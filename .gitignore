@@ -1,3 +1,9 @@
+# Yarn
+yarn.lock
+
+# Mac
+.DS_Store
+
 # Logs
 logs
 *.log
