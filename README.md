@@ -1,4 +1,4 @@
-# three-es6-boilerplate
+# Particulier
 
 ## Installation
 
@@ -7,7 +7,7 @@
 
 ## Build
 
-1. npm run build
+1. `npm run build`
 
 ## Run
 

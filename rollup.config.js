@@ -29,6 +29,7 @@ export default {
   entry: 'src/index.js',
   format: 'cjs',
   cache: cache.data,
+  sourceMap: true,
   plugins: [
     json(),
     glsl(),

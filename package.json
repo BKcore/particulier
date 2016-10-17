@@ -1,16 +1,17 @@
 {
-  "name": "three-es6-boilerplate",
+  "name": "particulier",
   "version": "0.0.1",
   "main": "src/index.js",
   "author": "Thibaut `BKcore` Despoulain <thibaut@despoulain.com>",
   "license": "MIT",
   "scripts": {
-    "build": "rollup -c",
-    "watch": "rollup -c -w"
+    "build": "rollup -c -m",
+    "watch": "rollup -c -w -m"
   },
   "dependencies": {
     "babel-preset-es2015-rollup": "^1.2.0",
     "babel-preset-stage-2": "^6.17.0",
+    "gl-matrix": "^2.3.2",
     "rollup": "^0.36.3",
     "rollup-plugin-babel": "^2.6.1",
     "rollup-plugin-commonjs": "^5.0.5",
