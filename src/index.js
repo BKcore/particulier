@@ -5,6 +5,8 @@ import {
   GridHelper
 } from 'three';
 
+import OrbitControls from '../libs/three/OrbitControls.js'
+
 class App {
   constructor(opts) {
     this.width = opts.width | 1280;
@@ -57,6 +59,11 @@ class App {
   initCamera() {
     this.camera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
     this.camera.position.y = 100;
+    this.camera.position.z = -200;
+    this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.cameraControls.enableDamping = true;
+    this.cameraControls.dampingFactor = 0.25;
+    this.cameraControls.enableZoom = false;
   }
 
   initScene() {
@@ -67,9 +74,7 @@ class App {
   }
 
   tick(dt) {
-    this.camera.position.x = 200 * Math.cos(this.time * 0.0003);
-    this.camera.position.z = 200 * Math.sin(this.time * 0.0003);
-    this.camera.lookAt(this.scene.position);
+    this.cameraControls.update();
     this.renderer.render(this.scene, this.camera);
   }
 }

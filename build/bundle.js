@@ -184,7 +184,7 @@ Object.assign( EventDispatcher.prototype, {
 } );
 
 var REVISION = '81';
-
+var MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2 };
 var CullFaceNone = 0;
 var CullFaceBack = 1;
 var CullFaceFront = 2;
@@ -988,6 +988,12 @@ Vector2.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author szimek / https://github.com/szimek/
+ */
 
 function Texture( image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding ) {
 
@@ -1896,6 +1902,17 @@ Vector4.prototype = {
 
 };
 
+/**
+ * @author szimek / https://github.com/szimek/
+ * @author alteredq / http://alteredqualia.com/
+ * @author Marius Kintel / https://github.com/kintel
+ */
+
+/*
+ In options, we can specify:
+ * Texture parameters for an auto-generated target texture
+ * depthBuffer/stencilBuffer: Booleans to indicate if we should generate these buffers
+*/
 function WebGLRenderTarget( width, height, options ) {
 
 	this.uuid = _Math.generateUUID();
@@ -1971,6 +1988,10 @@ Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
 
 } );
 
+/**
+ * @author alteredq / http://alteredqualia.com
+ */
+
 function WebGLRenderTargetCube( width, height, options ) {
 
 	WebGLRenderTarget.call( this, width, height, options );
@@ -1984,6 +2005,13 @@ WebGLRenderTargetCube.prototype = Object.create( WebGLRenderTarget.prototype );
 WebGLRenderTargetCube.prototype.constructor = WebGLRenderTargetCube;
 
 WebGLRenderTargetCube.prototype.isWebGLRenderTargetCube = true;
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ */
 
 function Quaternion( x, y, z, w ) {
 
@@ -2563,6 +2591,15 @@ Object.assign( Quaternion, {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author *kile / http://kile.stravaganza.org/
+ * @author philogb / http://blog.thejit.org/
+ * @author mikael emtinger / http://gomo.se/
+ * @author egraether / http://egraether.com/
+ * @author WestLangley / http://github.com/WestLangley
+ */
 
 function Vector3( x, y, z ) {
 
@@ -3317,6 +3354,19 @@ Vector3.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author supereggbert / http://www.paulbrunt.co.uk/
+ * @author philogb / http://blog.thejit.org/
+ * @author jordi_ros / http://plattsoft.com
+ * @author D1plo1d / http://github.com/D1plo1d
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author timknip / http://www.floorplanner.com/
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ */
 
 function Matrix4() {
 
@@ -4284,6 +4334,10 @@ Matrix4.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function CubeTexture( images, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding ) {
 
@@ -5814,6 +5868,10 @@ ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00F
 'springgreen': 0x00FF7F, 'steelblue': 0x4682B4, 'tan': 0xD2B48C, 'teal': 0x008080, 'thistle': 0xD8BFD8, 'tomato': 0xFF6347, 'turquoise': 0x40E0D0,
 'violet': 0xEE82EE, 'wheat': 0xF5DEB3, 'white': 0xFFFFFF, 'whitesmoke': 0xF5F5F5, 'yellow': 0xFFFF00, 'yellowgreen': 0x9ACD32 };
 
+/**
+ * Uniforms library for shared webgl shaders
+ */
+
 var UniformsLib = {
 
 	common: {
@@ -5967,6 +6025,12 @@ var UniformsLib = {
 	}
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ */
 
 var ShaderLib = {
 
@@ -6190,6 +6254,10 @@ ShaderLib.physical = {
 	fragmentShader: ShaderChunk.meshphysical_frag
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ */
 
 function Box2( min, max ) {
 
@@ -6423,6 +6491,11 @@ Box2.prototype = {
 	}
 
 };
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function LensFlarePlugin( renderer, flares ) {
 
@@ -6802,6 +6875,11 @@ function LensFlarePlugin( renderer, flares ) {
 
 }
 
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function SpritePlugin( renderer, sprites ) {
 
 	var gl = renderer.context;
@@ -7171,6 +7249,11 @@ function SpritePlugin( renderer, sprites ) {
 
 }
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function Material() {
 
 	Object.defineProperty( this, 'id', { value: MaterialIdCount() } );
@@ -7505,6 +7588,27 @@ Object.assign( Material.prototype, EventDispatcher.prototype );
 var count$1 = 0;
 function MaterialIdCount() { return count$1++; }
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  defines: { "label" : "value" },
+ *  uniforms: { "parameter1": { value: 1.0 }, "parameter2": { value2: 2 } },
+ *
+ *  fragmentShader: <string>,
+ *  vertexShader: <string>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  lights: <bool>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
+
 function ShaderMaterial( parameters ) {
 
 	Material.call( this );
@@ -7606,6 +7710,29 @@ ShaderMaterial.prototype.toJSON = function ( meta ) {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / https://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>
+ * }
+ */
+
 function MeshDepthMaterial( parameters ) {
 
 	Material.call( this );
@@ -7663,6 +7790,11 @@ MeshDepthMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ */
 
 function Box3( min, max ) {
 
@@ -8136,6 +8268,11 @@ Box3.prototype = {
 
 };
 
+/**
+ * @author bhouston / http://clara.io
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function Sphere( center, radius ) {
 
 	this.center = ( center !== undefined ) ? center : new Vector3();
@@ -8305,6 +8442,13 @@ Sphere.prototype = {
 	}
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ * @author tschw
+ */
 
 function Matrix3() {
 
@@ -8610,6 +8754,10 @@ Matrix3.prototype = {
 
 };
 
+/**
+ * @author bhouston / http://clara.io
+ */
+
 function Plane( normal, constant ) {
 
 	this.normal = ( normal !== undefined ) ? normal : new Vector3( 1, 0, 0 );
@@ -8838,6 +8986,12 @@ Plane.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / http://clara.io
+ */
 
 function Frustum( p0, p1, p2, p3, p4, p5 ) {
 
@@ -9480,6 +9634,10 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 
 }
 
+/**
+ * @author bhouston / http://clara.io
+ */
+
 function Ray( origin, direction ) {
 
 	this.origin = ( origin !== undefined ) ? origin : new Vector3();
@@ -10012,6 +10170,12 @@ Ray.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ */
+
 function Euler( x, y, z, order ) {
 
 	this._x = x || 0;
@@ -10380,6 +10544,14 @@ Layers.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author elephantatwork / www.elephantatwork.ch
+ */
 
 function Object3D() {
 
@@ -11095,6 +11267,10 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 var count$2 = 0;
 function Object3DIdCount() { return count$2++; }
 
+/**
+ * @author bhouston / http://clara.io
+ */
+
 function Line3( start, end ) {
 
 	this.start = ( start !== undefined ) ? start : new Vector3();
@@ -11217,6 +11393,11 @@ Line3.prototype = {
 	}
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Triangle( a, b, c ) {
 
@@ -11469,6 +11650,11 @@ Triangle.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function Face3( a, b, c, normal, color, materialIndex ) {
 
 	this.a = a;
@@ -11523,6 +11709,39 @@ Face3.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  shading: THREE.SmoothShading,
+ *  depthTest: <bool>,
+ *  depthWrite: <bool>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>
+ * }
+ */
 
 function MeshBasicMaterial( parameters ) {
 
@@ -11596,6 +11815,10 @@ MeshBasicMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function BufferAttribute( array, itemSize, normalized ) {
 
@@ -11903,8 +12126,6 @@ BufferAttribute.prototype = {
 
 };
 
-//
-
 function Uint16Attribute( array, itemSize ) {
 
 	return new BufferAttribute( new Uint16Array( array ), itemSize );
@@ -11922,6 +12143,15 @@ function Float32Attribute( array, itemSize ) {
 	return new BufferAttribute( new Float32Array( array ), itemSize );
 
 }
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author kile / http://kile.stravaganza.org/
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author bhouston / http://clara.io
+ */
 
 function Geometry() {
 
@@ -13142,6 +13372,10 @@ Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 var count$3 = 0;
 function GeometryIdCount() { return count$3++; }
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function DirectGeometry() {
 
 	Object.defineProperty( this, 'id', { value: GeometryIdCount() } );
@@ -13424,6 +13658,11 @@ Object.assign( DirectGeometry.prototype, EventDispatcher.prototype, {
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function BufferGeometry() {
 
@@ -14451,6 +14690,13 @@ Object.assign( BufferGeometry.prototype, EventDispatcher.prototype, {
 
 BufferGeometry.MaxIndex = 65535;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author jonobr1 / http://jonobr1.com/
+ */
+
 function Mesh( geometry, material ) {
 
 	Object3D.call( this );
@@ -14786,6 +15032,10 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
+
 function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments, depthSegments ) {
 
 	BufferGeometry.call( this );
@@ -14977,6 +15227,11 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 BoxBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 BoxBufferGeometry.prototype.constructor = BoxBufferGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * based on http://papervision3d.googlecode.com/svn/trunk/as3/trunk/src/org/papervision3d/objects/primitives/Plane.as
+ */
+
 function PlaneBufferGeometry( width, height, widthSegments, heightSegments ) {
 
 	BufferGeometry.call( this );
@@ -15069,6 +15324,12 @@ function PlaneBufferGeometry( width, height, widthSegments, heightSegments ) {
 PlaneBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 PlaneBufferGeometry.prototype.constructor = PlaneBufferGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author WestLangley / http://github.com/WestLangley
+*/
+
 function Camera() {
 
 	Object3D.call( this );
@@ -15133,6 +15394,13 @@ Camera.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author greggman / http://games.greggman.com/
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author tschw
+ */
 
 function PerspectiveCamera( fov, aspect, near, far ) {
 
@@ -15346,6 +15614,11 @@ PerspectiveCamera.prototype = Object.assign( Object.create( Camera.prototype ), 
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author arose / http://github.com/arose
+ */
 
 function OrthographicCamera( left, right, top, bottom, near, far ) {
 
@@ -19145,6 +19418,14 @@ function WebGLClipping() {
 
 }
 
+/**
+ * @author supereggbert / http://www.paulbrunt.co.uk/
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author szimek / https://github.com/szimek/
+ * @author tschw
+ */
+
 function WebGLRenderer( parameters ) {
 
 	console.log( 'THREE.WebGLRenderer', REVISION );
@@ -21940,6 +22221,11 @@ function WebGLRenderer( parameters ) {
 
 }
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function FogExp2 ( color, density ) {
 
 	this.name = '';
@@ -21966,6 +22252,11 @@ FogExp2.prototype.toJSON = function ( meta ) {
 	};
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Fog ( color, near, far ) {
 
@@ -21996,6 +22287,10 @@ Fog.prototype.toJSON = function ( meta ) {
 	};
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Scene () {
 
@@ -22040,6 +22335,11 @@ Scene.prototype.toJSON = function ( meta ) {
 	return data;
 
 };
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function LensFlare( texture, size, distance, blending, color ) {
 
@@ -22133,6 +22433,19 @@ LensFlare.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *	uvOffset: new THREE.Vector2(),
+ *	uvScale: new THREE.Vector2()
+ * }
+ */
+
 function SpriteMaterial( parameters ) {
 
 	Material.call( this );
@@ -22166,6 +22479,11 @@ SpriteMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Sprite( material ) {
 
@@ -22220,6 +22538,12 @@ Sprite.prototype = Object.assign( Object.create( Object3D.prototype ), {
 	}
 
 } );
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function LOD() {
 
@@ -22387,6 +22711,10 @@ LOD.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function DataTexture( data, width, height, format, type, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy, encoding ) {
 
 	Texture.call( this, null, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding );
@@ -22405,6 +22733,13 @@ DataTexture.prototype = Object.create( Texture.prototype );
 DataTexture.prototype.constructor = DataTexture;
 
 DataTexture.prototype.isDataTexture = true;
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author michael guerrero / http://realitymeltdown.com
+ * @author ikerr / http://verold.com
+ */
 
 function Skeleton( bones, boneInverses, useVertexTexture ) {
 
@@ -22580,6 +22915,12 @@ Object.assign( Skeleton.prototype, {
 
 } );
 
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author ikerr / http://verold.com
+ */
+
 function Bone( skin ) {
 
 	Object3D.call( this );
@@ -22607,6 +22948,12 @@ Bone.prototype = Object.assign( Object.create( Object3D.prototype ), {
 	}
 
 } );
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author ikerr / http://verold.com
+ */
 
 function SkinnedMesh( geometry, material, useVertexTexture ) {
 
@@ -22784,6 +23131,20 @@ SkinnedMesh.prototype = Object.assign( Object.create( Mesh.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  linewidth: <float>,
+ *  linecap: "round",
+ *  linejoin: "round"
+ * }
+ */
+
 function LineBasicMaterial( parameters ) {
 
 	Material.call( this );
@@ -22820,6 +23181,10 @@ LineBasicMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Line( geometry, material, mode ) {
 
@@ -23002,6 +23367,10 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function LineSegments( geometry, material ) {
 
 	Line.call( this, geometry, material );
@@ -23017,6 +23386,20 @@ LineSegments.prototype = Object.assign( Object.create( Line.prototype ), {
 	isLineSegments: true
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  size: <float>,
+ *  sizeAttenuation: <bool>
+ * }
+ */
 
 function PointsMaterial( parameters ) {
 
@@ -23056,6 +23439,10 @@ PointsMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Points( geometry, material ) {
 
@@ -23189,6 +23576,10 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function Group() {
 
 	Object3D.call( this );
@@ -23202,6 +23593,10 @@ Group.prototype = Object.assign( Object.create( Object3D.prototype ), {
 	constructor: Group
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function CompressedTexture( mipmaps, width, height, format, type, mapping, wrapS, wrapT, magFilter, minFilter, anisotropy, encoding ) {
 
@@ -23226,6 +23621,10 @@ CompressedTexture.prototype = Object.create( Texture.prototype );
 CompressedTexture.prototype.constructor = CompressedTexture;
 
 CompressedTexture.prototype.isCompressedTexture = true;
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function WireframeGeometry( geometry ) {
 
@@ -23406,6 +23805,15 @@ function WireframeGeometry( geometry ) {
 WireframeGeometry.prototype = Object.create( BufferGeometry.prototype );
 WireframeGeometry.prototype.constructor = WireframeGeometry;
 
+/**
+ * @author zz85 / https://github.com/zz85
+ * Parametric Surfaces Geometry
+ * based on the brilliant article by @prideout http://prideout.net/blog/?p=44
+ *
+ * new THREE.ParametricGeometry( parametricFunction, uSegments, ySegements );
+ *
+ */
+
 function ParametricGeometry( func, slices, stacks ) {
 
 	Geometry.call( this );
@@ -23482,6 +23890,12 @@ function ParametricGeometry( func, slices, stacks ) {
 
 ParametricGeometry.prototype = Object.create( Geometry.prototype );
 ParametricGeometry.prototype.constructor = ParametricGeometry;
+
+/**
+ * @author clockworkgeek / https://github.com/clockworkgeek
+ * @author timothypratley / https://github.com/timothypratley
+ * @author WestLangley / http://github.com/WestLangley
+*/
 
 function PolyhedronGeometry( vertices, indices, radius, detail ) {
 
@@ -23714,6 +24128,10 @@ function PolyhedronGeometry( vertices, indices, radius, detail ) {
 PolyhedronGeometry.prototype = Object.create( Geometry.prototype );
 PolyhedronGeometry.prototype.constructor = PolyhedronGeometry;
 
+/**
+ * @author timothypratley / https://github.com/timothypratley
+ */
+
 function TetrahedronGeometry( radius, detail ) {
 
 	var vertices = [
@@ -23738,6 +24156,10 @@ function TetrahedronGeometry( radius, detail ) {
 TetrahedronGeometry.prototype = Object.create( PolyhedronGeometry.prototype );
 TetrahedronGeometry.prototype.constructor = TetrahedronGeometry;
 
+/**
+ * @author timothypratley / https://github.com/timothypratley
+ */
+
 function OctahedronGeometry( radius, detail ) {
 
 	var vertices = [
@@ -23761,6 +24183,10 @@ function OctahedronGeometry( radius, detail ) {
 
 OctahedronGeometry.prototype = Object.create( PolyhedronGeometry.prototype );
 OctahedronGeometry.prototype.constructor = OctahedronGeometry;
+
+/**
+ * @author timothypratley / https://github.com/timothypratley
+ */
 
 function IcosahedronGeometry( radius, detail ) {
 
@@ -23792,6 +24218,10 @@ function IcosahedronGeometry( radius, detail ) {
 
 IcosahedronGeometry.prototype = Object.create( PolyhedronGeometry.prototype );
 IcosahedronGeometry.prototype.constructor = IcosahedronGeometry;
+
+/**
+ * @author Abe Pazos / https://hamoid.com
+ */
 
 function DodecahedronGeometry( radius, detail ) {
 
@@ -23847,6 +24277,20 @@ function DodecahedronGeometry( radius, detail ) {
 
 DodecahedronGeometry.prototype = Object.create( PolyhedronGeometry.prototype );
 DodecahedronGeometry.prototype.constructor = DodecahedronGeometry;
+
+/**
+ * @author WestLangley / https://github.com/WestLangley
+ * @author zz85 / https://github.com/zz85
+ * @author miningold / https://github.com/miningold
+ * @author jonobr1 / https://github.com/jonobr1
+ *
+ * Modified from the TorusKnotGeometry by @oosmoxiecode
+ *
+ * Creates a tube which extrudes along a 3d spline
+ *
+ * Uses parallel transport frames as described in
+ * http://www.cs.indiana.edu/pub/techreports/TR425.pdf
+ */
 
 function TubeGeometry( path, segments, radius, radialSegments, closed, taper ) {
 
@@ -24140,6 +24584,11 @@ TubeGeometry.FrenetFrames = function ( path, segments, closed ) {
 
 };
 
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ *
+ * see: http://www.blackpawn.com/texts/pqtorus/
+ */
 function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments, p, q ) {
 
 	BufferGeometry.call( this );
@@ -24300,6 +24749,10 @@ function TorusKnotBufferGeometry( radius, tube, tubularSegments, radialSegments,
 TorusKnotBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 TorusKnotBufferGeometry.prototype.constructor = TorusKnotBufferGeometry;
 
+/**
+ * @author oosmoxiecode
+ */
+
 function TorusKnotGeometry( radius, tube, tubularSegments, radialSegments, p, q, heightScale ) {
 
 	Geometry.call( this );
@@ -24324,6 +24777,10 @@ function TorusKnotGeometry( radius, tube, tubularSegments, radialSegments, p, q,
 
 TorusKnotGeometry.prototype = Object.create( Geometry.prototype );
 TorusKnotGeometry.prototype.constructor = TorusKnotGeometry;
+
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
 
 function TorusBufferGeometry( radius, tube, radialSegments, tubularSegments, arc ) {
 
@@ -24447,6 +24904,12 @@ function TorusBufferGeometry( radius, tube, radialSegments, tubularSegments, arc
 
 TorusBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 TorusBufferGeometry.prototype.constructor = TorusBufferGeometry;
+
+/**
+ * @author oosmoxiecode
+ * @author mrdoob / http://mrdoob.com/
+ * based on http://code.google.com/p/away3d/source/browse/trunk/fp10/Away3DLite/src/away3dlite/primitives/Torus.as?r=2888
+ */
 
 function TorusGeometry( radius, tube, radialSegments, tubularSegments, arc ) {
 
@@ -25237,6 +25700,30 @@ ShapeUtils = {
 
 };
 
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ *
+ * Creates extruded geometry from a path shape.
+ *
+ * parameters = {
+ *
+ *  curveSegments: <int>, // number of points on the curves
+ *  steps: <int>, // number of points for z-side extrusions / used for subdividing segments of extrude spline too
+ *  amount: <int>, // Depth to extrude the shape
+ *
+ *  bevelEnabled: <bool>, // turn on bevel
+ *  bevelThickness: <float>, // how deep into the original shape bevel goes
+ *  bevelSize: <float>, // how far from shape outline is bevel
+ *  bevelSegments: <int>, // number of bevel layers
+ *
+ *  extrudePath: <THREE.CurvePath> // 3d spline path to extrude shape along. (creates Frames if .frames aren't defined)
+ *  frames: <THREE.TubeGeometry.FrenetFrames> // containing arrays of tangents, normals, binormals
+ *
+ *  uvGenerator: <Object> // object that provides UV generator functions
+ *
+ * }
+ **/
+
 function ExtrudeGeometry( shapes, options ) {
 
 	if ( typeof( shapes ) === "undefined" ) {
@@ -25914,6 +26401,25 @@ ExtrudeGeometry.WorldUVGenerator = {
 	}
 };
 
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * Text = 3D Text
+ *
+ * parameters = {
+ *  font: <THREE.Font>, // font
+ *
+ *  size: <float>, // size of the text
+ *  height: <float>, // thickness to extrude text
+ *  curveSegments: <int>, // number of points on the curves
+ *
+ *  bevelEnabled: <bool>, // turn on bevel
+ *  bevelThickness: <float>, // how deep into text bevel goes
+ *  bevelSize: <float> // how far from text outline is bevel
+ * }
+ */
+
 function TextGeometry( text, parameters ) {
 
 	parameters = parameters || {};
@@ -25947,6 +26453,11 @@ function TextGeometry( text, parameters ) {
 
 TextGeometry.prototype = Object.create( ExtrudeGeometry.prototype );
 TextGeometry.prototype.constructor = TextGeometry;
+
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ * based on THREE.SphereGeometry
+ */
 
 function SphereBufferGeometry( radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength ) {
 
@@ -26045,6 +26556,10 @@ function SphereBufferGeometry( radius, widthSegments, heightSegments, phiStart, 
 SphereBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 SphereBufferGeometry.prototype.constructor = SphereBufferGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function SphereGeometry( radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength ) {
 
 	Geometry.call( this );
@@ -26067,6 +26582,10 @@ function SphereGeometry( radius, widthSegments, heightSegments, phiStart, phiLen
 
 SphereGeometry.prototype = Object.create( Geometry.prototype );
 SphereGeometry.prototype.constructor = SphereGeometry;
+
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
 
 function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
 
@@ -26185,6 +26704,10 @@ function RingBufferGeometry( innerRadius, outerRadius, thetaSegments, phiSegment
 RingBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 RingBufferGeometry.prototype.constructor = RingBufferGeometry;
 
+/**
+ * @author Kaleb Murphy
+ */
+
 function RingGeometry( innerRadius, outerRadius, thetaSegments, phiSegments, thetaStart, thetaLength ) {
 
 	Geometry.call( this );
@@ -26207,6 +26730,11 @@ function RingGeometry( innerRadius, outerRadius, thetaSegments, phiSegments, the
 RingGeometry.prototype = Object.create( Geometry.prototype );
 RingGeometry.prototype.constructor = RingGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * based on http://papervision3d.googlecode.com/svn/trunk/as3/trunk/src/org/papervision3d/objects/primitives/Plane.as
+ */
+
 function PlaneGeometry( width, height, widthSegments, heightSegments ) {
 
 	Geometry.call( this );
@@ -26226,6 +26754,17 @@ function PlaneGeometry( width, height, widthSegments, heightSegments ) {
 
 PlaneGeometry.prototype = Object.create( Geometry.prototype );
 PlaneGeometry.prototype.constructor = PlaneGeometry;
+
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
+
+ // points - to create a closed torus, one must use a set of points
+ //    like so: [ a, b, c, d, a ], see first is the same as last.
+ // segments - the number of circumference segments to create
+ // phiStart - the starting radian
+ // phiLength - the radian (0 to 2PI) range of the lathed section
+ //    2PI is a closed lathe, less than 2PI is a portion.
 
 function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 
@@ -26372,6 +26911,19 @@ function LatheBufferGeometry( points, segments, phiStart, phiLength ) {
 LatheBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 LatheBufferGeometry.prototype.constructor = LatheBufferGeometry;
 
+/**
+ * @author astrodud / http://astrodud.isgreat.org/
+ * @author zz85 / https://github.com/zz85
+ * @author bhouston / http://clara.io
+ */
+
+// points - to create a closed torus, one must use a set of points
+//    like so: [ a, b, c, d, a ], see first is the same as last.
+// segments - the number of circumference segments to create
+// phiStart - the starting radian
+// phiLength - the radian (0 to 2PI) range of the lathed section
+//    2PI is a closed lathe, less than 2PI is a portion.
+
 function LatheGeometry( points, segments, phiStart, phiLength ) {
 
 	Geometry.call( this );
@@ -26392,6 +26944,22 @@ function LatheGeometry( points, segments, phiStart, phiLength ) {
 
 LatheGeometry.prototype = Object.create( Geometry.prototype );
 LatheGeometry.prototype.constructor = LatheGeometry;
+
+/**
+ * @author jonobr1 / http://jonobr1.com
+ *
+ * Creates a one-sided polygonal geometry from a path shape. Similar to
+ * ExtrudeGeometry.
+ *
+ * parameters = {
+ *
+ *	curveSegments: <int>, // number of points on the curves. NOT USED AT THE MOMENT.
+ *
+ *	material: <int> // material index for front and back faces
+ *	uvGenerator: <Object> // object that provides UV generator functions
+ *
+ * }
+ **/
 
 function ShapeGeometry( shapes, options ) {
 
@@ -26509,6 +27077,10 @@ ShapeGeometry.prototype.addShape = function ( shape, options ) {
 
 };
 
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ */
+
 function EdgesGeometry( geometry, thresholdAngle ) {
 
 	BufferGeometry.call( this );
@@ -26600,6 +27172,10 @@ function EdgesGeometry( geometry, thresholdAngle ) {
 
 EdgesGeometry.prototype = Object.create( BufferGeometry.prototype );
 EdgesGeometry.prototype.constructor = EdgesGeometry;
+
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
 
 function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength ) {
 
@@ -26915,6 +27491,10 @@ function CylinderBufferGeometry( radiusTop, radiusBottom, height, radialSegments
 CylinderBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 CylinderBufferGeometry.prototype.constructor = CylinderBufferGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength ) {
 
 	Geometry.call( this );
@@ -26939,6 +27519,10 @@ function CylinderGeometry( radiusTop, radiusBottom, height, radialSegments, heig
 
 CylinderGeometry.prototype = Object.create( Geometry.prototype );
 CylinderGeometry.prototype.constructor = CylinderGeometry;
+
+/**
+ * @author abelnation / http://github.com/abelnation
+ */
 
 function ConeGeometry(
 	radius, height,
@@ -26967,6 +27551,10 @@ function ConeGeometry(
 ConeGeometry.prototype = Object.create( CylinderGeometry.prototype );
 ConeGeometry.prototype.constructor = ConeGeometry;
 
+/*
+ * @author: abelnation / http://github.com/abelnation
+ */
+
 function ConeBufferGeometry(
 	radius, height,
 	radialSegments, heightSegments,
@@ -26992,6 +27580,10 @@ function ConeBufferGeometry(
 
 ConeBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 ConeBufferGeometry.prototype.constructor = ConeBufferGeometry;
+
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
 
 function CircleBufferGeometry( radius, segments, thetaStart, thetaLength ) {
 
@@ -27057,6 +27649,10 @@ function CircleBufferGeometry( radius, segments, thetaStart, thetaLength ) {
 CircleBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 CircleBufferGeometry.prototype.constructor = CircleBufferGeometry;
 
+/**
+ * @author hughes
+ */
+
 function CircleGeometry( radius, segments, thetaStart, thetaLength ) {
 
 	Geometry.call( this );
@@ -27076,6 +27672,11 @@ function CircleGeometry( radius, segments, thetaStart, thetaLength ) {
 
 CircleGeometry.prototype = Object.create( Geometry.prototype );
 CircleGeometry.prototype.constructor = CircleGeometry;
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * based on http://papervision3d.googlecode.com/svn/trunk/as3/trunk/src/org/papervision3d/objects/primitives/Cube.as
+ */
 
 function BoxGeometry( width, height, depth, widthSegments, heightSegments, depthSegments ) {
 
@@ -27137,6 +27738,10 @@ var Geometries = Object.freeze({
 	BoxGeometry: BoxGeometry
 });
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function ShadowMaterial() {
 
 	ShaderMaterial.call( this, {
@@ -27172,6 +27777,10 @@ ShadowMaterial.prototype.constructor = ShadowMaterial;
 
 ShadowMaterial.prototype.isShadowMaterial = true;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function RawShaderMaterial( parameters ) {
 
 	ShaderMaterial.call( this, parameters );
@@ -27184,6 +27793,10 @@ RawShaderMaterial.prototype = Object.create( ShaderMaterial.prototype );
 RawShaderMaterial.prototype.constructor = RawShaderMaterial;
 
 RawShaderMaterial.prototype.isRawShaderMaterial = true;
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function MultiMaterial( materials ) {
 
@@ -27250,6 +27863,57 @@ MultiMaterial.prototype = {
 	}
 
 };
+
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  roughness: <float>,
+ *  metalness: <float>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  bumpMap: new THREE.Texture( <Image> ),
+ *  bumpScale: <float>,
+ *
+ *  normalMap: new THREE.Texture( <Image> ),
+ *  normalScale: <Vector2>,
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  roughnessMap: new THREE.Texture( <Image> ),
+ *
+ *  metalnessMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.CubeTexture( [posx, negx, posy, negy, posz, negz] ),
+ *  envMapIntensity: <float>
+ *
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
 
 function MeshStandardMaterial( parameters ) {
 
@@ -27370,6 +28034,14 @@ MeshStandardMaterial.prototype.copy = function ( source ) {
 
 };
 
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  reflectivity: <float>
+ * }
+ */
+
 function MeshPhysicalMaterial( parameters ) {
 
 	MeshStandardMaterial.call( this );
@@ -27406,6 +28078,56 @@ MeshPhysicalMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  specular: <hex>,
+ *  shininess: <float>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  bumpMap: new THREE.Texture( <Image> ),
+ *  bumpScale: <float>,
+ *
+ *  normalMap: new THREE.Texture( <Image> ),
+ *  normalScale: <Vector2>,
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
 
 function MeshPhongMaterial( parameters ) {
 
@@ -27518,6 +28240,17 @@ MeshPhongMaterial.prototype.copy = function ( source ) {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ *
+ * parameters = {
+ *  opacity: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>
+ * }
+ */
+
 function MeshNormalMaterial( parameters ) {
 
 	Material.call( this, parameters );
@@ -27550,6 +28283,44 @@ MeshNormalMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
 
 function MeshLambertMaterial( parameters ) {
 
@@ -27637,6 +28408,21 @@ MeshLambertMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  linewidth: <float>,
+ *
+ *  scale: <float>,
+ *  dashSize: <float>,
+ *  gapSize: <float>
+ * }
+ */
 
 function LineDashedMaterial( parameters ) {
 
@@ -27819,6 +28605,10 @@ function LoadingManager( onLoad, onProgress, onError ) {
 
 DefaultLoadingManager = new LoadingManager();
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function XHRLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -27940,6 +28730,12 @@ Object.assign( XHRLoader.prototype, {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ *
+ * Abstract Base class to block based textures loader (dds, pvr, ...)
+ */
 
 function CompressedTextureLoader( manager ) {
 
@@ -28151,6 +28947,10 @@ Object.assign( BinaryTextureLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function ImageLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -28223,6 +29023,10 @@ Object.assign( ImageLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function CubeTextureLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -28287,6 +29091,10 @@ Object.assign( CubeTextureLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function TextureLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -28349,6 +29157,11 @@ Object.assign( TextureLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function Light( color, intensity ) {
 
 	Object3D.call( this );
@@ -28401,6 +29214,10 @@ Light.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function HemisphereLight( skyColor, groundColor, intensity ) {
 
 	Light.call( this, skyColor, intensity );
@@ -28433,6 +29250,10 @@ HemisphereLight.prototype = Object.assign( Object.create( Light.prototype ), {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function LightShadow( camera ) {
 
@@ -28486,6 +29307,10 @@ Object.assign( LightShadow.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function SpotLightShadow() {
 
 	LightShadow.call( this, new PerspectiveCamera( 50, 1, 0.5, 500 ) );
@@ -28518,6 +29343,10 @@ SpotLightShadow.prototype = Object.assign( Object.create( LightShadow.prototype 
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function SpotLight( color, intensity, distance, angle, penumbra, decay ) {
 
@@ -28577,6 +29406,11 @@ SpotLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+
 function PointLight( color, intensity, distance, decay ) {
 
 	Light.call( this, color, intensity );
@@ -28625,6 +29459,10 @@ PointLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function DirectionalLightShadow( light ) {
 
 	LightShadow.call( this, new OrthographicCamera( - 5, 5, 5, - 5, 0.5, 500 ) );
@@ -28636,6 +29474,11 @@ DirectionalLightShadow.prototype = Object.assign( Object.create( LightShadow.pro
 	constructor: DirectionalLightShadow
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function DirectionalLight( color, intensity ) {
 
@@ -28671,6 +29514,10 @@ DirectionalLight.prototype = Object.assign( Object.create( Light.prototype ), {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function AmbientLight( color, intensity ) {
 
@@ -29110,6 +29957,16 @@ Object.assign( Interpolant.prototype, {
 
 } );
 
+/**
+ * Fast and simple cubic spline interpolant.
+ *
+ * It was derived from a Hermitian construction setting the first derivative
+ * at each sample position to the linear slope between neighboring positions
+ * over their parameter interval.
+ *
+ * @author tschw
+ */
+
 function CubicInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
@@ -29253,6 +30110,10 @@ CubicInterpolant.prototype =
 
 } );
 
+/**
+ * @author tschw
+ */
+
 function LinearInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
@@ -29291,6 +30152,14 @@ LinearInterpolant.prototype =
 	}
 
 } );
+
+/**
+ *
+ * Interpolant that evaluates to the sample value at the position preceeding
+ * the parameter.
+ *
+ * @author tschw
+ */
 
 function DiscreteInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
@@ -29691,6 +30560,16 @@ function KeyframeTrackConstructor( name, times, values, interpolation ) {
 
 }
 
+/**
+ *
+ * A Track of vectored keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function VectorKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -29709,6 +30588,12 @@ VectorKeyframeTrack.prototype =
 	// DefaultInterpolation is inherited
 
 } );
+
+/**
+ * Spherical linear unit quaternion interpolant.
+ *
+ * @author tschw
+ */
 
 function QuaternionLinearInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
@@ -29746,6 +30631,15 @@ QuaternionLinearInterpolant.prototype =
 
 } );
 
+/**
+ *
+ * A Track of quaternion keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function QuaternionKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -29774,6 +30668,15 @@ QuaternionKeyframeTrack.prototype =
 
 } );
 
+/**
+ *
+ * A Track of numeric keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function NumberKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -29792,6 +30695,16 @@ NumberKeyframeTrack.prototype =
 	// DefaultInterpolation is inherited
 
 } );
+
+/**
+ *
+ * A Track that interpolates Strings
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function StringKeyframeTrack( name, times, values, interpolation ) {
 
@@ -29814,6 +30727,16 @@ StringKeyframeTrack.prototype =
 	InterpolantFactoryMethodSmooth: undefined
 
 } );
+
+/**
+ *
+ * A Track of Boolean keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function BooleanKeyframeTrack( name, times, values ) {
 
@@ -29840,6 +30763,16 @@ BooleanKeyframeTrack.prototype =
 
 } );
 
+/**
+ *
+ * A Track of keyframe values that represent color.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function ColorKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -29862,6 +30795,16 @@ ColorKeyframeTrack.prototype =
 	// However, this is the place for color space parameterization.
 
 } );
+
+/**
+ *
+ * A timed sequence of keyframes for a specific property.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function KeyframeTrack( name, times, values, interpolation ) {
 
@@ -29996,6 +30939,14 @@ Object.assign( KeyframeTrack, {
 	}
 
 } );
+
+/**
+ *
+ * Reusable set of Tracks that represent an animation.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ */
 
 function AnimationClip( name, duration, tracks ) {
 
@@ -30346,6 +31297,10 @@ Object.assign( AnimationClip, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function MaterialLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -30497,6 +31452,10 @@ Object.assign( MaterialLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function BufferGeometryLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -30589,6 +31548,10 @@ Object.assign( BufferGeometryLoader.prototype, {
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Loader() {
 
@@ -30909,6 +31872,11 @@ Loader.Handlers = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function JSONLoader( manager ) {
 
@@ -31443,6 +32411,10 @@ Object.assign( JSONLoader.prototype, {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function ObjectLoader ( manager ) {
 
@@ -32388,6 +33360,10 @@ Curve.create = function ( constructor, getPointFunc ) {
 
 };
 
+/**************************************************************
+ *	Line
+ **************************************************************/
+
 function LineCurve( v1, v2 ) {
 
 	this.v1 = v1;
@@ -32430,6 +33406,16 @@ LineCurve.prototype.getTangent = function( t ) {
 	return tangent.normalize();
 
 };
+
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ *
+ **/
+
+/**************************************************************
+ *	Curved Path - a curve path is simply a array of connected
+ *  curves, but retains the api of a curve
+ **************************************************************/
 
 function CurvePath() {
 
@@ -32655,6 +33641,10 @@ CurvePath.prototype = Object.assign( Object.create( Curve.prototype ), {
 
 } );
 
+/**************************************************************
+ *	Ellipse curve
+ **************************************************************/
+
 function EllipseCurve( aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation ) {
 
 	this.aX = aX;
@@ -32789,6 +33779,10 @@ CurveUtils = {
 
 };
 
+/**************************************************************
+ *	Spline curve
+ **************************************************************/
+
 function SplineCurve( points /* array of Vector2 */ ) {
 
 	this.points = ( points === undefined ) ? [] : points;
@@ -32821,6 +33815,10 @@ SplineCurve.prototype.getPoint = function ( t ) {
 	);
 
 };
+
+/**************************************************************
+ *	Cubic Bezier curve
+ **************************************************************/
 
 function CubicBezierCurve( v0, v1, v2, v3 ) {
 
@@ -32855,6 +33853,11 @@ CubicBezierCurve.prototype.getTangent = function( t ) {
 	).normalize();
 
 };
+
+/**************************************************************
+ *	Quadratic Bezier curve
+ **************************************************************/
+
 
 function QuadraticBezierCurve( v0, v1, v2 ) {
 
@@ -33011,6 +34014,17 @@ var PathPrototype = Object.assign( Object.create( CurvePath.prototype ), {
 
 } );
 
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * Defines a 2d shape plane using paths.
+ **/
+
+// STEP 1 Create a path.
+// STEP 2 Turn path into shape.
+// STEP 3 ExtrudeGeometry takes in Shape/Shapes
+// STEP 3a - Extract points from each shape, turn to vertices
+// STEP 3b - Triangulate each shape, add faces.
+
 function Shape() {
 
 	Path.apply( this, arguments );
@@ -33057,6 +34071,12 @@ Shape.prototype = Object.assign( Object.create( PathPrototype ), {
 	}
 
 } );
+
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * Creates free form 2d path using series of points, lines or curves.
+ *
+ **/
 
 function Path( points ) {
 
@@ -33328,6 +34348,11 @@ ShapePath.prototype = {
 	}
 };
 
+/**
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function Font( data ) {
 
 	this.data = data;
@@ -33490,6 +34515,10 @@ Object.assign( Font.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function FontLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -33548,6 +34577,10 @@ function getAudioContext() {
 
 }
 
+/**
+ * @author Reece Aaron Lecrivain / http://reecenotes.com/
+ */
+
 function AudioLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -33575,6 +34608,10 @@ Object.assign( AudioLoader.prototype, {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function StereoCamera() {
 
@@ -34191,6 +35228,16 @@ Object.assign( AudioAnalyser.prototype, {
 	}
 
 } );
+
+/**
+ *
+ * Buffered scene graph property that allows weighted accumulation.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function PropertyMixer( binding, typeName, valueSize ) {
 
@@ -35036,6 +36083,17 @@ PropertyBinding.findNode = function( root, nodeName ) {
 
 };
 
+/**
+ *
+ * Action provided by AnimationMixer for scheduling clip playback on specific
+ * objects.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ *
+ */
+
 function AnimationAction( mixer, clip, localRoot ) {
 
 	this._mixer = mixer;
@@ -35677,6 +36735,16 @@ AnimationAction.prototype = {
 	}
 
 };
+
+/**
+ *
+ * Player for AnimationClips.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function AnimationMixer( root ) {
 
@@ -36408,6 +37476,10 @@ Object.assign( AnimationMixer.prototype, {
  * @author mrdoob / http://mrdoob.com/
  */
 
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
+
 function InterleavedBuffer( array, stride ) {
 
 	this.uuid = _Math.generateUUID();
@@ -36513,11 +37585,96 @@ function intersectObject( object, raycaster, intersects, recursive ) {
 
 }
 
-//
-
 /**
  * @author alteredq / http://alteredqualia.com/
  */
+
+/**
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+ *
+ * The poles (phi) are at the positive and negative y axis.
+ * The equator starts at positive z.
+ */
+
+function Spherical( radius, phi, theta ) {
+
+	this.radius = ( radius !== undefined ) ? radius : 1.0;
+	this.phi = ( phi !== undefined ) ? phi : 0; // up / down towards top and bottom pole
+	this.theta = ( theta !== undefined ) ? theta : 0; // around the equator of the sphere
+
+	return this;
+
+}
+
+Spherical.prototype = {
+
+	constructor: Spherical,
+
+	set: function ( radius, phi, theta ) {
+
+		this.radius = radius;
+		this.phi = phi;
+		this.theta = theta;
+
+		return this;
+
+	},
+
+	clone: function () {
+
+		return new this.constructor().copy( this );
+
+	},
+
+	copy: function ( other ) {
+
+		this.radius.copy( other.radius );
+		this.phi.copy( other.phi );
+		this.theta.copy( other.theta );
+
+		return this;
+
+	},
+
+	// restrict phi to be betwee EPS and PI-EPS
+	makeSafe: function() {
+
+		var EPS = 0.000001;
+		this.phi = Math.max( EPS, Math.min( Math.PI - EPS, this.phi ) );
+
+		return this;
+
+	},
+
+	setFromVector3: function( vec3 ) {
+
+		this.radius = vec3.length();
+
+		if ( this.radius === 0 ) {
+
+			this.theta = 0;
+			this.phi = 0;
+
+		} else {
+
+			this.theta = Math.atan2( vec3.x, vec3.z ); // equator angle around y-up axis
+			this.phi = Math.acos( _Math.clamp( vec3.y / this.radius, - 1, 1 ) ); // polar angle
+
+		}
+
+		return this;
+
+	},
+
+};
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+*/
 
 function VertexNormalsHelper( object, size, hex, linewidth ) {
 
@@ -36660,6 +37817,12 @@ VertexNormalsHelper.prototype.update = ( function () {
 
 }() );
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+*/
+
 function SpotLightHelper( light ) {
 
 	Object3D.call( this );
@@ -36736,6 +37899,11 @@ SpotLightHelper.prototype.update = function () {
 
 }();
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function HemisphereLightHelper( light, sphereSize ) {
 
 	Object3D.call( this );
@@ -36792,6 +37960,10 @@ HemisphereLightHelper.prototype.update = function () {
 
 }();
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function GridHelper( size, divisions, color1, color2 ) {
 
 	divisions = divisions || 1;
@@ -36834,6 +38006,11 @@ GridHelper.prototype.setColors = function () {
 	console.error( 'THREE.GridHelper: setColors() has been deprecated, pass them in the constructor instead.' );
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+*/
 
 function FaceNormalsHelper( object, size, hex, linewidth ) {
 
@@ -36941,6 +38118,12 @@ FaceNormalsHelper.prototype.update = ( function () {
 
 }() );
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+ */
+
 function DirectionalLightHelper( light, size ) {
 
 	Object3D.call( this );
@@ -37014,6 +38197,15 @@ DirectionalLightHelper.prototype.update = function () {
 	};
 
 }();
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ *	- shows frustum, line of sight and up of the camera
+ *	- suitable for fast updates
+ * 	- based on frustum visualization in lightgl.js shadowmap example
+ *		http://evanw.github.com/lightgl.js/tests/shadowmap.html
+ */
 
 function CameraHelper( camera ) {
 
@@ -37195,6 +38387,10 @@ CameraHelper.prototype.update = function () {
 	};
 
 }();
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function BoxHelper( object, color ) {
 
@@ -37564,6 +38760,11 @@ CatmullRomCurve3 = ( function() {
 	);
 
 } )();
+
+/**************************************************************
+ *	Spline 3D curve
+ **************************************************************/
+
 
 var SplineCurve3 = Curve.create(
 
@@ -38376,6 +39577,944 @@ Object.assign( AudioAnalyser.prototype, {
 
 //
 
+// ES6 Module from three/examples/js/controls/OrbitControls.js
+
+/**
+ * @author qiao / https://github.com/qiao
+ * @author mrdoob / http://mrdoob.com
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author erich666 / http://erichaines.com
+ */
+
+// This set of controls performs orbiting, dollying (zooming), and panning.
+// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+//
+//    Orbit - left mouse / touch: one finger move
+//    Zoom - middle mouse, or mousewheel / touch: two finger spread or squish
+//    Pan - right mouse, or arrow keys / touch: three finter swipe
+
+var OrbitControls = function OrbitControls(object, domElement) {
+
+  this.object = object;
+
+  this.domElement = domElement !== undefined ? domElement : document;
+
+  // Set to false to disable this control
+  this.enabled = true;
+
+  // "target" sets the location of focus, where the object orbits around
+  this.target = new Vector3();
+
+  // How far you can dolly in and out ( PerspectiveCamera only )
+  this.minDistance = 0;
+  this.maxDistance = Infinity;
+
+  // How far you can zoom in and out ( OrthographicCamera only )
+  this.minZoom = 0;
+  this.maxZoom = Infinity;
+
+  // How far you can orbit vertically, upper and lower limits.
+  // Range is 0 to Math.PI radians.
+  this.minPolarAngle = 0; // radians
+  this.maxPolarAngle = Math.PI; // radians
+
+  // How far you can orbit horizontally, upper and lower limits.
+  // If set, must be a sub-interval of the interval [ - Math.PI, Math.PI ].
+  this.minAzimuthAngle = -Infinity; // radians
+  this.maxAzimuthAngle = Infinity; // radians
+
+  // Set to true to enable damping (inertia)
+  // If damping is enabled, you must call controls.update() in your animation loop
+  this.enableDamping = false;
+  this.dampingFactor = 0.25;
+
+  // This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
+  // Set to false to disable zooming
+  this.enableZoom = true;
+  this.zoomSpeed = 1.0;
+
+  // Set to false to disable rotating
+  this.enableRotate = true;
+  this.rotateSpeed = 1.0;
+
+  // Set to false to disable panning
+  this.enablePan = true;
+  this.keyPanSpeed = 7.0; // pixels moved per arrow key push
+
+  // Set to true to automatically rotate around the target
+  // If auto-rotate is enabled, you must call controls.update() in your animation loop
+  this.autoRotate = false;
+  this.autoRotateSpeed = 2.0; // 30 seconds per round when fps is 60
+
+  // Set to false to disable use of the keys
+  this.enableKeys = true;
+
+  // The four arrow keys
+  this.keys = { LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40 };
+
+  // Mouse buttons
+  this.mouseButtons = { ORBIT: MOUSE.LEFT, ZOOM: MOUSE.MIDDLE, PAN: MOUSE.RIGHT };
+
+  // for reset
+  this.target0 = this.target.clone();
+  this.position0 = this.object.position.clone();
+  this.zoom0 = this.object.zoom;
+
+  //
+  // public methods
+  //
+
+  this.getPolarAngle = function () {
+
+    return spherical.phi;
+  };
+
+  this.getAzimuthalAngle = function () {
+
+    return spherical.theta;
+  };
+
+  this.reset = function () {
+
+    scope.target.copy(scope.target0);
+    scope.object.position.copy(scope.position0);
+    scope.object.zoom = scope.zoom0;
+
+    scope.object.updateProjectionMatrix();
+    scope.dispatchEvent(changeEvent);
+
+    scope.update();
+
+    state = STATE.NONE;
+  };
+
+  // this method is exposed, but perhaps it would be better if we can make it private...
+  this.update = function () {
+
+    var offset = new Vector3();
+
+    // so camera.up is the orbit axis
+    var quat = new Quaternion().setFromUnitVectors(object.up, new Vector3(0, 1, 0));
+    var quatInverse = quat.clone().inverse();
+
+    var lastPosition = new Vector3();
+    var lastQuaternion = new Quaternion();
+
+    return function update() {
+
+      var position = scope.object.position;
+
+      offset.copy(position).sub(scope.target);
+
+      // rotate offset to "y-axis-is-up" space
+      offset.applyQuaternion(quat);
+
+      // angle from z-axis around y-axis
+      spherical.setFromVector3(offset);
+
+      if (scope.autoRotate && state === STATE.NONE) {
+
+        rotateLeft(getAutoRotationAngle());
+      }
+
+      spherical.theta += sphericalDelta.theta;
+      spherical.phi += sphericalDelta.phi;
+
+      // restrict theta to be between desired limits
+      spherical.theta = Math.max(scope.minAzimuthAngle, Math.min(scope.maxAzimuthAngle, spherical.theta));
+
+      // restrict phi to be between desired limits
+      spherical.phi = Math.max(scope.minPolarAngle, Math.min(scope.maxPolarAngle, spherical.phi));
+
+      spherical.makeSafe();
+
+      spherical.radius *= scale;
+
+      // restrict radius to be between desired limits
+      spherical.radius = Math.max(scope.minDistance, Math.min(scope.maxDistance, spherical.radius));
+
+      // move target to panned location
+      scope.target.add(panOffset);
+
+      offset.setFromSpherical(spherical);
+
+      // rotate offset back to "camera-up-vector-is-up" space
+      offset.applyQuaternion(quatInverse);
+
+      position.copy(scope.target).add(offset);
+
+      scope.object.lookAt(scope.target);
+
+      if (scope.enableDamping === true) {
+
+        sphericalDelta.theta *= 1 - scope.dampingFactor;
+        sphericalDelta.phi *= 1 - scope.dampingFactor;
+      } else {
+
+        sphericalDelta.set(0, 0, 0);
+      }
+
+      scale = 1;
+      panOffset.set(0, 0, 0);
+
+      // update condition is:
+      // min(camera displacement, camera rotation in radians)^2 > EPS
+      // using small-angle approximation cos(x/2) = 1 - x^2 / 8
+
+      if (zoomChanged || lastPosition.distanceToSquared(scope.object.position) > EPS || 8 * (1 - lastQuaternion.dot(scope.object.quaternion)) > EPS) {
+
+        scope.dispatchEvent(changeEvent);
+
+        lastPosition.copy(scope.object.position);
+        lastQuaternion.copy(scope.object.quaternion);
+        zoomChanged = false;
+
+        return true;
+      }
+
+      return false;
+    };
+  }();
+
+  this.dispose = function () {
+
+    scope.domElement.removeEventListener('contextmenu', onContextMenu, false);
+    scope.domElement.removeEventListener('mousedown', onMouseDown, false);
+    scope.domElement.removeEventListener('wheel', onMouseWheel, false);
+
+    scope.domElement.removeEventListener('touchstart', onTouchStart, false);
+    scope.domElement.removeEventListener('touchend', onTouchEnd, false);
+    scope.domElement.removeEventListener('touchmove', onTouchMove, false);
+
+    document.removeEventListener('mousemove', onMouseMove, false);
+    document.removeEventListener('mouseup', onMouseUp, false);
+
+    window.removeEventListener('keydown', onKeyDown, false);
+
+    //scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
+  };
+
+  //
+  // internals
+  //
+
+  var scope = this;
+
+  var changeEvent = { type: 'change' };
+  var startEvent = { type: 'start' };
+  var endEvent = { type: 'end' };
+
+  var STATE = { NONE: -1, ROTATE: 0, DOLLY: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_DOLLY: 4, TOUCH_PAN: 5 };
+
+  var state = STATE.NONE;
+
+  var EPS = 0.000001;
+
+  // current position in spherical coordinates
+  var spherical = new Spherical();
+  var sphericalDelta = new Spherical();
+
+  var scale = 1;
+  var panOffset = new Vector3();
+  var zoomChanged = false;
+
+  var rotateStart = new Vector2();
+  var rotateEnd = new Vector2();
+  var rotateDelta = new Vector2();
+
+  var panStart = new Vector2();
+  var panEnd = new Vector2();
+  var panDelta = new Vector2();
+
+  var dollyStart = new Vector2();
+  var dollyEnd = new Vector2();
+  var dollyDelta = new Vector2();
+
+  function getAutoRotationAngle() {
+
+    return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed;
+  }
+
+  function getZoomScale() {
+
+    return Math.pow(0.95, scope.zoomSpeed);
+  }
+
+  function rotateLeft(angle) {
+
+    sphericalDelta.theta -= angle;
+  }
+
+  function rotateUp(angle) {
+
+    sphericalDelta.phi -= angle;
+  }
+
+  var panLeft = function () {
+
+    var v = new Vector3();
+
+    return function panLeft(distance, objectMatrix) {
+
+      v.setFromMatrixColumn(objectMatrix, 0); // get X column of objectMatrix
+      v.multiplyScalar(-distance);
+
+      panOffset.add(v);
+    };
+  }();
+
+  var panUp = function () {
+
+    var v = new Vector3();
+
+    return function panUp(distance, objectMatrix) {
+
+      v.setFromMatrixColumn(objectMatrix, 1); // get Y column of objectMatrix
+      v.multiplyScalar(distance);
+
+      panOffset.add(v);
+    };
+  }();
+
+  // deltaX and deltaY are in pixels; right and down are positive
+  var pan = function () {
+
+    var offset = new Vector3();
+
+    return function pan(deltaX, deltaY) {
+
+      var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+      if (scope.object instanceof PerspectiveCamera) {
+
+        // perspective
+        var position = scope.object.position;
+        offset.copy(position).sub(scope.target);
+        var targetDistance = offset.length();
+
+        // half of the fov is center to top of screen
+        targetDistance *= Math.tan(scope.object.fov / 2 * Math.PI / 180.0);
+
+        // we actually don't use screenWidth, since perspective camera is fixed to screen height
+        panLeft(2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix);
+        panUp(2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix);
+      } else if (scope.object instanceof OrthographicCamera) {
+
+        // orthographic
+        panLeft(deltaX * (scope.object.right - scope.object.left) / scope.object.zoom / element.clientWidth, scope.object.matrix);
+        panUp(deltaY * (scope.object.top - scope.object.bottom) / scope.object.zoom / element.clientHeight, scope.object.matrix);
+      } else {
+
+        // camera neither orthographic nor perspective
+        console.warn('WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.');
+        scope.enablePan = false;
+      }
+    };
+  }();
+
+  function dollyIn(dollyScale) {
+
+    if (scope.object instanceof PerspectiveCamera) {
+
+      scale /= dollyScale;
+    } else if (scope.object instanceof OrthographicCamera) {
+
+      scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom * dollyScale));
+      scope.object.updateProjectionMatrix();
+      zoomChanged = true;
+    } else {
+
+      console.warn('WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.');
+      scope.enableZoom = false;
+    }
+  }
+
+  function dollyOut(dollyScale) {
+
+    if (scope.object instanceof PerspectiveCamera) {
+
+      scale *= dollyScale;
+    } else if (scope.object instanceof OrthographicCamera) {
+
+      scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom / dollyScale));
+      scope.object.updateProjectionMatrix();
+      zoomChanged = true;
+    } else {
+
+      console.warn('WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.');
+      scope.enableZoom = false;
+    }
+  }
+
+  //
+  // event callbacks - update the object state
+  //
+
+  function handleMouseDownRotate(event) {
+
+    //console.log( 'handleMouseDownRotate' );
+
+    rotateStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseDownDolly(event) {
+
+    //console.log( 'handleMouseDownDolly' );
+
+    dollyStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseDownPan(event) {
+
+    //console.log( 'handleMouseDownPan' );
+
+    panStart.set(event.clientX, event.clientY);
+  }
+
+  function handleMouseMoveRotate(event) {
+
+    //console.log( 'handleMouseMoveRotate' );
+
+    rotateEnd.set(event.clientX, event.clientY);
+    rotateDelta.subVectors(rotateEnd, rotateStart);
+
+    var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+    // rotating across whole screen goes 360 degrees around
+    rotateLeft(2 * Math.PI * rotateDelta.x / element.clientWidth * scope.rotateSpeed);
+
+    // rotating up and down along whole screen attempts to go 360, but limited to 180
+    rotateUp(2 * Math.PI * rotateDelta.y / element.clientHeight * scope.rotateSpeed);
+
+    rotateStart.copy(rotateEnd);
+
+    scope.update();
+  }
+
+  function handleMouseMoveDolly(event) {
+
+    //console.log( 'handleMouseMoveDolly' );
+
+    dollyEnd.set(event.clientX, event.clientY);
+
+    dollyDelta.subVectors(dollyEnd, dollyStart);
+
+    if (dollyDelta.y > 0) {
+
+      dollyIn(getZoomScale());
+    } else if (dollyDelta.y < 0) {
+
+      dollyOut(getZoomScale());
+    }
+
+    dollyStart.copy(dollyEnd);
+
+    scope.update();
+  }
+
+  function handleMouseMovePan(event) {
+
+    //console.log( 'handleMouseMovePan' );
+
+    panEnd.set(event.clientX, event.clientY);
+
+    panDelta.subVectors(panEnd, panStart);
+
+    pan(panDelta.x, panDelta.y);
+
+    panStart.copy(panEnd);
+
+    scope.update();
+  }
+
+  function handleMouseUp(event) {
+
+    //console.log( 'handleMouseUp' );
+
+  }
+
+  function handleMouseWheel(event) {
+
+    //console.log( 'handleMouseWheel' );
+
+    if (event.deltaY < 0) {
+
+      dollyOut(getZoomScale());
+    } else if (event.deltaY > 0) {
+
+      dollyIn(getZoomScale());
+    }
+
+    scope.update();
+  }
+
+  function handleKeyDown(event) {
+
+    //console.log( 'handleKeyDown' );
+
+    switch (event.keyCode) {
+
+      case scope.keys.UP:
+        pan(0, scope.keyPanSpeed);
+        scope.update();
+        break;
+
+      case scope.keys.BOTTOM:
+        pan(0, -scope.keyPanSpeed);
+        scope.update();
+        break;
+
+      case scope.keys.LEFT:
+        pan(scope.keyPanSpeed, 0);
+        scope.update();
+        break;
+
+      case scope.keys.RIGHT:
+        pan(-scope.keyPanSpeed, 0);
+        scope.update();
+        break;
+
+    }
+  }
+
+  function handleTouchStartRotate(event) {
+
+    //console.log( 'handleTouchStartRotate' );
+
+    rotateStart.set(event.touches[0].pageX, event.touches[0].pageY);
+  }
+
+  function handleTouchStartDolly(event) {
+
+    //console.log( 'handleTouchStartDolly' );
+
+    var dx = event.touches[0].pageX - event.touches[1].pageX;
+    var dy = event.touches[0].pageY - event.touches[1].pageY;
+
+    var distance = Math.sqrt(dx * dx + dy * dy);
+
+    dollyStart.set(0, distance);
+  }
+
+  function handleTouchStartPan(event) {
+
+    //console.log( 'handleTouchStartPan' );
+
+    panStart.set(event.touches[0].pageX, event.touches[0].pageY);
+  }
+
+  function handleTouchMoveRotate(event) {
+
+    //console.log( 'handleTouchMoveRotate' );
+
+    rotateEnd.set(event.touches[0].pageX, event.touches[0].pageY);
+    rotateDelta.subVectors(rotateEnd, rotateStart);
+
+    var element = scope.domElement === document ? scope.domElement.body : scope.domElement;
+
+    // rotating across whole screen goes 360 degrees around
+    rotateLeft(2 * Math.PI * rotateDelta.x / element.clientWidth * scope.rotateSpeed);
+
+    // rotating up and down along whole screen attempts to go 360, but limited to 180
+    rotateUp(2 * Math.PI * rotateDelta.y / element.clientHeight * scope.rotateSpeed);
+
+    rotateStart.copy(rotateEnd);
+
+    scope.update();
+  }
+
+  function handleTouchMoveDolly(event) {
+
+    //console.log( 'handleTouchMoveDolly' );
+
+    var dx = event.touches[0].pageX - event.touches[1].pageX;
+    var dy = event.touches[0].pageY - event.touches[1].pageY;
+
+    var distance = Math.sqrt(dx * dx + dy * dy);
+
+    dollyEnd.set(0, distance);
+
+    dollyDelta.subVectors(dollyEnd, dollyStart);
+
+    if (dollyDelta.y > 0) {
+
+      dollyOut(getZoomScale());
+    } else if (dollyDelta.y < 0) {
+
+      dollyIn(getZoomScale());
+    }
+
+    dollyStart.copy(dollyEnd);
+
+    scope.update();
+  }
+
+  function handleTouchMovePan(event) {
+
+    //console.log( 'handleTouchMovePan' );
+
+    panEnd.set(event.touches[0].pageX, event.touches[0].pageY);
+
+    panDelta.subVectors(panEnd, panStart);
+
+    pan(panDelta.x, panDelta.y);
+
+    panStart.copy(panEnd);
+
+    scope.update();
+  }
+
+  function handleTouchEnd(event) {}
+
+  //console.log( 'handleTouchEnd' );
+
+  //
+  // event handlers - FSM: listen for events and reset state
+  //
+
+  function onMouseDown(event) {
+
+    if (scope.enabled === false) return;
+
+    event.preventDefault();
+
+    if (event.button === scope.mouseButtons.ORBIT) {
+
+      if (scope.enableRotate === false) return;
+
+      handleMouseDownRotate(event);
+
+      state = STATE.ROTATE;
+    } else if (event.button === scope.mouseButtons.ZOOM) {
+
+      if (scope.enableZoom === false) return;
+
+      handleMouseDownDolly(event);
+
+      state = STATE.DOLLY;
+    } else if (event.button === scope.mouseButtons.PAN) {
+
+      if (scope.enablePan === false) return;
+
+      handleMouseDownPan(event);
+
+      state = STATE.PAN;
+    }
+
+    if (state !== STATE.NONE) {
+
+      document.addEventListener('mousemove', onMouseMove, false);
+      document.addEventListener('mouseup', onMouseUp, false);
+
+      scope.dispatchEvent(startEvent);
+    }
+  }
+
+  function onMouseMove(event) {
+
+    if (scope.enabled === false) return;
+
+    event.preventDefault();
+
+    if (state === STATE.ROTATE) {
+
+      if (scope.enableRotate === false) return;
+
+      handleMouseMoveRotate(event);
+    } else if (state === STATE.DOLLY) {
+
+      if (scope.enableZoom === false) return;
+
+      handleMouseMoveDolly(event);
+    } else if (state === STATE.PAN) {
+
+      if (scope.enablePan === false) return;
+
+      handleMouseMovePan(event);
+    }
+  }
+
+  function onMouseUp(event) {
+
+    if (scope.enabled === false) return;
+
+    handleMouseUp(event);
+
+    document.removeEventListener('mousemove', onMouseMove, false);
+    document.removeEventListener('mouseup', onMouseUp, false);
+
+    scope.dispatchEvent(endEvent);
+
+    state = STATE.NONE;
+  }
+
+  function onMouseWheel(event) {
+
+    if (scope.enabled === false || scope.enableZoom === false || state !== STATE.NONE && state !== STATE.ROTATE) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    handleMouseWheel(event);
+
+    scope.dispatchEvent(startEvent); // not sure why these are here...
+    scope.dispatchEvent(endEvent);
+  }
+
+  function onKeyDown(event) {
+
+    if (scope.enabled === false || scope.enableKeys === false || scope.enablePan === false) return;
+
+    handleKeyDown(event);
+  }
+
+  function onTouchStart(event) {
+
+    if (scope.enabled === false) return;
+
+    switch (event.touches.length) {
+
+      case 1:
+        // one-fingered touch: rotate
+
+        if (scope.enableRotate === false) return;
+
+        handleTouchStartRotate(event);
+
+        state = STATE.TOUCH_ROTATE;
+
+        break;
+
+      case 2:
+        // two-fingered touch: dolly
+
+        if (scope.enableZoom === false) return;
+
+        handleTouchStartDolly(event);
+
+        state = STATE.TOUCH_DOLLY;
+
+        break;
+
+      case 3:
+        // three-fingered touch: pan
+
+        if (scope.enablePan === false) return;
+
+        handleTouchStartPan(event);
+
+        state = STATE.TOUCH_PAN;
+
+        break;
+
+      default:
+
+        state = STATE.NONE;
+
+    }
+
+    if (state !== STATE.NONE) {
+
+      scope.dispatchEvent(startEvent);
+    }
+  }
+
+  function onTouchMove(event) {
+
+    if (scope.enabled === false) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    switch (event.touches.length) {
+
+      case 1:
+        // one-fingered touch: rotate
+
+        if (scope.enableRotate === false) return;
+        if (state !== STATE.TOUCH_ROTATE) return; // is this needed?...
+
+        handleTouchMoveRotate(event);
+
+        break;
+
+      case 2:
+        // two-fingered touch: dolly
+
+        if (scope.enableZoom === false) return;
+        if (state !== STATE.TOUCH_DOLLY) return; // is this needed?...
+
+        handleTouchMoveDolly(event);
+
+        break;
+
+      case 3:
+        // three-fingered touch: pan
+
+        if (scope.enablePan === false) return;
+        if (state !== STATE.TOUCH_PAN) return; // is this needed?...
+
+        handleTouchMovePan(event);
+
+        break;
+
+      default:
+
+        state = STATE.NONE;
+
+    }
+  }
+
+  function onTouchEnd(event) {
+
+    if (scope.enabled === false) return;
+
+    handleTouchEnd(event);
+
+    scope.dispatchEvent(endEvent);
+
+    state = STATE.NONE;
+  }
+
+  function onContextMenu(event) {
+
+    event.preventDefault();
+  }
+
+  //
+
+  scope.domElement.addEventListener('contextmenu', onContextMenu, false);
+
+  scope.domElement.addEventListener('mousedown', onMouseDown, false);
+  scope.domElement.addEventListener('wheel', onMouseWheel, false);
+
+  scope.domElement.addEventListener('touchstart', onTouchStart, false);
+  scope.domElement.addEventListener('touchend', onTouchEnd, false);
+  scope.domElement.addEventListener('touchmove', onTouchMove, false);
+
+  window.addEventListener('keydown', onKeyDown, false);
+
+  // force an update at start
+
+  this.update();
+};
+
+OrbitControls.prototype = Object.create(EventDispatcher.prototype);
+OrbitControls.prototype.constructor = OrbitControls;
+
+Object.defineProperties(OrbitControls.prototype, {
+
+  center: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .center has been renamed to .target');
+      return this.target;
+    }
+
+  },
+
+  // backward compatibility
+
+  noZoom: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .noZoom has been deprecated. Use .enableZoom instead.');
+      return !this.enableZoom;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .noZoom has been deprecated. Use .enableZoom instead.');
+      this.enableZoom = !value;
+    }
+
+  },
+
+  noRotate: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .noRotate has been deprecated. Use .enableRotate instead.');
+      return !this.enableRotate;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .noRotate has been deprecated. Use .enableRotate instead.');
+      this.enableRotate = !value;
+    }
+
+  },
+
+  noPan: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .noPan has been deprecated. Use .enablePan instead.');
+      return !this.enablePan;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .noPan has been deprecated. Use .enablePan instead.');
+      this.enablePan = !value;
+    }
+
+  },
+
+  noKeys: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .noKeys has been deprecated. Use .enableKeys instead.');
+      return !this.enableKeys;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .noKeys has been deprecated. Use .enableKeys instead.');
+      this.enableKeys = !value;
+    }
+
+  },
+
+  staticMoving: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .staticMoving has been deprecated. Use .enableDamping instead.');
+      return !this.enableDamping;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .staticMoving has been deprecated. Use .enableDamping instead.');
+      this.enableDamping = !value;
+    }
+
+  },
+
+  dynamicDampingFactor: {
+
+    get: function get() {
+
+      console.warn('OrbitControls: .dynamicDampingFactor has been renamed. Use .dampingFactor instead.');
+      return this.dampingFactor;
+    },
+
+    set: function set(value) {
+
+      console.warn('OrbitControls: .dynamicDampingFactor has been renamed. Use .dampingFactor instead.');
+      this.dampingFactor = value;
+    }
+
+  }
+
+});
+
 var asyncGenerator = function () {
   function AwaitValue(value) {
     this.value = value;
@@ -38523,7 +40662,7 @@ var createClass = function () {
 
 
 
-var get = function get(object, property, receiver) {
+var get$1 = function get$1(object, property, receiver) {
   if (object === null) object = Function.prototype;
   var desc = Object.getOwnPropertyDescriptor(object, property);
 
@@ -38533,7 +40672,7 @@ var get = function get(object, property, receiver) {
     if (parent === null) {
       return undefined;
     } else {
-      return get(parent, property, receiver);
+      return get$1(parent, property, receiver);
     }
   } else if ("value" in desc) {
     return desc.value;
@@ -38564,14 +40703,14 @@ var get = function get(object, property, receiver) {
 
 
 
-var set = function set(object, property, value, receiver) {
+var set$1 = function set$1(object, property, value, receiver) {
   var desc = Object.getOwnPropertyDescriptor(object, property);
 
   if (desc === undefined) {
     var parent = Object.getPrototypeOf(object);
 
     if (parent !== null) {
-      set(parent, property, value, receiver);
+      set$1(parent, property, value, receiver);
     }
   } else if ("value" in desc && desc.writable) {
     desc.value = value;
@@ -38646,6 +40785,11 @@ var App = function () {
     value: function initCamera() {
       this.camera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
       this.camera.position.y = 100;
+      this.camera.position.z = -200;
+      this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.cameraControls.enableDamping = true;
+      this.cameraControls.dampingFactor = 0.25;
+      this.cameraControls.enableZoom = false;
     }
   }, {
     key: 'initScene',
@@ -38658,9 +40802,7 @@ var App = function () {
   }, {
     key: 'tick',
     value: function tick(dt) {
-      this.camera.position.x = 200 * Math.cos(this.time * 0.0003);
-      this.camera.position.z = 200 * Math.sin(this.time * 0.0003);
-      this.camera.lookAt(this.scene.position);
+      this.cameraControls.update();
       this.renderer.render(this.scene, this.camera);
     }
   }]);
