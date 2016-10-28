@@ -60,7 +60,7 @@ class ThreeParticleSystemContainer {
   createMaterial() {
     return new RawShaderMaterial({
       uniforms: {
-        force: {value: new Vector3(0, -60, 0)},
+        force: {value: new Vector3(0, -10, 0)},
         time: {value: 0}
       },
       vertexShader: vertexShader,
@@ -68,7 +68,7 @@ class ThreeParticleSystemContainer {
       side: DoubleSide,
       transparent: true,
       blending: AdditiveBlending,
-      depthTest: false,
+      depthTest: true,
       depthWrite: false
     });
   }
@@ -272,12 +272,12 @@ export class ParticleEmitter {
       position: vec3.fromValues(0, 0, 0),
       velocity: vec3.fromValues(0, 0, 0),
       color: vec4.fromValues(1, 1, 1, 0.3),
-      scale: vec2.fromValues(0.5, 0.5),
+      scale: vec2.fromValues(0.3, 0.3),
       life: 1
     };
     this.position = vec3.create();
-    this.positionRange = [vec3.fromValues(-5, 0, -5), vec3.fromValues(5, 0, 5)];
-    this.velocityRange = [vec3.fromValues(-50, 100, -50), vec3.fromValues(50, 200, 50)];
+    this.positionRange = [vec3.fromValues(-1, 0, -1), vec3.fromValues(1, 0, 1)];
+    this.velocityRange = [vec3.fromValues(-10, 20, -10), vec3.fromValues(10, 40, 10)];
     this.colorRange = [vec3.fromValues(0, 0.5, 1), vec3.fromValues(0, 1, 1)];
     this.lastUpdate = -Infinity;
     let Container = ParticleEmitter.backend.getParticleEmitterContainerClass();
