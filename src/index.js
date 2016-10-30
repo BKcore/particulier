@@ -1,13 +1,13 @@
 import { AmbientLight } from 'three/src/lights/AmbientLight';
 import { BoxGeometry } from 'three/src/geometries/BoxGeometry';
+import { CameraHelper } from 'three/src/extras/helpers/CameraHelper';
 import { DirectionalLight } from 'three/src/lights/DirectionalLight';
 import { FogExp2 } from 'three/src/scenes/FogExp2';
 import { GridHelper } from 'three/src/extras/helpers/GridHelper';
-import { TextureLoader } from 'three/src/loaders/TextureLoader';
 import { Mesh } from 'three/src/objects/Mesh';
 import { MeshStandardMaterial } from 'three/src/materials/MeshStandardMaterial';
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera';
-import { ReinhardToneMapping, RepeatWrapping } from 'three/src/constants';
+import { PCFSoftShadowMap, ReinhardToneMapping, RepeatWrapping } from 'three/src/constants';
 import { Scene } from 'three/src/scenes/Scene';
 import { Vector2 } from 'three/src/math/Vector2';
 import { Vector3 } from 'three/src/math/Vector3';
@@ -17,6 +17,13 @@ import { OrbitControls } from '../libs/three/OrbitControls.js';
 import { Sky } from '../libs/three/SkyShader.js';
 
 import { ParticleSystem, ParticleEmitter } from './particulier.js';
+import { GrayBox } from './GrayBox.js';
+import { Loader } from './Loader.js';
+
+const ASSETS = [
+  {path: '/textures/default.png', type: 'texture'},
+  {path: '/models/gun.json', type: 'json/model'}
+]
 
 class App {
   constructor(opts) {
@@ -25,25 +32,20 @@ class App {
     this.height = opts.height || 720;
     this.pixelRatio = opts.pixelRatio || 1;
     this.aspectRatio = this.width / this.height;
-    this.near = opts.near || 1;
+    this.near = opts.near || 0.1;
     this.far = opts.far || 1000;
     this.fov = opts.fov || 80;
     this.dom = opts.dom;
     this.time = performance.now() * 0.001;
+    this.boxes = [];
 
-    this.textureLoader = new TextureLoader();
+    this.loader = new Loader(this.assetsPath);
+    this.loader.loadAssets(ASSETS, this.onLoadComplete, this.onLoadProgress, this.onLoadError);
 
     this.sunPosition = new Vector3();
     if(opts.sunPosition != null) {
-      this.sunPosition.fromArray(opts.sunPosition);
+      this.sunPosition.fromArray(opts.sunPosition).normalize().multiplyScalar(50);
     }
-
-    this.initRenderer();
-    this.initCamera();
-    this.initScene();
-    this.initListeners();
-
-    requestAnimationFrame(this.onRequestAnimationFrame);
   }
 
   onWindowResize = () => {
@@ -65,6 +67,23 @@ class App {
     this.tick(dt);
   }
 
+  onLoadProgress = (loaded, failed, total, path, asset, error) => {
+    console.info('Loading:', loaded + failed, '/', total, path, asset, error);
+  }
+
+  onLoadError = (error) => {
+    console.error(error.toString(), error.stack);
+  }
+
+  onLoadComplete = () => {
+    GrayBox.setDefaultTexture(this.loader.getAsset('/textures/default.png').texture);
+    this.initRenderer();
+    this.initCamera();
+    this.initScene();
+    this.initListeners();
+    requestAnimationFrame(this.onRequestAnimationFrame);
+  }
+
   initListeners() {
     window.addEventListener('resize', this.onWindowResize, false);
   }
@@ -80,14 +99,14 @@ class App {
     this.renderer.gammaInput = true;
     this.renderer.gammaOutput = true;
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = PCFSoftShadowMap;
     this.renderer.toneMapping = ReinhardToneMapping;
     this.dom.appendChild(this.renderer.domElement);
   }
 
   initCamera() {
     this.camera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
-    this.camera.position.y = 100;
-    this.camera.position.z = -200;
+    this.camera.position.set(-2, 1.8, -2);
     this.farCamera = new PerspectiveCamera(this.fov, this.aspectRatio, this.far, this.far + 500000);
     this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
     this.cameraControls.enableDamping = true;
@@ -99,6 +118,21 @@ class App {
     this.scene = new Scene();
     this.scene.fog = new FogExp2(0x818f9c, 0.0022);
     this.farScene = new Scene();
+    this.initLighting();
+    // this.grid = new GridHelper(200, 40, 0x0000ff, 0x444444);
+    // this.grid.position.y = 0;
+    // this.scene.add(this.grid);
+    this.ground = GrayBox.createBox(0, -5, 0, 1000, 10, 1000);
+    this.ground.frustumCulled = false;
+    this.scene.add(this.ground);
+    this.addBoxes();
+    this.addGun();
+    this.particleSystem = new ParticleSystem({maxCount: 100000});
+    this.scene.add(this.particleSystem.getContainer().getMesh());
+    this.particleEmitter = new ParticleEmitter(this.particleSystem);
+  }
+
+  initLighting() {
     this.sky = new Sky({
       turbidity: 11,
       rayleigh: 0.6,
@@ -108,39 +142,48 @@ class App {
       sunPosition: this.sunPosition
     });
     this.farScene.add(this.sky.mesh);
-    this.ambient = new AmbientLight(0x666666);
+    this.ambient = new AmbientLight(0xfdefff, 1.6);
     this.scene.add(this.ambient);
-    this.sun = new DirectionalLight(0xfffdef, 1);
+    this.sun = new DirectionalLight(0xfffdef, 1.2);
     this.sun.position.copy(this.sunPosition);
+    this.sun.castShadow = true;
+    let shadow = this.sun.shadow;
+    shadow.mapSize.width = 2048;
+    shadow.mapSize.height = 2048;
+    let d = 10;
+    shadow.camera.left = -d;
+    shadow.camera.right = d;
+    shadow.camera.top = d;
+    shadow.camera.bottom = -d;
+    shadow.camera.near = 1;
+    shadow.camera.far = 200;
+    shadow.bias = -0.000001;
     this.scene.add(this.sun);
-    // this.grid = new GridHelper(200, 40, 0x0000ff, 0x444444);
-    // this.grid.position.y = 0;
-    // this.scene.add(this.grid);
-    this.ground = this.createGround();
-    this.scene.add(this.ground);
-    this.particleSystem = new ParticleSystem({maxCount: 100000});
-    this.scene.add(this.particleSystem.getContainer().getMesh());
-    this.particleEmitter = new ParticleEmitter(this.particleSystem);
+    // this.shadowCameraHelper = new CameraHelper(shadow.camera);
+    // this.scene.add(this.shadowCameraHelper);
   }
 
-  createGround() {
-    let geometry = new BoxGeometry(1, 1, 1);
-    let material = new MeshStandardMaterial({color: 0x999999, specular: 0xcccccc});
-    material.map = this.textureLoader.load(this.assetsPath + 'textures/default.png');
-    material.map.wrapS = material.map.wrapT = RepeatWrapping;
-    material.map.anisotropy = 4;
-    material.map.repeat.set(100, 100);
-    material.roughness = 0.5;
-    let mesh = new Mesh(geometry, material);
-    mesh.position.y = -5;
-    mesh.scale.set(1000, 10, 1000);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    return mesh;
+  addGun() {
+    let geometry = this.loader.getAsset('/models/gun.json').geometry;
+    let material = GrayBox.createMaterial(20, 20);
+    this.gun = GrayBox.createMesh(geometry, material, 0, 1, 0, 1, 1, 1);
+    this.scene.add(this.gun);
   }
 
-  createMesh(geometry, color) {
-
+  addBoxes() {
+    let boxes = [
+      [-2, 0.5, 6, 1, 1, 1],
+      [0, 1, 6, 2, 2, 2],
+      [4, 1.5, 6, 3, 3, 3],
+      [-2, 0.5, -6, 1, 1, 1, 0xffffff],
+      [0, 1, -6, 2, 2, 2, 0x6c6c6c],
+      [4, 1.5, -6, 3, 3, 3, 0x000000]
+    ];
+    for(let args of boxes) {
+      let box = GrayBox.createBox.apply(null, args);
+      this.scene.add(box);
+      this.boxes.push(box);
+    }
   }
 
   tick(dt) {
@@ -163,6 +206,6 @@ let config = {
   pixelRatio: window.devicePixelRatio,
   width: window.innerWidth,
   height: window.innerHeight,
-  sunPosition: [50, 600, 1000]
+  sunPosition: [2, 6, 10]
 };
 let app = new App(config);
