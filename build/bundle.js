@@ -24014,7 +24014,7 @@ var Sky = function Sky(opts) {
   });
   skyMat.depthTest = false;
 
-  var skyGeo = new SphereBufferGeometry(450000, 32, 15);
+  var skyGeo = new SphereBufferGeometry(990, 32, 15);
   var skyMesh = new Mesh(skyGeo, skyMat);
   skyMesh.frustumCulled = false;
 
@@ -30388,6 +30388,151 @@ GrayBox.geometries = {
   box: new BoxBufferGeometry(1, 1, 1)
 };
 
+var KMPH_TO_MPS = 1000 / 3600;
+var VANGLE_MIN = Math.PI / 12;
+var VANGLE_MAX = Math.PI - Math.PI / 12;
+
+var FirstPersonPlayer = function (_Object3D) {
+  inherits(FirstPersonPlayer, _Object3D);
+
+  function FirstPersonPlayer(app) {
+    classCallCheck(this, FirstPersonPlayer);
+
+    var _this = possibleConstructorReturn(this, (FirstPersonPlayer.__proto__ || Object.getPrototypeOf(FirstPersonPlayer)).call(this));
+
+    _this.onMouseMove = function (event) {
+      var movementX = event.movementX;
+      var movementY = event.movementY;
+
+      _this.orientation.x += movementX * _this.pixelRatio.x;
+      _this.orientation.y -= movementY * _this.pixelRatio.y;
+      _this.orientation.y = Math.max(Math.min(_this.orientation.y, VANGLE_MAX), VANGLE_MIN);
+    };
+
+    _this.onKeyDown = function (event) {
+      switch (event.keyCode) {
+        case 38: /*up*/
+        case 87:
+          /*W*/_this.keys.forward = 1;break;
+        case 37: /*left*/
+        case 65:
+          /*A*/_this.keys.left = 1;break;
+        case 40: /*down*/
+        case 83:
+          /*S*/_this.keys.back = 1;break;
+        case 39: /*right*/
+        case 68:
+          /*D*/_this.keys.right = 1;break;
+        case 16:
+          /*run*/_this.keys.run = 1;break;
+        case 221:
+          /*]*/_this.app.toggleCamera();
+      }
+    };
+
+    _this.onKeyUp = function (event) {
+      switch (event.keyCode) {
+        case 38: /*up*/
+        case 87:
+          /*W*/_this.keys.forward = 0;break;
+        case 37: /*left*/
+        case 65:
+          /*A*/_this.keys.left = 0;break;
+        case 40: /*down*/
+        case 83:
+          /*S*/_this.keys.back = 0;break;
+        case 39: /*right*/
+        case 68:
+          /*D*/_this.keys.right = 0;break;
+        case 16:
+          /*run*/_this.keys.run = 0;break;
+      }
+    };
+
+    _this.app = app;
+    _this.frameMotion = new Vector3();
+    _this.orientation = new Vector2(0, Math.PI / 2);
+    _this.target = new Vector3();
+    _this.sensitivity = 2.5;
+    _this.keys = {
+      forward: 0,
+      back: 0,
+      left: 0,
+      right: 0,
+      run: 0
+    };
+    _this.walkSpeed = 10 * KMPH_TO_MPS;
+    _this.runSpeed = 20 * KMPH_TO_MPS;
+    _this.pixelRatio = new Vector2();
+    _this.onWindowResize();
+    _this.head = new Object3D();
+    _this.head.position.set(0, 1.7, 0);
+    _this.add(_this.head);
+
+    _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
+    _this.camera.position.set(0, 0, 0);
+    _this.head.add(_this.camera);
+    _this.addGun();
+
+    _this.initListeners();
+    return _this;
+  }
+
+  createClass(FirstPersonPlayer, [{
+    key: 'addGun',
+    value: function addGun() {
+      var geometry = this.app.loader.getAsset('/models/gun.json').geometry;
+      var material = GrayBox.createMaterial(20, 20);
+      this.gun = GrayBox.createMesh(geometry, material, 0.12, -0.1, -0.28, 0.19, 0.19, 0.19);
+      this.gun.castShadow = false;
+      this.gun.receiveShadow = false;
+      this.gun.rotation.set(-Math.PI / 2, 0, Math.PI);
+      this.head.add(this.gun);
+    }
+  }, {
+    key: 'tick',
+    value: function tick(dt) {
+      this.frameMotion.set(0, 0, 0);
+
+      this.frameMotion.z -= this.keys.forward;
+      this.frameMotion.z += this.keys.back;
+      this.frameMotion.x -= this.keys.left;
+      this.frameMotion.x += this.keys.right;
+      var speed = this.walkSpeed;
+      if (this.keys.run) {
+        speed = this.runSpeed;
+      }
+
+      this.frameMotion.normalize().transformDirection(this.matrix).multiplyScalar(speed * dt);
+      this.position.add(this.frameMotion);
+
+      this.target.x = this.head.position.x + 100 * Math.sin(this.orientation.y) * Math.cos(Math.PI / 2);
+      this.target.y = this.head.position.y + 100 * Math.cos(this.orientation.y);
+      this.target.z = this.head.position.z + 100 * Math.sin(this.orientation.y);
+      this.head.lookAt(this.target);
+
+      var hangle = this.orientation.x + Math.PI / 2;
+      this.target.x = this.position.x + 100 * Math.cos(this.orientation.x);
+      this.target.y = this.position.y + 100 * Math.cos(Math.PI / 2);
+      this.target.z = this.position.z + 100 * Math.sin(this.orientation.x);
+      this.lookAt(this.target);
+    }
+  }, {
+    key: 'initListeners',
+    value: function initListeners() {
+      window.addEventListener('keydown', this.onKeyDown, false);
+      window.addEventListener('keyup', this.onKeyUp, false);
+      window.addEventListener('mousemove', this.onMouseMove, false);
+    }
+  }, {
+    key: 'onWindowResize',
+    value: function onWindowResize() {
+      this.pixelRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
+    }
+  }]);
+  return FirstPersonPlayer;
+}(Object3D);
+
 var Cache;
 
 /**
@@ -34081,9 +34226,8 @@ var App = function () {
       _this.aspectRatio = _this.width / _this.height;
       _this.camera.aspect = _this.aspectRatio;
       _this.camera.updateProjectionMatrix();
-      _this.farCamera.aspect = _this.aspectRatio;
-      _this.farCamera.updateProjectionMatrix();
       _this.renderer.setSize(_this.width, _this.height);
+      _this.player.onWindowResize();
     };
 
     this.onRequestAnimationFrame = function () {
@@ -34107,14 +34251,22 @@ var App = function () {
       _this.initRenderer();
       _this.initCamera();
       _this.initScene();
+      _this.initPlayer();
       _this.initListeners();
       requestAnimationFrame(_this.onRequestAnimationFrame);
+    };
+
+    this.onMouseDown = function () {
+      if (_this.camera === _this.player.camera) {
+        _this.pointerLock(true);
+      }
     };
 
     this.assetsPath = opts.assetsPath || '';
     this.width = opts.width || 1280;
     this.height = opts.height || 720;
     this.pixelRatio = opts.pixelRatio || 1;
+    this.renderRatio = 0.75;
     this.aspectRatio = this.width / this.height;
     this.near = opts.near || 0.1;
     this.far = opts.far || 1000;
@@ -34122,6 +34274,7 @@ var App = function () {
     this.dom = opts.dom;
     this.time = performance.now() * 0.001;
     this.boxes = [];
+    this.camera = null;
 
     this.loader = new Loader(this.assetsPath);
     this.loader.loadAssets(ASSETS, this.onLoadComplete, this.onLoadProgress, this.onLoadError);
@@ -34133,15 +34286,37 @@ var App = function () {
   }
 
   createClass(App, [{
+    key: 'toggleCamera',
+    value: function toggleCamera() {
+      if (this.camera === this.orbitCamera) {
+        this.camera = this.player.camera;
+        this.pointerLock(true);
+      } else {
+        this.camera = this.orbitCamera;
+        this.pointerLock(false);
+      }
+      this.onWindowResize();
+    }
+  }, {
+    key: 'pointerLock',
+    value: function pointerLock(enable) {
+      if (enable) {
+        this.dom.requestPointerLock();
+      } else {
+        window.document.exitPointerLock();
+      }
+    }
+  }, {
     key: 'initListeners',
     value: function initListeners() {
       window.addEventListener('resize', this.onWindowResize, false);
+      this.dom.addEventListener('mousedown', this.onMouseDown, false);
     }
   }, {
     key: 'initRenderer',
     value: function initRenderer() {
       this.renderer = new WebGLRenderer();
-      this.renderer.setPixelRatio(this.pixelRatio);
+      this.renderer.setPixelRatio(this.pixelRatio * this.renderRatio);
       this.renderer.setSize(this.width, this.height);
       this.renderer.setClearColor(0x222222);
       this.renderer.extensions.get('ANGLE_instanced_arrays');
@@ -34155,12 +34330,20 @@ var App = function () {
       this.dom.appendChild(this.renderer.domElement);
     }
   }, {
+    key: 'initPlayer',
+    value: function initPlayer() {
+      this.player = new FirstPersonPlayer(this);
+      this.camera = this.player.camera;
+      this.scene.add(this.player);
+      // this.cameraHelper = new CameraHelper(this.player.camera);
+      // this.scene.add(this.cameraHelper);
+    }
+  }, {
     key: 'initCamera',
     value: function initCamera() {
-      this.camera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
-      this.camera.position.set(-2, 1.8, -2);
-      this.farCamera = new PerspectiveCamera(this.fov, this.aspectRatio, this.far, this.far + 500000);
-      this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.orbitCamera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
+      this.orbitCamera.position.set(-2, 1.8, -2);
+      this.cameraControls = new OrbitControls(this.orbitCamera, this.renderer.domElement);
       this.cameraControls.enableDamping = true;
       this.cameraControls.dampingFactor = 0.25;
       this.cameraControls.enableZoom = true;
@@ -34170,7 +34353,6 @@ var App = function () {
     value: function initScene() {
       this.scene = new Scene();
       this.scene.fog = new FogExp2(0x818f9c, 0.0022);
-      this.farScene = new Scene();
       this.initLighting();
       // this.grid = new GridHelper(200, 40, 0x0000ff, 0x444444);
       // this.grid.position.y = 0;
@@ -34179,7 +34361,6 @@ var App = function () {
       this.ground.frustumCulled = false;
       this.scene.add(this.ground);
       this.addBoxes();
-      this.addGun();
       this.particleSystem = new ParticleSystem({ maxCount: 100000 });
       this.scene.add(this.particleSystem.getContainer().getMesh());
       this.particleEmitter = new ParticleEmitter(this.particleSystem);
@@ -34195,7 +34376,7 @@ var App = function () {
         luminance: 1.1,
         sunPosition: this.sunPosition
       });
-      this.farScene.add(this.sky.mesh);
+      this.scene.add(this.sky.mesh);
       this.ambient = new AmbientLight(0xfdefff, 1.6);
       this.scene.add(this.ambient);
       this.sun = new DirectionalLight(0xfffdef, 1.2);
@@ -34215,14 +34396,6 @@ var App = function () {
       this.scene.add(this.sun);
       // this.shadowCameraHelper = new CameraHelper(shadow.camera);
       // this.scene.add(this.shadowCameraHelper);
-    }
-  }, {
-    key: 'addGun',
-    value: function addGun() {
-      var geometry = this.loader.getAsset('/models/gun.json').geometry;
-      var material = GrayBox.createMaterial(20, 20);
-      this.gun = GrayBox.createMesh(geometry, material, 0, 1, 0, 1, 1, 1);
-      this.scene.add(this.gun);
     }
   }, {
     key: 'addBoxes',
@@ -34258,15 +34431,16 @@ var App = function () {
   }, {
     key: 'tick',
     value: function tick(dt) {
-      this.cameraControls.update();
-      this.farCamera.position.copy(this.camera.position);
-      this.farCamera.rotation.copy(this.camera.rotation);
+      this.player.tick(dt);
+      this.sky.mesh.position.copy(this.player.position);
+      if (this.camera === this.orbitCamera) {
+        this.cameraControls.update();
+      }
       var position = this.particleEmitter.getContainer().getObject().position;
       position.x = Math.cos(this.time) * 100;
       position.z = Math.sin(this.time) * 100;
       this.particleEmitter.spawnMany(100);
       this.particleSystem.tick(dt);
-      this.renderer.render(this.farScene, this.farCamera);
       this.renderer.render(this.scene, this.camera);
     }
   }]);

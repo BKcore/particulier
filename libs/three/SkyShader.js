@@ -238,7 +238,7 @@ export class Sky {
     });
     skyMat.depthTest = false;
 
-    let skyGeo = new SphereBufferGeometry(450000, 32, 15);
+    let skyGeo = new SphereBufferGeometry(990, 32, 15);
     let skyMesh = new Mesh(skyGeo, skyMat);
     skyMesh.frustumCulled = false;
 

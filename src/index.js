@@ -18,6 +18,7 @@ import { Sky } from '../libs/three/SkyShader.js';
 
 import { ParticleSystem, ParticleEmitter } from './particulier.js';
 import { GrayBox } from './GrayBox.js';
+import { FirstPersonPlayer } from './FirstPersonPlayer.js';
 import { Loader } from './Loader.js';
 
 const ASSETS = [
@@ -31,6 +32,7 @@ class App {
     this.width = opts.width || 1280;
     this.height = opts.height || 720;
     this.pixelRatio = opts.pixelRatio || 1;
+    this.renderRatio = 0.75;
     this.aspectRatio = this.width / this.height;
     this.near = opts.near || 0.1;
     this.far = opts.far || 1000;
@@ -38,6 +40,7 @@ class App {
     this.dom = opts.dom;
     this.time = performance.now() * 0.001;
     this.boxes = [];
+    this.camera = null;
 
     this.loader = new Loader(this.assetsPath);
     this.loader.loadAssets(ASSETS, this.onLoadComplete, this.onLoadProgress, this.onLoadError);
@@ -54,9 +57,8 @@ class App {
     this.aspectRatio = this.width / this.height;
     this.camera.aspect = this.aspectRatio;
     this.camera.updateProjectionMatrix();
-    this.farCamera.aspect = this.aspectRatio;
-    this.farCamera.updateProjectionMatrix();
     this.renderer.setSize(this.width, this.height);
+    this.player.onWindowResize();
   }
 
   onRequestAnimationFrame = () => {
@@ -80,17 +82,44 @@ class App {
     this.initRenderer();
     this.initCamera();
     this.initScene();
+    this.initPlayer();
     this.initListeners();
     requestAnimationFrame(this.onRequestAnimationFrame);
   }
 
+  onMouseDown = () => {
+    if(this.camera === this.player.camera) {
+      this.pointerLock(true);
+    }
+  }
+
+  toggleCamera() {
+    if(this.camera === this.orbitCamera) {
+      this.camera = this.player.camera;
+      this.pointerLock(true);
+    } else {
+      this.camera = this.orbitCamera;
+      this.pointerLock(false);
+    }
+    this.onWindowResize();
+  }
+
+  pointerLock(enable) {
+    if(enable) {
+      this.dom.requestPointerLock();
+    } else {
+      window.document.exitPointerLock();
+    }
+  }
+
   initListeners() {
     window.addEventListener('resize', this.onWindowResize, false);
+    this.dom.addEventListener('mousedown', this.onMouseDown, false);
   }
 
   initRenderer() {
     this.renderer = new WebGLRenderer();
-    this.renderer.setPixelRatio(this.pixelRatio);
+    this.renderer.setPixelRatio(this.pixelRatio * this.renderRatio);
     this.renderer.setSize(this.width, this.height);
     this.renderer.setClearColor(0x222222);
     this.renderer.extensions.get('ANGLE_instanced_arrays');
@@ -104,11 +133,18 @@ class App {
     this.dom.appendChild(this.renderer.domElement);
   }
 
+  initPlayer() {
+    this.player = new FirstPersonPlayer(this);
+    this.camera = this.player.camera;
+    this.scene.add(this.player);
+    // this.cameraHelper = new CameraHelper(this.player.camera);
+    // this.scene.add(this.cameraHelper);
+  }
+
   initCamera() {
-    this.camera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
-    this.camera.position.set(-2, 1.8, -2);
-    this.farCamera = new PerspectiveCamera(this.fov, this.aspectRatio, this.far, this.far + 500000);
-    this.cameraControls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.orbitCamera = new PerspectiveCamera(this.fov, this.aspectRatio, this.near, this.far);
+    this.orbitCamera.position.set(-2, 1.8, -2);
+    this.cameraControls = new OrbitControls(this.orbitCamera, this.renderer.domElement);
     this.cameraControls.enableDamping = true;
     this.cameraControls.dampingFactor = 0.25;
     this.cameraControls.enableZoom = true;
@@ -117,7 +153,6 @@ class App {
   initScene() {
     this.scene = new Scene();
     this.scene.fog = new FogExp2(0x818f9c, 0.0022);
-    this.farScene = new Scene();
     this.initLighting();
     // this.grid = new GridHelper(200, 40, 0x0000ff, 0x444444);
     // this.grid.position.y = 0;
@@ -126,7 +161,6 @@ class App {
     this.ground.frustumCulled = false;
     this.scene.add(this.ground);
     this.addBoxes();
-    this.addGun();
     this.particleSystem = new ParticleSystem({maxCount: 100000});
     this.scene.add(this.particleSystem.getContainer().getMesh());
     this.particleEmitter = new ParticleEmitter(this.particleSystem);
@@ -141,7 +175,7 @@ class App {
       luminance: 1.1,
       sunPosition: this.sunPosition
     });
-    this.farScene.add(this.sky.mesh);
+    this.scene.add(this.sky.mesh);
     this.ambient = new AmbientLight(0xfdefff, 1.6);
     this.scene.add(this.ambient);
     this.sun = new DirectionalLight(0xfffdef, 1.2);
@@ -163,13 +197,6 @@ class App {
     // this.scene.add(this.shadowCameraHelper);
   }
 
-  addGun() {
-    let geometry = this.loader.getAsset('/models/gun.json').geometry;
-    let material = GrayBox.createMaterial(20, 20);
-    this.gun = GrayBox.createMesh(geometry, material, 0, 1, 0, 1, 1, 1);
-    this.scene.add(this.gun);
-  }
-
   addBoxes() {
     let boxes = [
       [-2, 0.5, 6, 1, 1, 1],
@@ -187,15 +214,16 @@ class App {
   }
 
   tick(dt) {
-    this.cameraControls.update();
-    this.farCamera.position.copy(this.camera.position);
-    this.farCamera.rotation.copy(this.camera.rotation);
+    this.player.tick(dt);
+    this.sky.mesh.position.copy(this.player.position);
+    if(this.camera === this.orbitCamera) {
+      this.cameraControls.update();
+    }
     let position = this.particleEmitter.getContainer().getObject().position;
     position.x = Math.cos(this.time) * 100;
     position.z = Math.sin(this.time) * 100;
     this.particleEmitter.spawnMany(100);
     this.particleSystem.tick(dt);
-    this.renderer.render(this.farScene, this.farCamera);
     this.renderer.render(this.scene, this.camera);
   }
 }
