@@ -1,13 +1,11 @@
 'use strict';
 
-var _Math;
-
 /**
  * @author alteredq / http://alteredqualia.com/
  * @author mrdoob / http://mrdoob.com/
  */
 
-_Math = {
+var _Math = {
 
 	DEG2RAD: Math.PI / 180,
 	RAD2DEG: 180 / Math.PI,
@@ -69,6 +67,14 @@ _Math = {
 	mapLinear: function ( x, a1, a2, b1, b2 ) {
 
 		return b1 + ( x - a1 ) * ( b2 - b1 ) / ( a2 - a1 );
+
+	},
+
+	// https://en.wikipedia.org/wiki/Linear_interpolation
+
+	lerp: function ( x, y, t ) {
+
+		return ( 1 - t ) * x + t * y;
 
 	},
 
@@ -643,7 +649,7 @@ Matrix4.prototype = {
 
 				v1.applyMatrix4( this );
 
-				buffer.setXYZ( v1.x, v1.y, v1.z );
+				buffer.setXYZ( j, v1.x, v1.y, v1.z );
 
 			}
 
@@ -1202,6 +1208,8 @@ Vector3.prototype = {
 			default: throw new Error( 'index is out of range: ' + index );
 
 		}
+		
+		return this;
 
 	},
 
@@ -1989,7 +1997,7 @@ Quaternion.prototype = {
 
 		if ( (euler && euler.isEuler) === false ) {
 
-			throw new Error( 'THREE.Quaternion: .setFromEuler() now expects a Euler rotation rather than a Vector3 and order.' );
+			throw new Error( 'THREE.Quaternion: .setFromEuler() now expects an Euler rotation rather than a Vector3 and order.' );
 
 		}
 
@@ -3063,7 +3071,7 @@ Matrix3.prototype = {
 
 				v1.applyMatrix3( this );
 
-				buffer.setXYZ( v1.x, v1.y, v1.z );
+				buffer.setXYZ( j, v1.x, v1.y, v1.z );
 
 			}
 
@@ -3313,7 +3321,8 @@ function Object3D() {
 
 	this.userData = {};
 
-	this.onBeforeRender = null;
+	this.onBeforeRender = function(){}; 
+	this.onAfterRender = function(){};
 
 }
 
@@ -3951,12 +3960,6 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 var count = 0;
 function Object3DIdCount() { return count++; }
 
-var ColorKeywords;
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
 function Color( r, g, b ) {
 
 	if ( g === undefined && b === undefined ) {
@@ -4003,6 +4006,8 @@ Color.prototype = {
 		this.r = scalar;
 		this.g = scalar;
 		this.b = scalar;
+
+		return this;
 
 	},
 
@@ -4447,7 +4452,7 @@ Color.prototype = {
 
 };
 
-ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
+var ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
 'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
 'brown': 0xA52A2A, 'burlywood': 0xDEB887, 'cadetblue': 0x5F9EA0, 'chartreuse': 0x7FFF00, 'chocolate': 0xD2691E, 'coral': 0xFF7F50,
 'cornflowerblue': 0x6495ED, 'cornsilk': 0xFFF8DC, 'crimson': 0xDC143C, 'cyan': 0x00FFFF, 'darkblue': 0x00008B, 'darkcyan': 0x008B8B,
@@ -4987,7 +4992,7 @@ Box3.prototype = {
 
 			this.getCenter( result.center );
 
-			result.radius = this.size( v1 ).length() * 0.5;
+			result.radius = this.getSize( v1 ).length() * 0.5;
 
 			return result;
 
@@ -5328,6 +5333,8 @@ Vector2.prototype = {
 			default: throw new Error( 'index is out of range: ' + index );
 
 		}
+		
+		return this;
 
 	},
 
@@ -6155,6 +6162,8 @@ Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 
 		} else {
 
+			this.computeFaceNormals();
+
 			for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
 
 				face = this.faces[ f ];
@@ -6190,6 +6199,42 @@ Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 				vertexNormals[ 0 ] = vertices[ face.a ].clone();
 				vertexNormals[ 1 ] = vertices[ face.b ].clone();
 				vertexNormals[ 2 ] = vertices[ face.c ].clone();
+
+			}
+
+		}
+
+		if ( this.faces.length > 0 ) {
+
+			this.normalsNeedUpdate = true;
+
+		}
+
+	},
+
+	computeFlatVertexNormals: function () {
+
+		var f, fl, face;
+
+		this.computeFaceNormals();
+
+		for ( f = 0, fl = this.faces.length; f < fl; f ++ ) {
+
+			face = this.faces[ f ];
+
+			var vertexNormals = face.vertexNormals;
+
+			if ( vertexNormals.length === 3 ) {
+
+				vertexNormals[ 0 ].copy( face.normal );
+				vertexNormals[ 1 ].copy( face.normal );
+				vertexNormals[ 2 ].copy( face.normal );
+
+			} else {
+
+				vertexNormals[ 0 ] = face.normal.clone();
+				vertexNormals[ 1 ] = face.normal.clone();
+				vertexNormals[ 2 ] = face.normal.clone();
 
 			}
 
@@ -7028,6 +7073,8 @@ Vector4.prototype = {
 			default: throw new Error( 'index is out of range: ' + index );
 
 		}
+		
+		return this;
 
 	},
 
@@ -7599,6 +7646,19 @@ BufferAttribute.prototype = {
 	set needsUpdate( value ) {
 
 		if ( value === true ) this.version ++;
+
+	},
+
+	setArray: function ( array ) {
+
+		if ( Array.isArray( array ) ) {
+
+			throw new TypeError( 'THREE.BufferAttribute: array should be a Typed Array.' );
+
+		}
+
+		this.count = array !== undefined ? array.length / this.itemSize : 0;
+		this.array = array;
 
 	},
 
@@ -9991,7 +10051,7 @@ Ray.prototype = {
 
 };
 
-var REVISION = '81';
+var REVISION = '82';
 var MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2 };
 var CullFaceNone = 0;
 var CullFaceBack = 1;
@@ -10017,12 +10077,12 @@ var SubtractiveBlending = 3;
 var MultiplyBlending = 4;
 var CustomBlending = 5;
 var BlendingMode = {
-    NoBlending: NoBlending,
-    NormalBlending: NormalBlending,
-    AdditiveBlending: AdditiveBlending,
-    SubtractiveBlending: SubtractiveBlending,
-    MultiplyBlending: MultiplyBlending,
-    CustomBlending: CustomBlending
+	NoBlending: NoBlending,
+	NormalBlending: NormalBlending,
+	AdditiveBlending: AdditiveBlending,
+	SubtractiveBlending: SubtractiveBlending,
+	MultiplyBlending: MultiplyBlending,
+	CustomBlending: CustomBlending
 };
 var AddEquation = 100;
 var SubtractEquation = 101;
@@ -10160,6 +10220,7 @@ function Material() {
 	this.depthWrite = true;
 
 	this.clippingPlanes = null;
+	this.clipIntersection = false;
 	this.clipShadows = false;
 
 	this.colorWrite = true;
@@ -10423,6 +10484,7 @@ Material.prototype = {
 
 		this.visible = source.visible;
 		this.clipShadows = source.clipShadows;
+		this.clipIntersection = source.clipIntersection;
 
 		var srcPlanes = source.clippingPlanes,
 			dstPlanes = null;
@@ -12850,10 +12912,6 @@ Object.defineProperty( CubeTexture.prototype, 'images', {
  *
  * 		filters 'seq' entries with corresponding entry in values
  *
- * .splitDynamic( seq, values ) : filteredSeq
- *
- * 		filters 'seq' entries with dynamic entry and removes them from 'seq'
- *
  *
  * Methods of the top-level container (renderer factorizations):
  *
@@ -13360,58 +13418,11 @@ WebGLUniforms.seqWithValue = function( seq, values ) {
 
 };
 
-WebGLUniforms.splitDynamic = function( seq, values ) {
-
-	var r = null,
-		n = seq.length,
-		w = 0;
-
-	for ( var i = 0; i !== n; ++ i ) {
-
-		var u = seq[ i ],
-			v = values[ u.id ];
-
-		if ( v && v.dynamic === true ) {
-
-			if ( r === null ) r = [];
-			r.push( u );
-
-		} else {
-
-			// in-place compact 'seq', removing the matches
-			if ( w < i ) seq[ w ] = u;
-			++ w;
-
-		}
-
-	}
-
-	if ( w < n ) seq.length = w;
-
-	return r;
-
-};
-
-WebGLUniforms.evalDynamic = function( seq, values, object, material, camera ) {
-
-	for ( var i = 0, n = seq.length; i !== n; ++ i ) {
-
-		var v = values[ seq[ i ].id ],
-			f = v.onUpdateCallback;
-
-		if ( f !== undefined ) f.call( v, object, material, camera );
-
-	}
-
-};
-
-var UniformsUtils;
-
 /**
  * Uniform Utilities
  */
 
-UniformsUtils = {
+var UniformsUtils = {
 
 	merge: function ( uniforms ) {
 
@@ -13445,13 +13456,10 @@ UniformsUtils = {
 
 				var parameter_src = uniforms_src[ u ][ p ];
 
-				if ( (parameter_src && parameter_src.isColor) ||
-					 (parameter_src && parameter_src.isVector2) ||
-					 (parameter_src && parameter_src.isVector3) ||
-					 (parameter_src && parameter_src.isVector4) ||
-					 (parameter_src && parameter_src.isMatrix3) ||
-					 (parameter_src && parameter_src.isMatrix4) ||
-					 (parameter_src && parameter_src.isTexture) ) {
+				if ( parameter_src && ( parameter_src.isColor ||
+					parameter_src.isMatrix3 || parameter_src.isMatrix4 ||
+					parameter_src.isVector2 || parameter_src.isVector3 || parameter_src.isVector4 ||
+					parameter_src.isTexture ) ) {
 
 					uniforms_dst[ u ][ p ] = parameter_src.clone();
 
@@ -13493,7 +13501,7 @@ var bsdfs = "bool testLightInRange( const in float lightDistance, const in float
 
 var bumpmap_pars_fragment = "#ifdef USE_BUMPMAP\n\tuniform sampler2D bumpMap;\n\tuniform float bumpScale;\n\tvec2 dHdxy_fwd() {\n\t\tvec2 dSTdx = dFdx( vUv );\n\t\tvec2 dSTdy = dFdy( vUv );\n\t\tfloat Hll = bumpScale * texture2D( bumpMap, vUv ).x;\n\t\tfloat dBx = bumpScale * texture2D( bumpMap, vUv + dSTdx ).x - Hll;\n\t\tfloat dBy = bumpScale * texture2D( bumpMap, vUv + dSTdy ).x - Hll;\n\t\treturn vec2( dBx, dBy );\n\t}\n\tvec3 perturbNormalArb( vec3 surf_pos, vec3 surf_norm, vec2 dHdxy ) {\n\t\tvec3 vSigmaX = dFdx( surf_pos );\n\t\tvec3 vSigmaY = dFdy( surf_pos );\n\t\tvec3 vN = surf_norm;\n\t\tvec3 R1 = cross( vSigmaY, vN );\n\t\tvec3 R2 = cross( vN, vSigmaX );\n\t\tfloat fDet = dot( vSigmaX, R1 );\n\t\tvec3 vGrad = sign( fDet ) * ( dHdxy.x * R1 + dHdxy.y * R2 );\n\t\treturn normalize( abs( fDet ) * surf_norm - vGrad );\n\t}\n#endif\n";
 
-var clipping_planes_fragment = "#if NUM_CLIPPING_PLANES > 0\n\tfor ( int i = 0; i < NUM_CLIPPING_PLANES; ++ i ) {\n\t\tvec4 plane = clippingPlanes[ i ];\n\t\tif ( dot( vViewPosition, plane.xyz ) > plane.w ) discard;\n\t}\n#endif\n";
+var clipping_planes_fragment = "#if NUM_CLIPPING_PLANES > 0\n\tfor ( int i = 0; i < UNION_CLIPPING_PLANES; ++ i ) {\n\t\tvec4 plane = clippingPlanes[ i ];\n\t\tif ( dot( vViewPosition, plane.xyz ) > plane.w ) discard;\n\t}\n\t\t\n\t#if UNION_CLIPPING_PLANES < NUM_CLIPPING_PLANES\n\t\tbool clipped = true;\n\t\tfor ( int i = UNION_CLIPPING_PLANES; i < NUM_CLIPPING_PLANES; ++ i ) {\n\t\t\tvec4 plane = clippingPlanes[ i ];\n\t\t\tclipped = ( dot( vViewPosition, plane.xyz ) > plane.w ) && clipped;\n\t\t}\n\t\tif ( clipped ) discard;\n\t\n\t#endif\n#endif\n";
 
 var clipping_planes_pars_fragment = "#if NUM_CLIPPING_PLANES > 0\n\t#if ! defined( PHYSICAL ) && ! defined( PHONG )\n\t\tvarying vec3 vViewPosition;\n\t#endif\n\tuniform vec4 clippingPlanes[ NUM_CLIPPING_PLANES ];\n#endif\n";
 
@@ -14596,8 +14604,8 @@ function LensFlarePlugin( renderer, flares ) {
 
 		var validArea = new Box2();
 
-		validArea.min.set( 0, 0 );
-		validArea.max.set( viewport.z - 16, viewport.w - 16 );
+		validArea.min.set( viewport.x, viewport.y );
+		validArea.max.set( viewport.x + ( viewport.z - 16 ), viewport.y + ( viewport.w - 16 ) );
 
 		if ( program === undefined ) {
 
@@ -16838,6 +16846,7 @@ function WebGLProgram( renderer, code, material, parameters ) {
 			parameters.flipSided ? '#define FLIP_SIDED' : '',
 
 			'#define NUM_CLIPPING_PLANES ' + parameters.numClippingPlanes,
+			'#define UNION_CLIPPING_PLANES ' + (parameters.numClippingPlanes - parameters.numClipIntersection),
 
 			parameters.shadowMapEnabled ? '#define USE_SHADOWMAP' : '',
 			parameters.shadowMapEnabled ? '#define ' + shadowMapTypeDefine : '',
@@ -17081,7 +17090,7 @@ function WebGLPrograms( renderer, capabilities ) {
 		"maxMorphTargets", "maxMorphNormals", "premultipliedAlpha",
 		"numDirLights", "numPointLights", "numSpotLights", "numHemiLights",
 		"shadowMapEnabled", "shadowMapType", "toneMapping", 'physicallyCorrectLights',
-		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "depthPacking"
+		"alphaTest", "doubleSided", "flipSided", "numClippingPlanes", "numClipIntersection", "depthPacking"
 	];
 
 
@@ -17153,7 +17162,7 @@ function WebGLPrograms( renderer, capabilities ) {
 
 	}
 
-	this.getParameters = function ( material, lights, fog, nClipPlanes, object ) {
+	this.getParameters = function ( material, lights, fog, nClipPlanes, nClipIntersection, object ) {
 
 		var shaderID = shaderIDs[ material.type ];
 
@@ -17230,6 +17239,7 @@ function WebGLPrograms( renderer, capabilities ) {
 			numHemiLights: lights.hemi.length,
 
 			numClippingPlanes: nClipPlanes,
+			numClipIntersection: nClipIntersection,
 
 			shadowMapEnabled: renderer.shadowMap.enabled && object.receiveShadow && lights.shadows.length > 0,
 			shadowMapType: renderer.shadowMap.type,
@@ -17577,7 +17587,11 @@ function WebGLObjects( gl, properties, info ) {
 
 		gl.bindBuffer( bufferType, attributeProperties.__webglBuffer );
 
-		if ( data.dynamic === false || data.updateRange.count === - 1 ) {
+		if ( data.dynamic === false ) {
+
+			gl.bufferData( bufferType, data.array, gl.STATIC_DRAW );
+
+		} else if ( data.updateRange.count === - 1 ) {
 
 			// Not using update ranges
 
@@ -18995,8 +19009,6 @@ function WebGLState( gl, extensions, paramThreeToGL ) {
 		} else {
 
 			disable( gl.BLEND );
-			currentBlending = blending; // no blending, that is
-			return;
 
 		}
 
@@ -19663,6 +19675,7 @@ function WebGLClipping() {
 
 	this.uniform = uniform;
 	this.numPlanes = 0;
+	this.numIntersection = 0;
 
 	this.init = function( planes, enableLocalClipping, camera ) {
 
@@ -19697,7 +19710,7 @@ function WebGLClipping() {
 
 	};
 
-	this.setState = function( planes, clipShadows, camera, cache, fromCache ) {
+	this.setState = function( planes, clipIntersection, clipShadows, camera, cache, fromCache ) {
 
 		if ( ! localClippingEnabled ||
 				planes === null || planes.length === 0 ||
@@ -19732,6 +19745,7 @@ function WebGLClipping() {
 			}
 
 			cache.clippingState = dstArray;
+			this.numIntersection = clipIntersection ? this.numPlanes : 0;
 			this.numPlanes += nGlobal;
 
 		}
@@ -19749,6 +19763,7 @@ function WebGLClipping() {
 		}
 
 		scope.numPlanes = numGlobalPlanes;
+		scope.numIntersection = 0;
 
 	}
 
@@ -19793,6 +19808,7 @@ function WebGLClipping() {
 		}
 
 		scope.numPlanes = nPlanes;
+		
 		return dstArray;
 
 	}
@@ -20746,7 +20762,7 @@ function WebGLRenderer( parameters ) {
 					var size = geometryAttribute.itemSize;
 					var buffer = objects.getAttributeBuffer( geometryAttribute );
 
-					if ( geometryAttribute && geometryAttribute.isInterleavedBufferAttribute ) {
+					if ( geometryAttribute.isInterleavedBufferAttribute ) {
 
 						var data = geometryAttribute.data;
 						var stride = data.stride;
@@ -20773,7 +20789,7 @@ function WebGLRenderer( parameters ) {
 
 					} else {
 
-						if ( geometryAttribute && geometryAttribute.isInstancedBufferAttribute ) {
+						if ( geometryAttribute.isInstancedBufferAttribute ) {
 
 							state.enableAttributeAndDivisor( programAttribute, geometryAttribute.meshPerAttribute, extension );
 
@@ -20893,8 +20909,6 @@ function WebGLRenderer( parameters ) {
 			return;
 
 		}
-
-		var fog = scene.fog;
 
 		// reset caching for this frame
 
@@ -21016,19 +21030,19 @@ function WebGLRenderer( parameters ) {
 
 			var overrideMaterial = scene.overrideMaterial;
 
-			renderObjects( opaqueObjects, camera, fog, overrideMaterial );
-			renderObjects( transparentObjects, camera, fog, overrideMaterial );
+			renderObjects( opaqueObjects, scene, camera, overrideMaterial );
+			renderObjects( transparentObjects, scene, camera, overrideMaterial );
 
 		} else {
 
 			// opaque pass (front-to-back order)
 
 			state.setBlending( NoBlending );
-			renderObjects( opaqueObjects, camera, fog );
+			renderObjects( opaqueObjects, scene, camera );
 
 			// transparent pass (back-to-front order)
 
-			renderObjects( transparentObjects, camera, fog );
+			renderObjects( transparentObjects, scene, camera );
 
 		}
 
@@ -21255,7 +21269,7 @@ function WebGLRenderer( parameters ) {
 
 	}
 
-	function renderObjects( renderList, camera, fog, overrideMaterial ) {
+	function renderObjects( renderList, scene, camera, overrideMaterial ) {
 
 		for ( var i = 0, l = renderList.length; i < l; i ++ ) {
 
@@ -21269,11 +21283,13 @@ function WebGLRenderer( parameters ) {
 			object.modelViewMatrix.multiplyMatrices( camera.matrixWorldInverse, object.matrixWorld );
 			object.normalMatrix.getNormalMatrix( object.modelViewMatrix );
 
+			object.onBeforeRender( _this, scene, camera, geometry, material, group );
+
 			if ( object.isImmediateRenderObject ) {
 
 				setMaterial( material );
 
-				var program = setProgram( camera, fog, material, object );
+				var program = setProgram( camera, scene.fog, material, object );
 
 				_currentGeometryProgram = '';
 
@@ -21285,11 +21301,12 @@ function WebGLRenderer( parameters ) {
 
 			} else {
 
-				if ( object.onBeforeRender !== null ) object.onBeforeRender();
-
-				_this.renderBufferDirect( camera, fog, geometry, material, object, group );
+				_this.renderBufferDirect( camera, scene.fog, geometry, material, object, group );
 
 			}
+
+			object.onAfterRender( _this, scene, camera, geometry, material, group );
+
 
 		}
 
@@ -21300,7 +21317,7 @@ function WebGLRenderer( parameters ) {
 		var materialProperties = properties.get( material );
 
 		var parameters = programCache.getParameters(
-				material, _lights, fog, _clipping.numPlanes, object );
+				material, _lights, fog, _clipping.numPlanes, _clipping.numIntersection, object );
 
 		var code = programCache.getProgramCode( material, parameters );
 
@@ -21403,6 +21420,7 @@ function WebGLRenderer( parameters ) {
 		       material.clipping === true ) {
 
 			materialProperties.numClippingPlanes = _clipping.numPlanes;
+			materialProperties.numIntersection = _clipping.numIntersection;
 			uniforms.clippingPlanes = _clipping.uniform;
 
 		}
@@ -21437,8 +21455,6 @@ function WebGLRenderer( parameters ) {
 					WebGLUniforms.seqWithValue( progUniforms.seq, uniforms );
 
 		materialProperties.uniformsList = uniformsList;
-		materialProperties.dynamicUniforms =
-				WebGLUniforms.splitDynamic( uniformsList, uniforms );
 
 	}
 
@@ -21480,7 +21496,7 @@ function WebGLRenderer( parameters ) {
 				// object instead of the material, once it becomes feasible
 				// (#8465, #8379)
 				_clipping.setState(
-						material.clippingPlanes, material.clipShadows,
+						material.clippingPlanes, material.clipIntersection, material.clipShadows,
 						camera, materialProperties, useCache );
 
 			}
@@ -21502,7 +21518,8 @@ function WebGLRenderer( parameters ) {
 				material.needsUpdate = true;
 
 			} else if ( materialProperties.numClippingPlanes !== undefined &&
-				materialProperties.numClippingPlanes !== _clipping.numPlanes ) {
+				( materialProperties.numClippingPlanes !== _clipping.numPlanes || 
+ 				  materialProperties.numIntersection  !== _clipping.numIntersection ) ) {
 
 				material.needsUpdate = true;
 
@@ -21727,18 +21744,6 @@ function WebGLRenderer( parameters ) {
 		p_uniforms.set( _gl, object, 'normalMatrix' );
 		p_uniforms.setValue( _gl, 'modelMatrix', object.matrixWorld );
 
-
-		// dynamic uniforms
-
-		var dynUniforms = materialProperties.dynamicUniforms;
-
-		if ( dynUniforms !== null ) {
-
-			WebGLUniforms.evalDynamic( dynUniforms, m_uniforms, object, material, camera );
-			WebGLUniforms.upload( _gl, dynUniforms, m_uniforms, _this );
-
-		}
-
 		return program;
 
 	}
@@ -21865,7 +21870,7 @@ function WebGLRenderer( parameters ) {
 		uniforms.diffuse.value = material.color;
 		uniforms.opacity.value = material.opacity;
 		uniforms.size.value = material.size * _pixelRatio;
-		uniforms.scale.value = _canvas.clientHeight * 0.5;
+		uniforms.scale.value = _height * 0.5;
 
 		uniforms.map.value = material.map;
 
@@ -22508,11 +22513,11 @@ function WebGLRenderer( parameters ) {
 		if ( p === UnsignedIntType ) return _gl.UNSIGNED_INT;
 		if ( p === FloatType ) return _gl.FLOAT;
 
-		extension = extensions.get( 'OES_texture_half_float' );
+		if ( p === HalfFloatType ) {
 
-		if ( extension !== null ) {
+			extension = extensions.get( 'OES_texture_half_float' );
 
-			if ( p === HalfFloatType ) return extension.HALF_FLOAT_OES;
+			if ( extension !== null ) return extension.HALF_FLOAT_OES;
 
 		}
 
@@ -22541,50 +22546,64 @@ function WebGLRenderer( parameters ) {
 		if ( p === OneMinusDstColorFactor ) return _gl.ONE_MINUS_DST_COLOR;
 		if ( p === SrcAlphaSaturateFactor ) return _gl.SRC_ALPHA_SATURATE;
 
-		extension = extensions.get( 'WEBGL_compressed_texture_s3tc' );
+		if ( p === RGB_S3TC_DXT1_Format || p === RGBA_S3TC_DXT1_Format ||
+			p === RGBA_S3TC_DXT3_Format || p === RGBA_S3TC_DXT5_Format ) {
 
-		if ( extension !== null ) {
+			extension = extensions.get( 'WEBGL_compressed_texture_s3tc' );
 
-			if ( p === RGB_S3TC_DXT1_Format ) return extension.COMPRESSED_RGB_S3TC_DXT1_EXT;
-			if ( p === RGBA_S3TC_DXT1_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT1_EXT;
-			if ( p === RGBA_S3TC_DXT3_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT3_EXT;
-			if ( p === RGBA_S3TC_DXT5_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			if ( extension !== null ) {
 
-		}
+				if ( p === RGB_S3TC_DXT1_Format ) return extension.COMPRESSED_RGB_S3TC_DXT1_EXT;
+				if ( p === RGBA_S3TC_DXT1_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT1_EXT;
+				if ( p === RGBA_S3TC_DXT3_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT3_EXT;
+				if ( p === RGBA_S3TC_DXT5_Format ) return extension.COMPRESSED_RGBA_S3TC_DXT5_EXT;
 
-		extension = extensions.get( 'WEBGL_compressed_texture_pvrtc' );
-
-		if ( extension !== null ) {
-
-			if ( p === RGB_PVRTC_4BPPV1_Format ) return extension.COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
-			if ( p === RGB_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
-			if ( p === RGBA_PVRTC_4BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
-			if ( p === RGBA_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+			}
 
 		}
 
-		extension = extensions.get( 'WEBGL_compressed_texture_etc1' );
+		if ( p === RGB_PVRTC_4BPPV1_Format || p === RGB_PVRTC_2BPPV1_Format ||
+			 p === RGBA_PVRTC_4BPPV1_Format || p === RGBA_PVRTC_2BPPV1_Format ) {
 
-		if ( extension !== null ) {
+			extension = extensions.get( 'WEBGL_compressed_texture_pvrtc' );
 
-			if ( p === RGB_ETC1_Format ) return extension.COMPRESSED_RGB_ETC1_WEBGL;
+			if ( extension !== null ) {
+
+				if ( p === RGB_PVRTC_4BPPV1_Format ) return extension.COMPRESSED_RGB_PVRTC_4BPPV1_IMG;
+				if ( p === RGB_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGB_PVRTC_2BPPV1_IMG;
+				if ( p === RGBA_PVRTC_4BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+				if ( p === RGBA_PVRTC_2BPPV1_Format ) return extension.COMPRESSED_RGBA_PVRTC_2BPPV1_IMG;
+
+			}
 
 		}
 
-		extension = extensions.get( 'EXT_blend_minmax' );
+		if ( p === RGB_ETC1_Format ) {
 
-		if ( extension !== null ) {
+			extension = extensions.get( 'WEBGL_compressed_texture_etc1' );
 
-			if ( p === MinEquation ) return extension.MIN_EXT;
-			if ( p === MaxEquation ) return extension.MAX_EXT;
+			if ( extension !== null ) return extension.COMPRESSED_RGB_ETC1_WEBGL;
 
 		}
 
-		extension = extensions.get( 'WEBGL_depth_texture' );
+		if ( p === MinEquation || p === MaxEquation ) {
 
-		if ( extension !== null ){
+			extension = extensions.get( 'EXT_blend_minmax' );
 
-			if ( p === UnsignedInt248Type ) return extension.UNSIGNED_INT_24_8_WEBGL;
+			if ( extension !== null ) {
+
+				if ( p === MinEquation ) return extension.MIN_EXT;
+				if ( p === MaxEquation ) return extension.MAX_EXT;
+
+			}
+
+		}
+
+		if ( p === UnsignedInt248Type ) {
+
+			extension = extensions.get( 'WEBGL_depth_texture' );
+
+			if ( extension !== null ) return extension.UNSIGNED_INT_24_8_WEBGL;
 
 		}
 
@@ -22626,9 +22645,9 @@ Spherical.prototype = {
 
 	copy: function ( other ) {
 
-		this.radius.copy( other.radius );
-		this.phi.copy( other.phi );
-		this.theta.copy( other.theta );
+		this.radius = other.radius;
+		this.phi = other.phi;
+		this.theta = other.theta;
 
 		return this;
 
@@ -24037,13 +24056,13 @@ InstancedBufferGeometry.prototype.constructor = InstancedBufferGeometry;
 
 InstancedBufferGeometry.prototype.isInstancedBufferGeometry = true;
 
-InstancedBufferGeometry.prototype.addGroup = function ( start, count, instances ) {
+InstancedBufferGeometry.prototype.addGroup = function ( start, count, materialIndex ) {
 
 	this.groups.push( {
 
 		start: start,
 		count: count,
-		instances: instances
+		materialIndex: materialIndex
 
 	} );
 
@@ -24073,7 +24092,7 @@ InstancedBufferGeometry.prototype.copy = function ( source ) {
 	for ( var i = 0, l = groups.length; i < l; i ++ ) {
 
 		var group = groups[ i ];
-		this.addGroup( group.start, group.count, group.instances );
+		this.addGroup( group.start, group.count, group.materialIndex );
 
 	}
 
@@ -24105,6 +24124,19 @@ InterleavedBuffer.prototype = {
 	set needsUpdate( value ) {
 
 		if ( value === true ) this.version ++;
+
+	},
+
+	setArray: function ( array ) {
+
+		if ( Array.isArray( array ) ) {
+
+			throw new TypeError( 'THREE.BufferAttribute: array should be a Typed Array.' );
+
+		}
+
+		this.count = array !== undefined ? array.length / this.stride : 0;
+		this.array = array;
 
 	},
 
@@ -30388,9 +30420,25 @@ GrayBox.geometries = {
   box: new BoxBufferGeometry(1, 1, 1)
 };
 
+var smootherstep = _Math.smootherstep;
+var lerp = _Math.lerp;
+
+
 var KMPH_TO_MPS = 1000 / 3600;
-var VANGLE_MIN = Math.PI / 12;
-var VANGLE_MAX = Math.PI - Math.PI / 12;
+var VANGLE_MIN = -Math.PI / 2 + Math.PI / 12;
+var VANGLE_MAX = +Math.PI / 2 - Math.PI / 12;
+
+var ADS_TIME = 0.14;
+var FOV_ADS_MUL = 0.8;
+var ANGLE_LAG_SMOOTH_TIME = 0.1;
+var STRAFE_ROLL_SMOOTH_TIME = 0.2;
+var RUN_SMOOTH_TIME = 0.08;
+var MOVE_SMOOTH_TIME = 0.1;
+var STOP_SMOOTH_TIME = 0.2;
+
+var GUN_POS = new Vector3(0.12, -0.11, -0.28);
+var GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
+var GUN_POS_RUN = new Vector3(0.1, -0.07, -0.30);
 
 var FirstPersonPlayer = function (_Object3D) {
   inherits(FirstPersonPlayer, _Object3D);
@@ -30404,9 +30452,28 @@ var FirstPersonPlayer = function (_Object3D) {
       var movementX = event.movementX;
       var movementY = event.movementY;
 
-      _this.orientation.x += movementX * _this.pixelRatio.x;
-      _this.orientation.y -= movementY * _this.pixelRatio.y;
-      _this.orientation.y = Math.max(Math.min(_this.orientation.y, VANGLE_MAX), VANGLE_MIN);
+      _this.frameAngle.x = movementY * _this.pixelRatio.y;
+      _this.frameAngle.y = movementX * _this.pixelRatio.x;
+      _this.orientation.sub(_this.frameAngle);
+      _this.orientation.x = Math.max(Math.min(_this.orientation.x, VANGLE_MAX), VANGLE_MIN);
+    };
+
+    _this.onMouseDown = function (event) {
+      switch (event.button) {
+        case 0:
+          _this.keys.fire = 1;break;
+        case 2:
+          _this.aim(true);break;
+      }
+    };
+
+    _this.onMouseUp = function (event) {
+      switch (event.button) {
+        case 0:
+          _this.keys.fire = 0;break;
+        case 2:
+          _this.aim(false);break;
+      }
     };
 
     _this.onKeyDown = function (event) {
@@ -30424,9 +30491,11 @@ var FirstPersonPlayer = function (_Object3D) {
         case 68:
           /*D*/_this.keys.right = 1;break;
         case 16:
-          /*run*/_this.keys.run = 1;break;
+          /*run*/_this.toggleRun();break;
         case 221:
-          /*]*/_this.app.toggleCamera();
+          /*]*/_this.app.toggleCamera();break;
+        case 17:
+          /*control*/_this.aim(true);break;
       }
     };
 
@@ -30444,30 +30513,41 @@ var FirstPersonPlayer = function (_Object3D) {
         case 39: /*right*/
         case 68:
           /*D*/_this.keys.right = 0;break;
-        case 16:
-          /*run*/_this.keys.run = 0;break;
+        case 17:
+          /*control*/_this.aim(false);break;
       }
     };
 
     _this.app = app;
+    _this.tmpVec3 = new Vector3();
     _this.frameMotion = new Vector3();
+    _this.frameAngle = new Vector2();
     _this.orientation = new Vector2(0, Math.PI / 2);
     _this.target = new Vector3();
     _this.sensitivity = 2.5;
+    _this.smoothLocalFrameAngle = new Vector2();
+    _this.smoothLocalFrameMotion = new Vector3();
+    _this.smoothRun = 0;
+    _this.smoothMove = 0;
+    _this.smoothAim = 0;
     _this.keys = {
       forward: 0,
       back: 0,
       left: 0,
       right: 0,
-      run: 0
+      run: 0,
+      aim: 0
     };
+    _this.aimTiming = 0;
     _this.walkSpeed = 10 * KMPH_TO_MPS;
     _this.runSpeed = 20 * KMPH_TO_MPS;
     _this.pixelRatio = new Vector2();
     _this.onWindowResize();
     _this.head = new Object3D();
-    _this.head.position.set(0, 1.7, 0);
+    _this.headPosition = new Vector3(0, 1.7, 0);
+    _this.head.position.copy(_this.headPosition);
     _this.add(_this.head);
+    _this.gunRotation = new Vector3(-Math.PI / 2, 0, Math.PI);
 
     _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     _this.camera.position.set(0, 0, 0);
@@ -30483,10 +30563,14 @@ var FirstPersonPlayer = function (_Object3D) {
     value: function addGun() {
       var geometry = this.app.loader.getAsset('/models/gun.json').geometry;
       var material = GrayBox.createMaterial(20, 20);
-      this.gun = GrayBox.createMesh(geometry, material, 0.12, -0.1, -0.28, 0.19, 0.19, 0.19);
+      var x = GUN_POS.x;
+      var y = GUN_POS.y;
+      var z = GUN_POS.z;
+
+      this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
       this.gun.castShadow = false;
       this.gun.receiveShadow = false;
-      this.gun.rotation.set(-Math.PI / 2, 0, Math.PI);
+      this.gun.rotation.setFromVector3(this.gunRotation);
       this.head.add(this.gun);
     }
   }, {
@@ -30498,24 +30582,104 @@ var FirstPersonPlayer = function (_Object3D) {
       this.frameMotion.z += this.keys.back;
       this.frameMotion.x -= this.keys.left;
       this.frameMotion.x += this.keys.right;
+      this.frameMotion.normalize();
+
+      if (this.frameMotion.z == 0 && this.frameMotion.x == 0) {
+        // Cancel Run if no motion.
+        if (this.keys.run) {
+          this.toggleRun();
+        }
+        this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
+      } else {
+        this.smoothMove = lerp(this.smoothMove, 1, dt / MOVE_SMOOTH_TIME);
+      }
       var speed = this.walkSpeed;
       if (this.keys.run) {
         speed = this.runSpeed;
       }
+      speed *= dt;
 
-      this.frameMotion.normalize().transformDirection(this.matrix).multiplyScalar(speed * dt);
+      // Save and smooth local motion and orientation for later
+      var localFrameMotion = this.tmpVec3;
+      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+      this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
+      this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
+      this.smoothRun = lerp(this.smoothRun, this.keys.run, dt / RUN_SMOOTH_TIME);
+
+      // Apply motion
+      // Transform motion to world space
+      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
       this.position.add(this.frameMotion);
 
-      this.target.x = this.head.position.x + 100 * Math.sin(this.orientation.y) * Math.cos(Math.PI / 2);
-      this.target.y = this.head.position.y + 100 * Math.cos(this.orientation.y);
-      this.target.z = this.head.position.z + 100 * Math.sin(this.orientation.y);
-      this.head.lookAt(this.target);
+      // Apply orientation
+      // Vertical angle on the head
+      this.head.rotation.x = this.orientation.x;
+      // Horizontal angle on the body
+      this.rotation.y = this.orientation.y;
 
-      var hangle = this.orientation.x + Math.PI / 2;
-      this.target.x = this.position.x + 100 * Math.cos(this.orientation.x);
-      this.target.y = this.position.y + 100 * Math.cos(Math.PI / 2);
-      this.target.z = this.position.z + 100 * Math.sin(this.orientation.x);
-      this.lookAt(this.target);
+      this.tickAim(dt);
+      this.tickWobble(dt);
+    }
+  }, {
+    key: 'tickAim',
+    value: function tickAim(dt) {
+      if (this.aimTiming < 1 && this.keys.aim) {
+        this.aimTiming += dt / ADS_TIME;
+      } else if (this.aimTiming > 0 && !this.keys.aim) {
+        this.aimTiming -= dt / ADS_TIME;
+      }
+      this.smoothAim = smootherstep(this.aimTiming, 0, 1);
+      this.gun.position.lerpVectors(GUN_POS, GUN_POS_ADS, this.smoothAim);
+      this.gun.position.lerp(GUN_POS_RUN, this.smoothRun);
+      this.camera.fov = lerp(this.app.fov, this.app.fov * FOV_ADS_MUL, this.smoothAim);
+      this.camera.updateProjectionMatrix();
+    }
+  }, {
+    key: 'tickWobble',
+    value: function tickWobble(dt) {
+
+      // Motion wobble
+      var walkWobbleX = Math.cos(this.app.time * 6.0) * 0.005;
+      var runWobbleX = Math.cos(this.app.time * 10.0) * 0.008;
+      var breathWobbleX = 0;
+      var walkWobbleY = Math.cos(this.app.time * 12.0) * 0.003;
+      var runWobbleY = Math.cos(this.app.time * 20.0) * 0.006;
+      var breathWobbleY = Math.sin(this.app.time * 2.0) * 0.002;
+
+      var aimWobbleAttenuation = 1.0 - this.smoothAim * 0.8;
+      var wobbleX = aimWobbleAttenuation * lerp(breathWobbleX, lerp(walkWobbleX, runWobbleX, this.smoothRun), this.smoothMove);
+      var wobbleY = aimWobbleAttenuation * lerp(breathWobbleY, lerp(walkWobbleY, runWobbleY, this.smoothRun), this.smoothMove);
+
+      this.camera.position.y = wobbleY;
+      this.camera.position.x = wobbleX;
+      this.head.position.x = this.headPosition.x + wobbleX * 0.5;
+      this.head.position.y = this.headPosition.y + wobbleY * 0.5;
+
+      // Aim wobble+lag
+      this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
+      this.gun.rotation.x = this.gunRotation.x + this.smoothLocalFrameAngle.x * 0.5 // Vertical
+      + wobbleY * 1 + this.smoothRun * 0.7; // Run rotation
+      this.gun.rotation.z = this.gunRotation.z + this.smoothLocalFrameAngle.y * 0.5 // Horizontal
+      - wobbleX * 3 + this.smoothRun * 0.15; // Run rotation
+      // Roll when strafing
+      this.gun.rotation.y = this.gunRotation.y + this.smoothLocalFrameMotion.x * 1; // Roll
+    }
+  }, {
+    key: 'toggleRun',
+    value: function toggleRun() {
+      if (this.keys.run) {
+        this.keys.run = 0;
+      } else if (!this.keys.aim) {
+        this.keys.run = 1;
+      }
+    }
+  }, {
+    key: 'aim',
+    value: function aim(enable) {
+      this.keys.aim = enable ? 1 : 0;
+      if (enable && this.keys.run) {
+        this.toggleRun();
+      }
     }
   }, {
     key: 'initListeners',
@@ -30523,6 +30687,8 @@ var FirstPersonPlayer = function (_Object3D) {
       window.addEventListener('keydown', this.onKeyDown, false);
       window.addEventListener('keyup', this.onKeyUp, false);
       window.addEventListener('mousemove', this.onMouseMove, false);
+      window.addEventListener('mousedown', this.onMouseDown, false);
+      window.addEventListener('mouseup', this.onMouseUp, false);
     }
   }, {
     key: 'onWindowResize',
@@ -30533,13 +30699,11 @@ var FirstPersonPlayer = function (_Object3D) {
   return FirstPersonPlayer;
 }(Object3D);
 
-var Cache;
-
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 
-Cache = {
+var Cache = {
 
 	enabled: false,
 
@@ -30578,8 +30742,6 @@ Cache = {
 	}
 
 };
-
-var DefaultLoadingManager;
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -30650,7 +30812,7 @@ function LoadingManager( onLoad, onProgress, onError ) {
 
 }
 
-DefaultLoadingManager = new LoadingManager();
+var DefaultLoadingManager = new LoadingManager();
 
 function XHRLoader( manager ) {
 
@@ -30661,6 +30823,8 @@ function XHRLoader( manager ) {
 Object.assign( XHRLoader.prototype, {
 
 	load: function ( url, onLoad, onProgress, onError ) {
+
+		if ( url === undefined ) url = '';
 
 		if ( this.path !== undefined ) url = this.path + url;
 
@@ -30684,66 +30848,156 @@ Object.assign( XHRLoader.prototype, {
 
 		}
 
-		var request = new XMLHttpRequest();
-		request.open( 'GET', url, true );
+		// Check for data: URI
+		var dataUriRegex = /^data:(.*?)(;base64)?,(.*)$/;
+		var dataUriRegexResult = url.match( dataUriRegex );
 
-		request.addEventListener( 'load', function ( event ) {
+		// Safari can not handle Data URIs through XMLHttpRequest so process manually
+		if ( dataUriRegexResult ) {
 
-			var response = event.target.response;
+			var mimeType = dataUriRegexResult[1];
+			var isBase64 = !!dataUriRegexResult[2];
+			var data = dataUriRegexResult[3];
 
-			Cache.add( url, response );
+			data = window.decodeURIComponent(data);
 
-			if ( this.status === 200 ) {
+			if( isBase64 ) {
+				data = window.atob(data);
+			}
 
-				if ( onLoad ) onLoad( response );
+			try {
 
-				scope.manager.itemEnd( url );
+				var response;
+				var responseType = ( this.responseType || '' ).toLowerCase();
 
-			} else if ( this.status === 0 ) {
+				switch ( responseType ) {
 
-				// Some browsers return HTTP Status 0 when using non-http protocol
-				// e.g. 'file://' or 'data://'. Handle as success.
+					case 'arraybuffer':
+					case 'blob':
 
-				console.warn( 'THREE.XHRLoader: HTTP Status 0 received.' );
+					 	response = new ArrayBuffer( data.length );
+						var view = new Uint8Array( response );
+						for ( var i = 0; i < data.length; i ++ ) {
 
-				if ( onLoad ) onLoad( response );
+								view[ i ] = data.charCodeAt( i );
 
-				scope.manager.itemEnd( url );
+						}
 
-			} else {
+						if ( responseType === 'blob' ) {
+
+							response = new Blob( [ response ], { "type" : mimeType } );
+
+						}
+
+						break;
+
+					case 'document':
+
+						var parser = new DOMParser();
+						response = parser.parseFromString( data, mimeType );
+
+						break;
+
+					case 'json':
+
+						response = JSON.parse( data );
+
+						break;
+
+					default: // 'text' or other
+
+						response = data;
+
+						break;
+
+				}
+
+				// Wait for next browser tick
+				window.setTimeout( function() {
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				}, 0);
+
+			} catch ( error ) {
+
+				// Wait for next browser tick
+				window.setTimeout( function() {
+
+					if ( onError ) onError( error );
+
+					scope.manager.itemError( url );
+
+				}, 0);
+
+			}
+
+		} else {
+
+			var request = new XMLHttpRequest();
+			request.open( 'GET', url, true );
+
+			request.addEventListener( 'load', function ( event ) {
+
+				var response = event.target.response;
+
+				Cache.add( url, response );
+
+				if ( this.status === 200 ) {
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				} else if ( this.status === 0 ) {
+
+					// Some browsers return HTTP Status 0 when using non-http protocol
+					// e.g. 'file://' or 'data://'. Handle as success.
+
+					console.warn( 'THREE.XHRLoader: HTTP Status 0 received.' );
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				} else {
+
+					if ( onError ) onError( event );
+
+					scope.manager.itemError( url );
+
+				}
+
+			}, false );
+
+			if ( onProgress !== undefined ) {
+
+				request.addEventListener( 'progress', function ( event ) {
+
+					onProgress( event );
+
+				}, false );
+
+			}
+
+			request.addEventListener( 'error', function ( event ) {
 
 				if ( onError ) onError( event );
 
 				scope.manager.itemError( url );
 
-			}
-
-		}, false );
-
-		if ( onProgress !== undefined ) {
-
-			request.addEventListener( 'progress', function ( event ) {
-
-				onProgress( event );
-
 			}, false );
 
+			if ( this.responseType !== undefined ) request.responseType = this.responseType;
+			if ( this.withCredentials !== undefined ) request.withCredentials = this.withCredentials;
+
+			if ( request.overrideMimeType ) request.overrideMimeType( 'text/plain' );
+
+			request.send( null );
+
 		}
-
-		request.addEventListener( 'error', function ( event ) {
-
-			if ( onError ) onError( event );
-
-			scope.manager.itemError( url );
-
-		}, false );
-
-		if ( this.responseType !== undefined ) request.responseType = this.responseType;
-		if ( this.withCredentials !== undefined ) request.withCredentials = this.withCredentials;
-
-		if ( request.overrideMimeType ) request.overrideMimeType( 'text/plain' );
-
-		request.send( null );
 
 		scope.manager.itemStart( url );
 
@@ -30798,6 +31052,7 @@ Object.assign( ImageLoader.prototype, {
 			scope.manager.itemEnd( url );
 
 		};
+		image.onerror = onError;
 
 		if ( url.indexOf( 'data:' ) === 0 ) {
 
@@ -31844,15 +32099,13 @@ Loader$1.Handlers = {
 
 };
 
-var AnimationUtils;
-
 /**
  * @author tschw
  * @author Ben Houston / http://clara.io/
  * @author David Sarno / http://lighthaus.us/
  */
 
-AnimationUtils = {
+var AnimationUtils = {
 
 	// same as Array.prototype.slice, but also works on typed arrays
 	arraySlice: function( array, from, to ) {
