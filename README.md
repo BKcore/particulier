@@ -2,12 +2,11 @@
 
 ## Installation
 
-1. `npm install`
-2. (Temp) Add `"jsnext:main": "src/Three.js",` to `node_modules/three/package.json`
+1. `yarn install`
 
 ## Build
 
-1. `npm run build`
+1. `yarn run build` or `yarn run watch`
 
 ## Run
 
