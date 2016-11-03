@@ -66,8 +66,16 @@ export class FirstPersonPlayer extends Object3D {
   }
 
   addGun() {
-    let geometry = this.app.loader.getAsset('/models/gun.json').geometry;
-    let material = GrayBox.createMaterial(20, 20);
+    let geometry = this.app.loader.getAsset('/models/gun/gun.json').geometry;
+    let material = GrayBox.createPBRMaterial({
+      map: this.app.loader.getAsset('/models/gun/gun.albedo.jpg').texture,
+      aoMap: this.app.loader.getAsset('/models/gun/gun.ao.jpg').texture,
+      roughnessMap: this.app.loader.getAsset('/models/gun/gun.roughness.jpg').texture,
+      metalnessMap: this.app.loader.getAsset('/models/gun/gun.metalness.jpg').texture,
+      envMap: this.app.getCubeMap(),
+      roughness: 1,
+      metalness: 1
+    });
     let {x, y, z} = GUN_POS;
     this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
     this.gun.castShadow = false;
@@ -153,8 +161,8 @@ export class FirstPersonPlayer extends Object3D {
 
     this.camera.position.y = wobbleY;
     this.camera.position.x = wobbleX;
-    this.head.position.x = this.headPosition.x + wobbleX * 0.5;
-    this.head.position.y = this.headPosition.y + wobbleY * 0.5;
+    this.head.position.x = this.headPosition.x + wobbleX * 2;
+    this.head.position.y = this.headPosition.y + wobbleY * 2;
 
     // Aim wobble+lag
     this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;

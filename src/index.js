@@ -1,13 +1,16 @@
 import { AmbientLight } from 'three/src/lights/AmbientLight';
 import { BoxGeometry } from 'three/src/geometries/BoxGeometry';
 import { CameraHelper } from 'three/src/extras/helpers/CameraHelper';
+import { CubeCamera } from 'three/src/cameras/CubeCamera';
 import { DirectionalLight } from 'three/src/lights/DirectionalLight';
 import { FogExp2 } from 'three/src/scenes/FogExp2';
 import { GridHelper } from 'three/src/extras/helpers/GridHelper';
 import { Mesh } from 'three/src/objects/Mesh';
 import { MeshStandardMaterial } from 'three/src/materials/MeshStandardMaterial';
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera';
-import { PCFSoftShadowMap, ReinhardToneMapping, RepeatWrapping } from 'three/src/constants';
+import {
+  PCFSoftShadowMap, ReinhardToneMapping, Uncharted2ToneMapping, RepeatWrapping
+} from 'three/src/constants';
 import { Scene } from 'three/src/scenes/Scene';
 import { Vector2 } from 'three/src/math/Vector2';
 import { Vector3 } from 'three/src/math/Vector3';
@@ -23,11 +26,17 @@ import { Loader } from './Loader.js';
 
 const ASSETS = [
   {path: '/textures/default.png', type: 'texture'},
-  {path: '/models/gun.json', type: 'json/model'}
+  {path: '/models/gun/gun.json', type: 'json/model'},
+  {path: '/models/gun/gun.albedo.jpg', type: 'texture'},
+  {path: '/models/gun/gun.ao.jpg', type: 'texture'},
+  {path: '/models/gun/gun.normal.jpg', type: 'texture'},
+  {path: '/models/gun/gun.roughness.jpg', type: 'texture'},
+  {path: '/models/gun/gun.metalness.jpg', type: 'texture'}
 ]
 
 class App {
   constructor(opts) {
+    window.app = this.app;
     this.assetsPath = opts.assetsPath || '';
     this.width = opts.width || 1280;
     this.height = opts.height || 720;
@@ -129,8 +138,25 @@ class App {
     this.renderer.gammaOutput = true;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = PCFSoftShadowMap;
-    this.renderer.toneMapping = ReinhardToneMapping;
+    this.renderer.toneMapping = Uncharted2ToneMapping;
+    this.renderer.toneMappingExposure = 1.6;
     this.dom.appendChild(this.renderer.domElement);
+  }
+
+  initCubeMap() {
+    this.cubeCamera = new CubeCamera(this.near, this.far, 256);
+    this.cubeCamera.position.y = 1.4;
+    this.scene.add(this.cubeCamera);
+    this.cubeCamera.updateCubeMap(this.renderer, this.scene);
+    GrayBox.setDefaultEnvMap(this.getCubeMap());
+  }
+
+  getCubeMap() {
+    if(this.cubeCamera != null) {
+      return this.cubeCamera.renderTarget.texture;
+    } else {
+      return null;
+    }
   }
 
   initPlayer() {
@@ -160,7 +186,10 @@ class App {
     this.ground = GrayBox.createBox(0, -5, 0, 1000, 10, 1000);
     this.ground.frustumCulled = false;
     this.scene.add(this.ground);
+    // Generate CubeMap before adding dynamic objects.
+    this.initCubeMap();
     this.addBoxes();
+    this.addSpheres();
     this.particleSystem = new ParticleSystem({maxCount: 100000});
     this.scene.add(this.particleSystem.getContainer().getMesh());
     this.particleEmitter = new ParticleEmitter(this.particleSystem);
@@ -178,7 +207,7 @@ class App {
     this.scene.add(this.sky.mesh);
     this.ambient = new AmbientLight(0xfdefff, 1.6);
     this.scene.add(this.ambient);
-    this.sun = new DirectionalLight(0xfffdef, 1.2);
+    this.sun = new DirectionalLight(0xfffdef, 1.0);
     this.sun.position.copy(this.sunPosition);
     this.sun.castShadow = true;
     let shadow = this.sun.shadow;
@@ -210,6 +239,32 @@ class App {
       let box = GrayBox.createBox.apply(null, args);
       this.scene.add(box);
       this.boxes.push(box);
+    }
+  }
+
+  addSpheres() {
+    this.spheres = [];
+    let spheres = [
+      [-6, 1.2, -2, 1, 1, 1, 0x999999, 0.9, 0.1],
+      [-6, 1.2, 0, 1, 1, 1, 0x999999, 0.5, 0.1],
+      [-6, 1.2, 2, 1, 1, 1, 0x999999, 0.1, 0.1],
+      [-8, 1.2, -2, 1, 1, 1, 0x999999, 0.9, 0.1],
+      [-8, 1.2, 0, 1, 1, 1, 0x999999, 0.9, 0.5],
+      [-8, 1.2, 2, 1, 1, 1, 0x999999, 0.9, 0.9],
+      [-10, 1.2, -2, 1, 1, 1, 0x000000, 0.9, 0.1],
+      [-10, 1.2, 0, 1, 1, 1, 0x000000, 0.5, 0.1],
+      [-10, 1.2, 2, 1, 1, 1, 0x000000, 0.1, 0.1],
+      [-12, 1.2, -2, 1, 1, 1, 0x000000, 0.9, 0.1],
+      [-12, 1.2, 0, 1, 1, 1, 0x000000, 0.9, 0.5],
+      [-12, 1.2, 2, 1, 1, 1, 0x000000, 0.9, 0.9]
+    ];
+    for(let args of spheres) {
+      let sphere = GrayBox.createSphere.apply(null, args);
+      sphere.material.metalness = args[7];
+      sphere.material.roughness = args[8];
+      sphere.material.envMap = this.getCubeMap();
+      this.scene.add(sphere);
+      this.spheres.push(sphere);
     }
   }
 

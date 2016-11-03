@@ -31,6 +31,7 @@ export class TextureAsset extends Asset {
   constructor(path, texture) {
     super(path);
     this.texture = texture;
+    this.texture.anisotropy = 4;
   }
 }
 
