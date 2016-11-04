@@ -2,6 +2,8 @@ import { BoxBufferGeometry } from 'three/src/geometries/BoxBufferGeometry';
 import { SphereBufferGeometry } from 'three/src/geometries/SphereBufferGeometry';
 import { Mesh } from 'three/src/objects/Mesh';
 import { MeshStandardMaterial } from 'three/src/materials/MeshStandardMaterial';
+import { Sprite } from 'three/src/objects/Sprite';
+import { SpriteMaterial } from 'three/src/materials/SpriteMaterial';
 import { RepeatWrapping } from 'three/src/constants';
 
 export class GrayBox {
@@ -57,6 +59,14 @@ export class GrayBox {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     return mesh;
+  }
+
+  static createSprite(texture, x, y, z, sx, sy, sz, color = 0xffffff) {
+    let material = new SpriteMaterial({map: texture, color: color});
+    let sprite = new Sprite(material);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(sx, sy, sz);
+    return sprite;
   }
 
   static createBox(x, y, z, sx, sy, sz, color) {

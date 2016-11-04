@@ -1,9 +1,12 @@
 import { CameraHelper } from 'three/src/extras/helpers/CameraHelper';
 import { Object3D } from 'three/src/core/Object3D';
 import { PerspectiveCamera } from 'three/src/cameras/PerspectiveCamera';
+import { Euler } from 'three/src/math/Euler';
 import { Vector3 } from 'three/src/math/Vector3';
 import { Vector2 } from 'three/src/math/Vector2';
+import { AdditiveBlending } from 'three/src/constants';
 import { GrayBox } from './GrayBox.js';
+import { fInterpTo } from './Utils.js';
 import { _Math } from 'three/src/math/Math';
 let { smootherstep, lerp } = _Math;
 
@@ -11,13 +14,21 @@ const KMPH_TO_MPS = 1000 / 3600;
 const VANGLE_MIN = -Math.PI/2 + Math.PI/12;
 const VANGLE_MAX = +Math.PI/2 - Math.PI/12;
 
+const EPSYLON = 1e-6;
+
 const ADS_TIME = 0.14;
 const FOV_ADS_MUL = 0.8;
 const ANGLE_LAG_SMOOTH_TIME = 0.1;
 const STRAFE_ROLL_SMOOTH_TIME = 0.2;
-const RUN_SMOOTH_TIME = 0.08;
+const RUN_SMOOTH_TIME = 0.16;
 const MOVE_SMOOTH_TIME = 0.1;
 const STOP_SMOOTH_TIME = 0.2;
+const FIRE_COOLDOWN = 0.5;
+const FIRE_KICK_FORCE = 0.6;
+const FIRE_KICK_TIME = 0.05;
+
+const RETICLE_SIDES_OPACITY = 0.6;
+const RETICLE_SCALE = 0.1;
 
 let GUN_POS = new Vector3(0.12, -0.11, -0.28);
 let GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
@@ -38,6 +49,7 @@ export class FirstPersonPlayer extends Object3D {
     this.smoothRun = 0;
     this.smoothMove = 0;
     this.smoothAim = 0;
+    this.smoothCooldown = 0;
     this.keys = {
       forward: 0,
       back: 0,
@@ -47,6 +59,7 @@ export class FirstPersonPlayer extends Object3D {
       aim: 0
     };
     this.aimTiming = 0;
+    this.fireTiming = 0;
     this.walkSpeed = 10 * KMPH_TO_MPS;
     this.runSpeed = 20 * KMPH_TO_MPS;
     this.pixelRatio = new Vector2();
@@ -55,7 +68,7 @@ export class FirstPersonPlayer extends Object3D {
     this.headPosition = new Vector3(0, 1.7, 0);
     this.head.position.copy(this.headPosition);
     this.add(this.head);
-    this.gunRotation = new Vector3(-Math.PI/2, 0, Math.PI);
+    this.gunRotation = new Euler(-Math.PI/2, 0, Math.PI);
 
     this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     this.camera.position.set(0, 0, 0);
@@ -80,8 +93,20 @@ export class FirstPersonPlayer extends Object3D {
     this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
     this.gun.castShadow = false;
     this.gun.receiveShadow = false;
-    this.gun.rotation.setFromVector3(this.gunRotation);
+    this.gun.rotation.copy(this.gunRotation);
     this.head.add(this.gun);
+    let centerTex = this.app.loader.getAsset('/textures/reticle.default.center.png').texture;
+    let sidesTex = this.app.loader.getAsset('/textures/reticle.default.sides.png').texture;
+    let s = RETICLE_SCALE;
+    let centerReticle = GrayBox.createSprite(centerTex, 0, 0, -1, s, s, s);
+    let sidesReticle = GrayBox.createSprite(sidesTex, 0, 0, -1, s, s, s);
+    this.reticles = [centerReticle, sidesReticle];
+    for(let ret of this.reticles) {
+      ret.material.depthTest = false;
+      ret.material.depthWrite = false;
+      ret.material.blending = AdditiveBlending;
+      this.camera.add(ret);
+    }
   }
 
   tick(dt) {
@@ -95,9 +120,7 @@ export class FirstPersonPlayer extends Object3D {
 
     if(this.frameMotion.z == 0 && this.frameMotion.x == 0) {
       // Cancel Run if no motion.
-      if(this.keys.run) {
-        this.toggleRun();
-      }
+      this.run(false);
       this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
     } else {
       this.smoothMove = lerp(this.smoothMove, 1, dt / MOVE_SMOOTH_TIME);
@@ -111,9 +134,10 @@ export class FirstPersonPlayer extends Object3D {
     // Save and smooth local motion and orientation for later
     let localFrameMotion = this.tmpVec3;
     localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+    localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
     this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
     this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
-    this.smoothRun = lerp(this.smoothRun, this.keys.run, dt / RUN_SMOOTH_TIME);
+    this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
 
     // Apply motion
     // Transform motion to world space
@@ -126,8 +150,14 @@ export class FirstPersonPlayer extends Object3D {
     // Horizontal angle on the body
     this.rotation.y = this.orientation.y;
 
+    // Reset gun rotation and position
+    this.gun.rotation.copy(this.gunRotation);
+    this.gun.position.copy(GUN_POS);
+
     this.tickAim(dt);
     this.tickWobble(dt);
+    this.tickFire(dt);
+    this.tickReticles(dt);
   }
 
   tickAim(dt) {
@@ -144,7 +174,6 @@ export class FirstPersonPlayer extends Object3D {
   }
 
   tickWobble(dt) {
-
     // Motion wobble
     let walkWobbleX = Math.cos(this.app.time * 6.0) * 0.005;
     let runWobbleX = Math.cos(this.app.time * 10.0) * 0.008;
@@ -166,28 +195,73 @@ export class FirstPersonPlayer extends Object3D {
 
     // Aim wobble+lag
     this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
-    this.gun.rotation.x = this.gunRotation.x + this.smoothLocalFrameAngle.x * 0.5 // Vertical
+    this.gun.rotation.x += this.smoothLocalFrameAngle.x * 0.5 // Vertical
                         + wobbleY * 1
                         + this.smoothRun * 0.7; // Run rotation
-    this.gun.rotation.z = this.gunRotation.z + this.smoothLocalFrameAngle.y * 0.5 // Horizontal
+    this.gun.rotation.z += this.smoothLocalFrameAngle.y * 0.5 // Horizontal
                         - wobbleX * 3
                         + this.smoothRun * 0.15; // Run rotation
     // Roll when strafing
-    this.gun.rotation.y = this.gunRotation.y + this.smoothLocalFrameMotion.x * 1; // Roll
+    this.gun.rotation.y += this.smoothLocalFrameMotion.x * 1; // Roll
+  }
+
+  tickFire(dt) {
+    if(this.fireTiming <= 0) { console.log(!this.smoothRun, this.smoothRun); }
+    if(this.fireTiming > 0.0) {
+      this.fireTiming -= dt;
+      this.fireTiming = Math.max(this.fireTiming, 0);
+    }
+    else if(this.keys.fire && !this.smoothRun) {
+      this.fireTiming = FIRE_COOLDOWN;
+    }
+    // TODO: VFX
+    // TODO: Really need custom curves for these...
+    let kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
+    if(this.fireTiming > kickTime) {
+      this.smoothCooldown = (1 - smootherstep(this.fireTiming, kickTime, FIRE_COOLDOWN));
+    } else {
+      this.smoothCooldown = smootherstep(this.fireTiming, 0, kickTime);
+    }
+    let kick = this.smoothCooldown * FIRE_KICK_FORCE;
+    this.gun.position.x += 0.04 * kick;
+    this.gun.position.y += 0.08 * kick;
+    this.gun.position.z += 0.12 * kick;
+    this.gun.rotation.x += 0.6 * kick;
+    this.gun.rotation.y += 0.3 * kick;
+  }
+
+  tickReticles(dt) {
+    let baseOpacity = 1.0 - Math.max(this.smoothAim, this.smoothRun);
+    let fireOpacity = 1.0 - Math.min(this.fireTiming / 0.1, 1);
+    this.reticles[0].material.opacity = baseOpacity * fireOpacity;
+    this.reticles[1].material.opacity = baseOpacity * RETICLE_SIDES_OPACITY * (1 - this.smoothCooldown);
+    this.reticles[1].scale.setScalar(RETICLE_SCALE * (1 + this.smoothCooldown));
   }
 
   toggleRun() {
-    if(this.keys.run) {
+    this.run(!this.keys.run);
+  }
+
+  run(enable) {
+    if(!enable) {
       this.keys.run = 0;
     } else if(!this.keys.aim) {
+      this.fire(false);
       this.keys.run = 1;
     }
   }
 
   aim(enable) {
     this.keys.aim = enable ? 1 : 0;
-    if(enable && this.keys.run) {
-      this.toggleRun();
+    if(enable) {
+      this.run(false);
+    }
+  }
+
+  fire(enable) {
+    this.keys.fire = enable ? 1 : 0;
+    if(enable) {
+      this.run(false);
     }
   }
 
@@ -213,14 +287,14 @@ export class FirstPersonPlayer extends Object3D {
 
   onMouseDown = (event) => {
     switch(event.button) {
-      case 0: this.keys.fire = 1; break;
+      case 0: this.fire(true); break;
       case 2: this.aim(true); break;
     }
   }
 
   onMouseUp = (event) => {
     switch(event.button) {
-      case 0: this.keys.fire = 0; break;
+      case 0: this.fire(false); break;
       case 2: this.aim(false); break;
     }
   }

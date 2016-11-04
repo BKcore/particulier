@@ -173,6 +173,19 @@ var _Math = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author supereggbert / http://www.paulbrunt.co.uk/
+ * @author philogb / http://blog.thejit.org/
+ * @author jordi_ros / http://plattsoft.com
+ * @author D1plo1d / http://github.com/D1plo1d
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author timknip / http://www.floorplanner.com/
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ */
+
 function Matrix4() {
 
 	this.elements = new Float32Array( [
@@ -1140,6 +1153,15 @@ Matrix4.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author *kile / http://kile.stravaganza.org/
+ * @author philogb / http://blog.thejit.org/
+ * @author mikael emtinger / http://gomo.se/
+ * @author egraether / http://egraether.com/
+ * @author WestLangley / http://github.com/WestLangley
+ */
+
 function Vector3( x, y, z ) {
 
 	this.x = x || 0;
@@ -1896,6 +1918,13 @@ Vector3.prototype = {
 
 };
 
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ */
+
 function Quaternion( x, y, z, w ) {
 
 	this._x = x || 0;
@@ -2572,6 +2601,12 @@ Object.assign( EventDispatcher.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ */
+
 function Euler( x, y, z, order ) {
 
 	this._x = x || 0;
@@ -2941,6 +2976,13 @@ Layers.prototype = {
 
 };
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author bhouston / http://clara.io
+ * @author tschw
+ */
+
 function Matrix3() {
 
 	this.elements = new Float32Array( [
@@ -3244,6 +3286,14 @@ Matrix3.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author elephantatwork / www.elephantatwork.ch
+ */
 
 function Object3D() {
 
@@ -3960,6 +4010,10 @@ Object.assign( Object3D.prototype, EventDispatcher.prototype, {
 var count = 0;
 function Object3DIdCount() { return count++; }
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function Color( r, g, b ) {
 
 	if ( g === undefined && b === undefined ) {
@@ -4477,6 +4531,11 @@ var ColorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0
 'springgreen': 0x00FF7F, 'steelblue': 0x4682B4, 'tan': 0xD2B48C, 'teal': 0x008080, 'thistle': 0xD8BFD8, 'tomato': 0xFF6347, 'turquoise': 0x40E0D0,
 'violet': 0xEE82EE, 'wheat': 0xF5DEB3, 'white': 0xFFFFFF, 'whitesmoke': 0xF5F5F5, 'yellow': 0xFFFF00, 'yellowgreen': 0x9ACD32 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function Light( color, intensity ) {
 
 	Object3D.call( this );
@@ -4529,6 +4588,10 @@ Light.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function AmbientLight( color, intensity ) {
 
 	Light.call( this, color, intensity );
@@ -4546,6 +4609,11 @@ AmbientLight.prototype = Object.assign( Object.create( Light.prototype ), {
 	isAmbientLight: true,
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Face3( a, b, c, normal, color, materialIndex ) {
 
@@ -4601,6 +4669,11 @@ Face3.prototype = {
 	}
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ */
 
 function Box3( min, max ) {
 
@@ -5073,6 +5146,11 @@ Box3.prototype = {
 	}
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Sphere( center, radius ) {
 
@@ -5727,6 +5805,15 @@ Vector2.prototype = {
 	}
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author kile / http://kile.stravaganza.org/
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author bhouston / http://clara.io
+ */
 
 function Geometry() {
 
@@ -7615,6 +7702,10 @@ Vector4.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function BufferAttribute( array, itemSize, normalized ) {
 
 	if ( Array.isArray( array ) ) {
@@ -7934,8 +8025,6 @@ BufferAttribute.prototype = {
 
 };
 
-//
-
 function Uint16Attribute( array, itemSize ) {
 
 	return new BufferAttribute( new Uint16Array( array ), itemSize );
@@ -7953,6 +8042,10 @@ function Float32Attribute( array, itemSize ) {
 	return new BufferAttribute( new Float32Array( array ), itemSize );
 
 }
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function DirectGeometry() {
 
@@ -8236,6 +8329,11 @@ Object.assign( DirectGeometry.prototype, EventDispatcher.prototype, {
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function BufferGeometry() {
 
@@ -9263,6 +9361,10 @@ Object.assign( BufferGeometry.prototype, EventDispatcher.prototype, {
 
 BufferGeometry.MaxIndex = 65535;
 
+/**
+ * @author Mugen87 / https://github.com/Mugen87
+ */
+
 function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments, depthSegments ) {
 
 	BufferGeometry.call( this );
@@ -9454,6 +9556,12 @@ function BoxBufferGeometry( width, height, depth, widthSegments, heightSegments,
 BoxBufferGeometry.prototype = Object.create( BufferGeometry.prototype );
 BoxBufferGeometry.prototype.constructor = BoxBufferGeometry;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author WestLangley / http://github.com/WestLangley
+*/
+
 function Camera() {
 
 	Object3D.call( this );
@@ -9518,6 +9626,10 @@ Camera.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ */
 
 function Ray( origin, direction ) {
 
@@ -10188,6 +10300,11 @@ var RGBDEncoding = 3006;
 var BasicDepthPacking = 3200;
 var RGBADepthPacking = 3201;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function Material() {
 
 	Object.defineProperty( this, 'id', { value: MaterialIdCount() } );
@@ -10524,6 +10641,20 @@ Object.assign( Material.prototype, EventDispatcher.prototype );
 var count$2 = 0;
 function MaterialIdCount() { return count$2++; }
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  linewidth: <float>,
+ *  linecap: "round",
+ *  linejoin: "round"
+ * }
+ */
+
 function LineBasicMaterial( parameters ) {
 
 	Material.call( this );
@@ -10560,6 +10691,10 @@ LineBasicMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Line( geometry, material, mode ) {
 
@@ -10742,6 +10877,10 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function LineSegments( geometry, material ) {
 
 	Line.call( this, geometry, material );
@@ -10757,6 +10896,15 @@ LineSegments.prototype = Object.assign( Object.create( Line.prototype ), {
 	isLineSegments: true
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ *	- shows frustum, line of sight and up of the camera
+ *	- suitable for fast updates
+ * 	- based on frustum visualization in lightgl.js shadowmap example
+ *		http://evanw.github.com/lightgl.js/tests/shadowmap.html
+ */
 
 function CameraHelper( camera ) {
 
@@ -10938,6 +11086,12 @@ CameraHelper.prototype.update = function () {
 	};
 
 }();
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author szimek / https://github.com/szimek/
+ */
 
 function Texture( image, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding ) {
 
@@ -11218,6 +11372,17 @@ Object.assign( Texture.prototype, EventDispatcher.prototype );
 var count$3 = 0;
 function TextureIdCount() { return count$3++; }
 
+/**
+ * @author szimek / https://github.com/szimek/
+ * @author alteredq / http://alteredqualia.com/
+ * @author Marius Kintel / https://github.com/kintel
+ */
+
+/*
+ In options, we can specify:
+ * Texture parameters for an auto-generated target texture
+ * depthBuffer/stencilBuffer: Booleans to indicate if we should generate these buffers
+*/
 function WebGLRenderTarget( width, height, options ) {
 
 	this.uuid = _Math.generateUUID();
@@ -11293,6 +11458,10 @@ Object.assign( WebGLRenderTarget.prototype, EventDispatcher.prototype, {
 
 } );
 
+/**
+ * @author alteredq / http://alteredqualia.com
+ */
+
 function WebGLRenderTargetCube( width, height, options ) {
 
 	WebGLRenderTarget.call( this, width, height, options );
@@ -11306,6 +11475,13 @@ WebGLRenderTargetCube.prototype = Object.create( WebGLRenderTarget.prototype );
 WebGLRenderTargetCube.prototype.constructor = WebGLRenderTargetCube;
 
 WebGLRenderTargetCube.prototype.isWebGLRenderTargetCube = true;
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author greggman / http://games.greggman.com/
+ * @author zz85 / http://www.lab4games.net/zz85/blog
+ * @author tschw
+ */
 
 function PerspectiveCamera( fov, aspect, near, far ) {
 
@@ -11520,6 +11696,13 @@ PerspectiveCamera.prototype = Object.assign( Object.create( Camera.prototype ), 
 
 } );
 
+/**
+ * Camera for rendering cube maps
+ *	- renders scene into axis-aligned cube
+ *
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function CubeCamera( near, far, cubeResolution ) {
 
 	Object3D.call( this );
@@ -11600,6 +11783,10 @@ function CubeCamera( near, far, cubeResolution ) {
 CubeCamera.prototype = Object.create( Object3D.prototype );
 CubeCamera.prototype.constructor = CubeCamera;
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function LightShadow( camera ) {
 
 	this.camera = camera;
@@ -11651,6 +11838,11 @@ Object.assign( LightShadow.prototype, {
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author arose / http://github.com/arose
+ */
 
 function OrthographicCamera( left, right, top, bottom, near, far ) {
 
@@ -11769,6 +11961,10 @@ OrthographicCamera.prototype = Object.assign( Object.create( Camera.prototype ),
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function DirectionalLightShadow( light ) {
 
 	LightShadow.call( this, new OrthographicCamera( - 5, 5, 5, - 5, 0.5, 500 ) );
@@ -11780,6 +11976,11 @@ DirectionalLightShadow.prototype = Object.assign( Object.create( LightShadow.pro
 	constructor: DirectionalLightShadow
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function DirectionalLight( color, intensity ) {
 
@@ -11816,6 +12017,11 @@ DirectionalLight.prototype = Object.assign( Object.create( Light.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function FogExp2 ( color, density ) {
 
 	this.name = '';
@@ -11842,6 +12048,10 @@ FogExp2.prototype.toJSON = function ( meta ) {
 	};
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ */
 
 function Line3( start, end ) {
 
@@ -11965,6 +12175,10 @@ Line3.prototype = {
 	}
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ */
 
 function Plane( normal, constant ) {
 
@@ -12194,6 +12408,11 @@ Plane.prototype = {
 	}
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function Triangle( a, b, c ) {
 
@@ -12446,6 +12665,39 @@ Triangle.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  shading: THREE.SmoothShading,
+ *  depthTest: <bool>,
+ *  depthWrite: <bool>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>
+ * }
+ */
+
 function MeshBasicMaterial( parameters ) {
 
 	Material.call( this );
@@ -12518,6 +12770,13 @@ MeshBasicMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author mikael emtinger / http://gomo.se/
+ * @author jonobr1 / http://jonobr1.com/
+ */
 
 function Mesh( geometry, material ) {
 
@@ -12854,6 +13113,57 @@ Mesh.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  roughness: <float>,
+ *  metalness: <float>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  bumpMap: new THREE.Texture( <Image> ),
+ *  bumpScale: <float>,
+ *
+ *  normalMap: new THREE.Texture( <Image> ),
+ *  normalScale: <Vector2>,
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  roughnessMap: new THREE.Texture( <Image> ),
+ *
+ *  metalnessMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.CubeTexture( [posx, negx, posy, negy, posz, negz] ),
+ *  envMapIntensity: <float>
+ *
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
+
 function MeshStandardMaterial( parameters ) {
 
 	Material.call( this );
@@ -12973,6 +13283,10 @@ MeshStandardMaterial.prototype.copy = function ( source ) {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function Scene () {
 
 	Object3D.call( this );
@@ -13016,6 +13330,10 @@ Scene.prototype.toJSON = function ( meta ) {
 	return data;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function CubeTexture( images, mapping, wrapS, wrapT, magFilter, minFilter, format, type, anisotropy, encoding ) {
 
@@ -13971,6 +14289,10 @@ var ShaderChunk = {
 	shadow_vert: shadow_vert
 };
 
+/**
+ * Uniforms library for shared webgl shaders
+ */
+
 var UniformsLib = {
 
 	common: {
@@ -14124,6 +14446,12 @@ var UniformsLib = {
 	}
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ * @author mrdoob / http://mrdoob.com/
+ * @author mikael emtinger / http://gomo.se/
+ */
 
 var ShaderLib = {
 
@@ -14347,6 +14675,10 @@ ShaderLib.physical = {
 	fragmentShader: ShaderChunk.meshphysical_frag
 
 };
+
+/**
+ * @author bhouston / http://clara.io
+ */
 
 function Box2( min, max ) {
 
@@ -14580,6 +14912,11 @@ Box2.prototype = {
 	}
 
 };
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function LensFlarePlugin( renderer, flares ) {
 
@@ -14959,6 +15296,11 @@ function LensFlarePlugin( renderer, flares ) {
 
 }
 
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
 function SpritePlugin( renderer, sprites ) {
 
 	var gl = renderer.context;
@@ -15328,6 +15670,27 @@ function SpritePlugin( renderer, sprites ) {
 
 }
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  defines: { "label" : "value" },
+ *  uniforms: { "parameter1": { value: 1.0 }, "parameter2": { value2: 2 } },
+ *
+ *  fragmentShader: <string>,
+ *  vertexShader: <string>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  lights: <bool>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
+
 function ShaderMaterial( parameters ) {
 
 	Material.call( this );
@@ -15429,6 +15792,29 @@ ShaderMaterial.prototype.toJSON = function ( meta ) {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / https://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>
+ * }
+ */
+
 function MeshDepthMaterial( parameters ) {
 
 	Material.call( this );
@@ -15486,6 +15872,12 @@ MeshDepthMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author bhouston / http://clara.io
+ */
 
 function Frustum( p0, p1, p2, p3, p4, p5 ) {
 
@@ -16127,6 +16519,11 @@ function WebGLShadowMap( _renderer, _lights, _objects, capabilities ) {
 	}
 
 }
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * based on http://papervision3d.googlecode.com/svn/trunk/as3/trunk/src/org/papervision3d/objects/primitives/Plane.as
+ */
 
 function PlaneBufferGeometry( width, height, widthSegments, heightSegments ) {
 
@@ -19909,6 +20306,14 @@ function WebGLClipping() {
 
 }
 
+/**
+ * @author supereggbert / http://www.paulbrunt.co.uk/
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ * @author szimek / https://github.com/szimek/
+ * @author tschw
+ */
+
 function WebGLRenderer( parameters ) {
 
 	console.log( 'THREE.WebGLRenderer', REVISION );
@@ -22707,6 +23112,16 @@ function WebGLRenderer( parameters ) {
 
 }
 
+/**
+ * @author bhouston / http://clara.io
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
+ *
+ * The poles (phi) are at the positive and negative y axis.
+ * The equator starts at positive z.
+ */
+
 function Spherical( radius, phi, theta ) {
 
 	this.radius = ( radius !== undefined ) ? radius : 1.0;
@@ -22780,6 +23195,21 @@ Spherical.prototype = {
 };
 
 // ES6 Module from three/examples/js/controls/OrbitControls.js
+
+/**
+ * @author qiao / https://github.com/qiao
+ * @author mrdoob / http://mrdoob.com
+ * @author alteredq / http://alteredqualia.com/
+ * @author WestLangley / http://github.com/WestLangley
+ * @author erich666 / http://erichaines.com
+ */
+
+// This set of controls performs orbiting, dollying (zooming), and panning.
+// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
+//
+//    Orbit - left mouse / touch: one finger move
+//    Zoom - middle mouse, or mousewheel / touch: two finger spread or squish
+//    Pan - right mouse, or arrow keys / touch: three finter swipe
 
 var OrbitControls = function OrbitControls(object, domElement) {
 
@@ -23702,6 +24132,11 @@ Object.defineProperties(OrbitControls.prototype, {
 
 });
 
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ * based on THREE.SphereGeometry
+ */
+
 function SphereBufferGeometry( radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength ) {
 
 	BufferGeometry.call( this );
@@ -24031,6 +24466,22 @@ var set$1 = function set$1(object, property, value, receiver) {
 
 // ES6 Module from three/examples/js/SkyShader.js
 
+/**
+ * @author zz85 / https://github.com/zz85
+ *
+ * Based on "A Practical Analytic Model for Daylight"
+ * aka The Preetham Model, the de facto standard analytic skydome model
+ * http://www.cs.utah.edu/~shirley/papers/sunsky/sunsky.pdf
+ *
+ * First implemented by Simon Wallner
+ * http://www.simonwallner.at/projects/atmospheric-scattering
+ *
+ * Improved by Martin Upitis
+ * http://blenderartists.org/forum/showthread.php?245954-preethams-sky-impementation-HDR
+ *
+ * Three.js integration by zz85 http://twitter.com/blurspline
+*/
+
 var skyShader = {
 
   uniforms: {
@@ -24136,6 +24587,10 @@ var Sky = function Sky(opts) {
   this.uniforms = skyUniforms;
 };
 
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
+
 function InstancedBufferGeometry() {
 
 	BufferGeometry.call( this );
@@ -24193,6 +24648,10 @@ InstancedBufferGeometry.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
 
 function InterleavedBuffer( array, stride ) {
 
@@ -24286,6 +24745,10 @@ InterleavedBuffer.prototype = {
 
 };
 
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
+
 function InstancedInterleavedBuffer( array, stride, meshPerAttribute ) {
 
 	InterleavedBuffer.call( this, array, stride );
@@ -24308,6 +24771,10 @@ InstancedInterleavedBuffer.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author benaadams / https://twitter.com/ben_a_adams
+ */
 
 function InterleavedBufferAttribute( interleavedBuffer, itemSize, offset, normalized ) {
 
@@ -24434,6 +24901,20 @@ InterleavedBufferAttribute.prototype = {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  size: <float>,
+ *  sizeAttenuation: <bool>
+ * }
+ */
+
 function PointsMaterial( parameters ) {
 
 	Material.call( this );
@@ -24472,6 +24953,10 @@ PointsMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Points( geometry, material ) {
 
@@ -24605,6 +25090,10 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function RawShaderMaterial( parameters ) {
 
 	ShaderMaterial.call( this, parameters );
@@ -24620,6 +25109,30 @@ RawShaderMaterial.prototype.isRawShaderMaterial = true;
 
 var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
+/**
+ * @class Common utilities
+ * @name glMatrix
+ */
 var glMatrix$2 = {};
 
 // Configuration Constants
@@ -24667,33 +25180,69 @@ glMatrix$2.equals = function(a, b) {
 
 var common$1 = glMatrix$2;
 
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
 var glMatrix$3 = common$1;
 
-/**
- * @class 2x2 Matrix
- * @name mat2
- */
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
 
 var glMatrix$4 = common$1;
 
-/**
- * @class 2x3 Matrix
- * @name mat2d
- * 
- * @description 
- * A mat2d contains six elements defined as:
- * <pre>
- * [a, c, tx,
- *  b, d, ty]
- * </pre>
- * This is a short form for the 3x3 matrix:
- * <pre>
- * [a, c, tx,
- *  b, d, ty,
- *  0, 0, 1]
- * </pre>
- * The last row is ignored so the array is shorter and operations are faster.
- */
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
 
 var glMatrix$5 = common$1;
 
@@ -25421,6 +25970,26 @@ mat3$1.equals = function (a, b) {
 
 
 var mat3_1 = mat3$1;
+
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
 
 var glMatrix$6 = common$1;
 
@@ -27535,6 +28104,26 @@ mat4$1.equals = function (a, b) {
             Math.abs(a15 - b15) <= glMatrix$6.EPSILON*Math.max(1.0, Math.abs(a15), Math.abs(b15)));
 };
 
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
 var glMatrix$8 = common$1;
 
 /**
@@ -28293,6 +28882,26 @@ vec3$2.equals = function (a, b) {
 
 var vec3_1 = vec3$2;
 
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
 var glMatrix$9 = common$1;
 
 /**
@@ -28883,6 +29492,26 @@ vec4$2.equals = function (a, b) {
 
 var vec4_1 = vec4$2;
 
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
 var glMatrix$7 = common$1;
 var mat3$2 = mat3_1;
 var vec3$1 = vec3_1;
@@ -29461,6 +30090,26 @@ quat$1.exactEquals = vec4$1.exactEquals;
  * @returns {Boolean} True if the vectors are equal, false otherwise.
  */
 quat$1.equals = vec4$1.equals;
+
+/* Copyright (c) 2015, Brandon Jones, Colin MacKenzie IV.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
 
 var glMatrix$10 = common$1;
 
@@ -30462,6 +31111,112 @@ var ParticleEmitter = function () {
 }();
 ParticleEmitter.backend = ThreeParticleBackend;
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *	uvOffset: new THREE.Vector2(),
+ *	uvScale: new THREE.Vector2()
+ * }
+ */
+
+function SpriteMaterial( parameters ) {
+
+	Material.call( this );
+
+	this.type = 'SpriteMaterial';
+
+	this.color = new Color( 0xffffff );
+	this.map = null;
+
+	this.rotation = 0;
+
+	this.fog = false;
+	this.lights = false;
+
+	this.setValues( parameters );
+
+}
+
+SpriteMaterial.prototype = Object.create( Material.prototype );
+SpriteMaterial.prototype.constructor = SpriteMaterial;
+
+SpriteMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
+
+	this.color.copy( source.color );
+	this.map = source.map;
+
+	this.rotation = source.rotation;
+
+	return this;
+
+};
+
+/**
+ * @author mikael emtinger / http://gomo.se/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+function Sprite( material ) {
+
+	Object3D.call( this );
+
+	this.type = 'Sprite';
+
+	this.material = ( material !== undefined ) ? material : new SpriteMaterial();
+
+}
+
+Sprite.prototype = Object.assign( Object.create( Object3D.prototype ), {
+
+	constructor: Sprite,
+
+	isSprite: true,
+
+	raycast: ( function () {
+
+		var matrixPosition = new Vector3();
+
+		return function raycast( raycaster, intersects ) {
+
+			matrixPosition.setFromMatrixPosition( this.matrixWorld );
+
+			var distanceSq = raycaster.ray.distanceSqToPoint( matrixPosition );
+			var guessSizeSq = this.scale.x * this.scale.y / 4;
+
+			if ( distanceSq > guessSizeSq ) {
+
+				return;
+
+			}
+
+			intersects.push( {
+
+				distance: Math.sqrt( distanceSq ),
+				point: this.position,
+				face: null,
+				object: this
+
+			} );
+
+		};
+
+	}() ),
+
+	clone: function () {
+
+		return new this.constructor( this.material ).copy( this );
+
+	}
+
+} );
+
 var GrayBox = function () {
   function GrayBox() {
     classCallCheck(this, GrayBox);
@@ -30518,6 +31273,17 @@ var GrayBox = function () {
       return mesh;
     }
   }, {
+    key: 'createSprite',
+    value: function createSprite(texture, x, y, z, sx, sy, sz) {
+      var color = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0xffffff;
+
+      var material = new SpriteMaterial({ map: texture, color: color });
+      var sprite = new Sprite(material);
+      sprite.position.set(x, y, z);
+      sprite.scale.set(sx, sy, sz);
+      return sprite;
+    }
+  }, {
     key: 'createBox',
     value: function createBox(x, y, z, sx, sy, sz, color) {
       var geometry = GrayBox.geometries.box;
@@ -30541,6 +31307,16 @@ GrayBox.geometries = {
   sphere: new SphereBufferGeometry(0.5, 36, 36)
 };
 
+function fInterpTo(value, target, speed, dt) {
+  if (value < target) {
+    return Math.min(target, value + speed * dt);
+  } else if (value > target) {
+    return Math.max(target, value - speed * dt);
+  } else {
+    return target;
+  }
+}
+
 var smootherstep = _Math.smootherstep;
 var lerp = _Math.lerp;
 
@@ -30553,9 +31329,15 @@ var ADS_TIME = 0.14;
 var FOV_ADS_MUL = 0.8;
 var ANGLE_LAG_SMOOTH_TIME = 0.1;
 var STRAFE_ROLL_SMOOTH_TIME = 0.2;
-var RUN_SMOOTH_TIME = 0.08;
+var RUN_SMOOTH_TIME = 0.16;
 var MOVE_SMOOTH_TIME = 0.1;
 var STOP_SMOOTH_TIME = 0.2;
+var FIRE_COOLDOWN = 0.5;
+var FIRE_KICK_FORCE = 0.6;
+var FIRE_KICK_TIME = 0.05;
+
+var RETICLE_SIDES_OPACITY = 0.6;
+var RETICLE_SCALE = 0.1;
 
 var GUN_POS = new Vector3(0.12, -0.11, -0.28);
 var GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
@@ -30582,7 +31364,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.onMouseDown = function (event) {
       switch (event.button) {
         case 0:
-          _this.keys.fire = 1;break;
+          _this.fire(true);break;
         case 2:
           _this.aim(true);break;
       }
@@ -30591,7 +31373,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.onMouseUp = function (event) {
       switch (event.button) {
         case 0:
-          _this.keys.fire = 0;break;
+          _this.fire(false);break;
         case 2:
           _this.aim(false);break;
       }
@@ -30651,6 +31433,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.smoothRun = 0;
     _this.smoothMove = 0;
     _this.smoothAim = 0;
+    _this.smoothCooldown = 0;
     _this.keys = {
       forward: 0,
       back: 0,
@@ -30660,6 +31443,7 @@ var FirstPersonPlayer = function (_Object3D) {
       aim: 0
     };
     _this.aimTiming = 0;
+    _this.fireTiming = 0;
     _this.walkSpeed = 10 * KMPH_TO_MPS;
     _this.runSpeed = 20 * KMPH_TO_MPS;
     _this.pixelRatio = new Vector2();
@@ -30668,7 +31452,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.headPosition = new Vector3(0, 1.7, 0);
     _this.head.position.copy(_this.headPosition);
     _this.add(_this.head);
-    _this.gunRotation = new Vector3(-Math.PI / 2, 0, Math.PI);
+    _this.gunRotation = new Euler(-Math.PI / 2, 0, Math.PI);
 
     _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     _this.camera.position.set(0, 0, 0);
@@ -30699,8 +31483,41 @@ var FirstPersonPlayer = function (_Object3D) {
       this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
       this.gun.castShadow = false;
       this.gun.receiveShadow = false;
-      this.gun.rotation.setFromVector3(this.gunRotation);
+      this.gun.rotation.copy(this.gunRotation);
       this.head.add(this.gun);
+      var centerTex = this.app.loader.getAsset('/textures/reticle.default.center.png').texture;
+      var sidesTex = this.app.loader.getAsset('/textures/reticle.default.sides.png').texture;
+      var s = RETICLE_SCALE;
+      var centerReticle = GrayBox.createSprite(centerTex, 0, 0, -1, s, s, s);
+      var sidesReticle = GrayBox.createSprite(sidesTex, 0, 0, -1, s, s, s);
+      this.reticles = [centerReticle, sidesReticle];
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.reticles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var ret = _step.value;
+
+          ret.material.depthTest = false;
+          ret.material.depthWrite = false;
+          ret.material.blending = AdditiveBlending;
+          this.camera.add(ret);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
     }
   }, {
     key: 'tick',
@@ -30715,9 +31532,7 @@ var FirstPersonPlayer = function (_Object3D) {
 
       if (this.frameMotion.z == 0 && this.frameMotion.x == 0) {
         // Cancel Run if no motion.
-        if (this.keys.run) {
-          this.toggleRun();
-        }
+        this.run(false);
         this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
       } else {
         this.smoothMove = lerp(this.smoothMove, 1, dt / MOVE_SMOOTH_TIME);
@@ -30731,9 +31546,10 @@ var FirstPersonPlayer = function (_Object3D) {
       // Save and smooth local motion and orientation for later
       var localFrameMotion = this.tmpVec3;
       localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
       this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
       this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
-      this.smoothRun = lerp(this.smoothRun, this.keys.run, dt / RUN_SMOOTH_TIME);
+      this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
 
       // Apply motion
       // Transform motion to world space
@@ -30746,8 +31562,14 @@ var FirstPersonPlayer = function (_Object3D) {
       // Horizontal angle on the body
       this.rotation.y = this.orientation.y;
 
+      // Reset gun rotation and position
+      this.gun.rotation.copy(this.gunRotation);
+      this.gun.position.copy(GUN_POS);
+
       this.tickAim(dt);
       this.tickWobble(dt);
+      this.tickFire(dt);
+      this.tickReticles(dt);
     }
   }, {
     key: 'tickAim',
@@ -30766,7 +31588,6 @@ var FirstPersonPlayer = function (_Object3D) {
   }, {
     key: 'tickWobble',
     value: function tickWobble(dt) {
-
       // Motion wobble
       var walkWobbleX = Math.cos(this.app.time * 6.0) * 0.005;
       var runWobbleX = Math.cos(this.app.time * 10.0) * 0.008;
@@ -30786,19 +31607,61 @@ var FirstPersonPlayer = function (_Object3D) {
 
       // Aim wobble+lag
       this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
-      this.gun.rotation.x = this.gunRotation.x + this.smoothLocalFrameAngle.x * 0.5 // Vertical
+      this.gun.rotation.x += this.smoothLocalFrameAngle.x * 0.5 // Vertical
       + wobbleY * 1 + this.smoothRun * 0.7; // Run rotation
-      this.gun.rotation.z = this.gunRotation.z + this.smoothLocalFrameAngle.y * 0.5 // Horizontal
+      this.gun.rotation.z += this.smoothLocalFrameAngle.y * 0.5 // Horizontal
       - wobbleX * 3 + this.smoothRun * 0.15; // Run rotation
       // Roll when strafing
-      this.gun.rotation.y = this.gunRotation.y + this.smoothLocalFrameMotion.x * 1; // Roll
+      this.gun.rotation.y += this.smoothLocalFrameMotion.x * 1; // Roll
+    }
+  }, {
+    key: 'tickFire',
+    value: function tickFire(dt) {
+      if (this.fireTiming <= 0) {
+        console.log(!this.smoothRun, this.smoothRun);
+      }
+      if (this.fireTiming > 0.0) {
+        this.fireTiming -= dt;
+        this.fireTiming = Math.max(this.fireTiming, 0);
+      } else if (this.keys.fire && !this.smoothRun) {
+        this.fireTiming = FIRE_COOLDOWN;
+      }
+      // TODO: VFX
+      // TODO: Really need custom curves for these...
+      var kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
+      if (this.fireTiming > kickTime) {
+        this.smoothCooldown = 1 - smootherstep(this.fireTiming, kickTime, FIRE_COOLDOWN);
+      } else {
+        this.smoothCooldown = smootherstep(this.fireTiming, 0, kickTime);
+      }
+      var kick = this.smoothCooldown * FIRE_KICK_FORCE;
+      this.gun.position.x += 0.04 * kick;
+      this.gun.position.y += 0.08 * kick;
+      this.gun.position.z += 0.12 * kick;
+      this.gun.rotation.x += 0.6 * kick;
+      this.gun.rotation.y += 0.3 * kick;
+    }
+  }, {
+    key: 'tickReticles',
+    value: function tickReticles(dt) {
+      var baseOpacity = 1.0 - Math.max(this.smoothAim, this.smoothRun);
+      var fireOpacity = 1.0 - Math.min(this.fireTiming / 0.1, 1);
+      this.reticles[0].material.opacity = baseOpacity * fireOpacity;
+      this.reticles[1].material.opacity = baseOpacity * RETICLE_SIDES_OPACITY * (1 - this.smoothCooldown);
+      this.reticles[1].scale.setScalar(RETICLE_SCALE * (1 + this.smoothCooldown));
     }
   }, {
     key: 'toggleRun',
     value: function toggleRun() {
-      if (this.keys.run) {
+      this.run(!this.keys.run);
+    }
+  }, {
+    key: 'run',
+    value: function run(enable) {
+      if (!enable) {
         this.keys.run = 0;
       } else if (!this.keys.aim) {
+        this.fire(false);
         this.keys.run = 1;
       }
     }
@@ -30806,8 +31669,16 @@ var FirstPersonPlayer = function (_Object3D) {
     key: 'aim',
     value: function aim(enable) {
       this.keys.aim = enable ? 1 : 0;
-      if (enable && this.keys.run) {
-        this.toggleRun();
+      if (enable) {
+        this.run(false);
+      }
+    }
+  }, {
+    key: 'fire',
+    value: function fire(enable) {
+      this.keys.fire = enable ? 1 : 0;
+      if (enable) {
+        this.run(false);
       }
     }
   }, {
@@ -30942,6 +31813,10 @@ function LoadingManager( onLoad, onProgress, onError ) {
 }
 
 var DefaultLoadingManager = new LoadingManager();
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function XHRLoader( manager ) {
 
@@ -31157,6 +32032,10 @@ Object.assign( XHRLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function ImageLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -31230,6 +32109,10 @@ Object.assign( ImageLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function TextureLoader( manager ) {
 
 	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
@@ -31292,6 +32175,10 @@ Object.assign( TextureLoader.prototype, {
 
 } );
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
 function ShadowMaterial() {
 
 	ShaderMaterial.call( this, {
@@ -31327,39 +32214,9 @@ ShadowMaterial.prototype.constructor = ShadowMaterial;
 
 ShadowMaterial.prototype.isShadowMaterial = true;
 
-function SpriteMaterial( parameters ) {
-
-	Material.call( this );
-
-	this.type = 'SpriteMaterial';
-
-	this.color = new Color( 0xffffff );
-	this.map = null;
-
-	this.rotation = 0;
-
-	this.fog = false;
-	this.lights = false;
-
-	this.setValues( parameters );
-
-}
-
-SpriteMaterial.prototype = Object.create( Material.prototype );
-SpriteMaterial.prototype.constructor = SpriteMaterial;
-
-SpriteMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-	this.map = source.map;
-
-	this.rotation = source.rotation;
-
-	return this;
-
-};
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function MultiMaterial( materials ) {
 
@@ -31427,6 +32284,14 @@ MultiMaterial.prototype = {
 
 };
 
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  reflectivity: <float>
+ * }
+ */
+
 function MeshPhysicalMaterial( parameters ) {
 
 	MeshStandardMaterial.call( this );
@@ -31463,6 +32328,56 @@ MeshPhysicalMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  specular: <hex>,
+ *  shininess: <float>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  bumpMap: new THREE.Texture( <Image> ),
+ *  bumpScale: <float>,
+ *
+ *  normalMap: new THREE.Texture( <Image> ),
+ *  normalScale: <Vector2>,
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
 
 function MeshPhongMaterial( parameters ) {
 
@@ -31575,6 +32490,17 @@ MeshPhongMaterial.prototype.copy = function ( source ) {
 
 };
 
+/**
+ * @author mrdoob / http://mrdoob.com/
+ *
+ * parameters = {
+ *  opacity: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>
+ * }
+ */
+
 function MeshNormalMaterial( parameters ) {
 
 	Material.call( this, parameters );
@@ -31607,6 +32533,44 @@ MeshNormalMaterial.prototype.copy = function ( source ) {
 	return this;
 
 };
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
 
 function MeshLambertMaterial( parameters ) {
 
@@ -31695,6 +32659,21 @@ MeshLambertMaterial.prototype.copy = function ( source ) {
 
 };
 
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  linewidth: <float>,
+ *
+ *  scale: <float>,
+ *  dashSize: <float>,
+ *  gapSize: <float>
+ * }
+ */
+
 function LineDashedMaterial( parameters ) {
 
 	Material.call( this );
@@ -31756,6 +32735,10 @@ var Materials = Object.freeze({
 	LineBasicMaterial: LineBasicMaterial,
 	Material: Material
 });
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
 
 function MaterialLoader( manager ) {
 
@@ -31907,6 +32890,10 @@ Object.assign( MaterialLoader.prototype, {
 	}
 
 } );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function Loader$1() {
 
@@ -32646,6 +33633,16 @@ Object.assign( Interpolant.prototype, {
 
 } );
 
+/**
+ * Fast and simple cubic spline interpolant.
+ *
+ * It was derived from a Hermitian construction setting the first derivative
+ * at each sample position to the linear slope between neighboring positions
+ * over their parameter interval.
+ *
+ * @author tschw
+ */
+
 function CubicInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
@@ -32789,6 +33786,10 @@ CubicInterpolant.prototype =
 
 } );
 
+/**
+ * @author tschw
+ */
+
 function LinearInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
 
@@ -32827,6 +33828,14 @@ LinearInterpolant.prototype =
 	}
 
 } );
+
+/**
+ *
+ * Interpolant that evaluates to the sample value at the position preceeding
+ * the parameter.
+ *
+ * @author tschw
+ */
 
 function DiscreteInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
@@ -33227,6 +34236,16 @@ function KeyframeTrackConstructor( name, times, values, interpolation ) {
 
 }
 
+/**
+ *
+ * A Track of vectored keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function VectorKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -33245,6 +34264,12 @@ VectorKeyframeTrack.prototype =
 	// DefaultInterpolation is inherited
 
 } );
+
+/**
+ * Spherical linear unit quaternion interpolant.
+ *
+ * @author tschw
+ */
 
 function QuaternionLinearInterpolant(
 		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
@@ -33282,6 +34307,15 @@ QuaternionLinearInterpolant.prototype =
 
 } );
 
+/**
+ *
+ * A Track of quaternion keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function QuaternionKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -33310,6 +34344,15 @@ QuaternionKeyframeTrack.prototype =
 
 } );
 
+/**
+ *
+ * A Track of numeric keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function NumberKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -33328,6 +34371,16 @@ NumberKeyframeTrack.prototype =
 	// DefaultInterpolation is inherited
 
 } );
+
+/**
+ *
+ * A Track that interpolates Strings
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function StringKeyframeTrack( name, times, values, interpolation ) {
 
@@ -33350,6 +34403,16 @@ StringKeyframeTrack.prototype =
 	InterpolantFactoryMethodSmooth: undefined
 
 } );
+
+/**
+ *
+ * A Track of Boolean keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function BooleanKeyframeTrack( name, times, values ) {
 
@@ -33376,6 +34439,16 @@ BooleanKeyframeTrack.prototype =
 
 } );
 
+/**
+ *
+ * A Track of keyframe values that represent color.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
 function ColorKeyframeTrack( name, times, values, interpolation ) {
 
 	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
@@ -33398,6 +34471,16 @@ ColorKeyframeTrack.prototype =
 	// However, this is the place for color space parameterization.
 
 } );
+
+/**
+ *
+ * A timed sequence of keyframes for a specific property.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
 
 function KeyframeTrack( name, times, values, interpolation ) {
 
@@ -33532,6 +34615,14 @@ Object.assign( KeyframeTrack, {
 	}
 
 } );
+
+/**
+ *
+ * Reusable set of Tracks that represent an animation.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ */
 
 function AnimationClip( name, duration, tracks ) {
 
@@ -33881,6 +34972,11 @@ Object.assign( AnimationClip, {
 	}
 
 } );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
 
 function JSONLoader( manager ) {
 
@@ -34595,7 +35691,7 @@ var Loader = function () {
   return Loader;
 }();
 
-var ASSETS = [{ path: '/textures/default.png', type: 'texture' }, { path: '/models/gun/gun.json', type: 'json/model' }, { path: '/models/gun/gun.albedo.jpg', type: 'texture' }, { path: '/models/gun/gun.ao.jpg', type: 'texture' }, { path: '/models/gun/gun.normal.jpg', type: 'texture' }, { path: '/models/gun/gun.roughness.jpg', type: 'texture' }, { path: '/models/gun/gun.metalness.jpg', type: 'texture' }];
+var ASSETS = [{ path: '/textures/default.png', type: 'texture' }, { path: '/models/gun/gun.json', type: 'json/model' }, { path: '/models/gun/gun.albedo.jpg', type: 'texture' }, { path: '/models/gun/gun.ao.jpg', type: 'texture' }, { path: '/models/gun/gun.normal.jpg', type: 'texture' }, { path: '/models/gun/gun.roughness.jpg', type: 'texture' }, { path: '/models/gun/gun.metalness.jpg', type: 'texture' }, { path: '/textures/reticle.default.png', type: 'texture' }, { path: '/textures/reticle.default.center.png', type: 'texture' }, { path: '/textures/reticle.default.sides.png', type: 'texture' }];
 
 var App = function () {
   function App(opts) {
@@ -34652,7 +35748,7 @@ var App = function () {
     this.pixelRatio = opts.pixelRatio || 1;
     this.renderRatio = 0.75;
     this.aspectRatio = this.width / this.height;
-    this.near = opts.near || 0.1;
+    this.near = opts.near || 0.01;
     this.far = opts.far || 1000;
     this.fov = opts.fov || 80;
     this.dom = opts.dom;

@@ -31,7 +31,10 @@ const ASSETS = [
   {path: '/models/gun/gun.ao.jpg', type: 'texture'},
   {path: '/models/gun/gun.normal.jpg', type: 'texture'},
   {path: '/models/gun/gun.roughness.jpg', type: 'texture'},
-  {path: '/models/gun/gun.metalness.jpg', type: 'texture'}
+  {path: '/models/gun/gun.metalness.jpg', type: 'texture'},
+  {path: '/textures/reticle.default.png', type: 'texture'},
+  {path: '/textures/reticle.default.center.png', type: 'texture'},
+  {path: '/textures/reticle.default.sides.png', type: 'texture'}
 ]
 
 class App {
@@ -43,7 +46,7 @@ class App {
     this.pixelRatio = opts.pixelRatio || 1;
     this.renderRatio = 0.75;
     this.aspectRatio = this.width / this.height;
-    this.near = opts.near || 0.1;
+    this.near = opts.near || 0.01;
     this.far = opts.far || 1000;
     this.fov = opts.fov || 80;
     this.dom = opts.dom;
