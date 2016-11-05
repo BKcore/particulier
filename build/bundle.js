@@ -31449,6 +31449,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.pixelRatio = new Vector2();
     _this.onWindowResize();
     _this.head = new Object3D();
+    _this.headRotation = new Euler(0, 0, 0);
     _this.headPosition = new Vector3(0, 1.7, 0);
     _this.head.position.copy(_this.headPosition);
     _this.add(_this.head);
@@ -31556,6 +31557,9 @@ var FirstPersonPlayer = function (_Object3D) {
       this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
       this.position.add(this.frameMotion);
 
+      this.head.position.copy(this.headPosition);
+      this.head.rotation.copy(this.headRotation);
+
       // Apply orientation
       // Vertical angle on the head
       this.head.rotation.x = this.orientation.x;
@@ -31602,8 +31606,8 @@ var FirstPersonPlayer = function (_Object3D) {
 
       this.camera.position.y = wobbleY;
       this.camera.position.x = wobbleX;
-      this.head.position.x = this.headPosition.x + wobbleX * 2;
-      this.head.position.y = this.headPosition.y + wobbleY * 2;
+      this.head.position.x += wobbleX * 2;
+      this.head.position.y += wobbleY * 2;
 
       // Aim wobble+lag
       this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
@@ -31617,14 +31621,13 @@ var FirstPersonPlayer = function (_Object3D) {
   }, {
     key: 'tickFire',
     value: function tickFire(dt) {
-      if (this.fireTiming <= 0) {
-        console.log(!this.smoothRun, this.smoothRun);
-      }
       if (this.fireTiming > 0.0) {
         this.fireTiming -= dt;
         this.fireTiming = Math.max(this.fireTiming, 0);
       } else if (this.keys.fire && !this.smoothRun) {
         this.fireTiming = FIRE_COOLDOWN;
+        this.orientation.x += FIRE_KICK_FORCE * 0.03;
+        this.orientation.y -= FIRE_KICK_FORCE * 0.015;
       }
       // TODO: VFX
       // TODO: Really need custom curves for these...
@@ -31640,6 +31643,8 @@ var FirstPersonPlayer = function (_Object3D) {
       this.gun.position.z += 0.12 * kick;
       this.gun.rotation.x += 0.6 * kick;
       this.gun.rotation.y += 0.3 * kick;
+      this.head.position.z += 0.2 * kick;
+      this.head.rotation.x += 0.15 * kick;
     }
   }, {
     key: 'tickReticles',
