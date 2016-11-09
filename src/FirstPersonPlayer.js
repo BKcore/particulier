@@ -162,6 +162,8 @@ export class FirstPersonPlayer extends Object3D {
     this.tickWobble(dt);
     this.tickFire(dt);
     this.tickReticles(dt);
+
+    this.camera.updateProjectionMatrix();
   }
 
   tickAim(dt) {
@@ -174,7 +176,6 @@ export class FirstPersonPlayer extends Object3D {
     this.gun.position.lerpVectors(GUN_POS, GUN_POS_ADS, this.smoothAim);
     this.gun.position.lerp(GUN_POS_RUN, this.smoothRun);
     this.camera.fov = lerp(this.app.fov, this.app.fov * FOV_ADS_MUL, this.smoothAim);
-    this.camera.updateProjectionMatrix();
   }
 
   tickWobble(dt) {
@@ -217,7 +218,7 @@ export class FirstPersonPlayer extends Object3D {
     else if(this.keys.fire && !this.smoothRun) {
       this.fireTiming = FIRE_COOLDOWN;
       this.orientation.x += FIRE_KICK_FORCE * 0.03;
-      this.orientation.y -= FIRE_KICK_FORCE * 0.015;
+      this.orientation.y -= FIRE_KICK_FORCE * 0.01;
     }
     // TODO: VFX
     // TODO: Really need custom curves for these...
@@ -233,8 +234,8 @@ export class FirstPersonPlayer extends Object3D {
     this.gun.position.z += 0.12 * kick;
     this.gun.rotation.x += 0.6 * kick;
     this.gun.rotation.y += 0.3 * kick;
-    this.head.position.z += 0.2 * kick;
     this.head.rotation.x += 0.15 * kick;
+    this.camera.fov += 5 * kick;
   }
 
   tickReticles(dt) {

@@ -23,6 +23,9 @@ import { ParticleSystem, ParticleEmitter } from './particulier.js';
 import { GrayBox } from './GrayBox.js';
 import { FirstPersonPlayer } from './FirstPersonPlayer.js';
 import { Loader } from './Loader.js';
+import { Physics } from './Physics.js';
+
+import { randomInRange } from './Utils.js';
 
 const ASSETS = [
   {path: '/textures/default.png', type: 'texture'},
@@ -51,6 +54,7 @@ class App {
     this.fov = opts.fov || 80;
     this.dom = opts.dom;
     this.time = performance.now() * 0.001;
+    this.lastTime = this.time;
     this.boxes = [];
     this.camera = null;
 
@@ -76,8 +80,9 @@ class App {
   onRequestAnimationFrame = () => {
     requestAnimationFrame(this.onRequestAnimationFrame);
     let now = performance.now() * 0.001;
-    let dt = now - this.time;
-    this.time = now;
+    let dt = Math.min(1/10, now - this.lastTime);
+    this.lastTime = now;
+    this.time += dt
     this.tick(dt);
   }
 
@@ -91,6 +96,7 @@ class App {
 
   onLoadComplete = () => {
     GrayBox.setDefaultTexture(this.loader.getAsset('/textures/default.png').texture);
+    this.initPhysics();
     this.initRenderer();
     this.initCamera();
     this.initScene();
@@ -127,6 +133,10 @@ class App {
   initListeners() {
     window.addEventListener('resize', this.onWindowResize, false);
     this.dom.addEventListener('mousedown', this.onMouseDown, false);
+  }
+
+  initPhysics() {
+    this.physics = new Physics();
   }
 
   initRenderer() {
@@ -183,16 +193,12 @@ class App {
     this.scene = new Scene();
     this.scene.fog = new FogExp2(0x818f9c, 0.0022);
     this.initLighting();
-    // this.grid = new GridHelper(200, 40, 0x0000ff, 0x444444);
-    // this.grid.position.y = 0;
-    // this.scene.add(this.grid);
-    this.ground = GrayBox.createBox(0, -5, 0, 1000, 10, 1000);
-    this.ground.frustumCulled = false;
-    this.scene.add(this.ground);
+    this.addGround();
     // Generate CubeMap before adding dynamic objects.
     this.initCubeMap();
     this.addBoxes();
     this.addSpheres();
+    this.addPhysicsBoxes();
     this.particleSystem = new ParticleSystem({maxCount: 100000});
     this.scene.add(this.particleSystem.getContainer().getMesh());
     this.particleEmitter = new ParticleEmitter(this.particleSystem);
@@ -227,6 +233,32 @@ class App {
     this.scene.add(this.sun);
     // this.shadowCameraHelper = new CameraHelper(shadow.camera);
     // this.scene.add(this.shadowCameraHelper);
+  }
+
+  addGround() {
+    this.ground = GrayBox.createBox(0, -5, 0, 1000, 10, 1000);
+    this.ground.frustumCulled = false;
+    this.scene.add(this.ground);
+    let {x, y, z} = this.ground.scale;
+    this.physics.createBoxBody(this.ground, x, y, z, 0);
+    // this.physics.createGroundBody(this.ground);
+  }
+
+  addPhysicsBoxes() {
+    let pi2 = Math.PI * 2;
+    let positionRange = [[-4, 4, -4], [4, 8, 4]];
+    let rotationRange = [[0, 0, 0], [pi2, pi2, pi2]];
+    let p = [0, 0, 0];
+    let r = [0, 0, 0];
+    for(let i = 0; i < 20; ++i) {
+      randomInRange(p, positionRange[0], positionRange[1]);
+      randomInRange(r, rotationRange[0], rotationRange[1]);
+      let s = 0.5 + Math.random() * 0.5 - 0.25;
+      let box = GrayBox.createBox(p[0], p[1], p[2], s, s, s);
+      box.rotation.fromArray(r);
+      this.scene.add(box);
+      this.physics.createBoxBody(box, s, s, s, 1);
+    }
   }
 
   addBoxes() {
@@ -273,6 +305,7 @@ class App {
 
   tick(dt) {
     this.player.tick(dt);
+    this.physics.tick(dt);
     this.sky.mesh.position.copy(this.player.position);
     if(this.camera === this.orbitCamera) {
       this.cameraControls.update();

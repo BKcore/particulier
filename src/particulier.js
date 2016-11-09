@@ -17,6 +17,16 @@ import {
   vec2
 } from 'gl-matrix'
 
+import {
+  copyVec2At,
+  copyVec3At,
+  copyVec4At,
+  randomInRange,
+  setVec2At,
+  setVec4At,
+  setVec6At
+} from './Utils.js'
+
 import vertexShader from './shaders/test.vert.glsl';
 import fragmentShader from './shaders/test.frag.glsl';
 
@@ -113,11 +123,6 @@ class Utils {
     vec[0] += scalar;
     vec[1] += scalar;
     vec[2] += scalar;
-  }
-
-  static randomScaleOffset(out, scale, offset) {
-    vec3.random(out, scale);
-    Utils.addScalar3(out, out, offset);
   }
 
   static randomInRange(out, start, end) {
