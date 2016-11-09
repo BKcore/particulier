@@ -31410,4386 +31410,6 @@ GrayBox.geometries = {
   sphere: new SphereBufferGeometry(0.5, 36, 36)
 };
 
-var smootherstep = _Math.smootherstep;
-var lerp = _Math.lerp;
-
-
-var KMPH_TO_MPS = 1000 / 3600;
-var VANGLE_MIN = -Math.PI / 2 + Math.PI / 12;
-var VANGLE_MAX = +Math.PI / 2 - Math.PI / 12;
-
-var ADS_TIME = 0.14;
-var FOV_ADS_MUL = 0.8;
-var ANGLE_LAG_SMOOTH_TIME = 0.1;
-var STRAFE_ROLL_SMOOTH_TIME = 0.2;
-var RUN_SMOOTH_TIME = 0.16;
-var MOVE_SMOOTH_TIME = 0.1;
-var STOP_SMOOTH_TIME = 0.2;
-var FIRE_COOLDOWN = 0.5;
-var FIRE_KICK_FORCE = 0.6;
-var FIRE_KICK_TIME = 0.05;
-
-var RETICLE_SIDES_OPACITY = 0.6;
-var RETICLE_SCALE = 0.1;
-
-var GUN_POS = new Vector3(0.12, -0.11, -0.28);
-var GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
-var GUN_POS_RUN = new Vector3(0.1, -0.07, -0.30);
-
-var FirstPersonPlayer = function (_Object3D) {
-  inherits(FirstPersonPlayer, _Object3D);
-
-  function FirstPersonPlayer(app) {
-    classCallCheck(this, FirstPersonPlayer);
-
-    var _this = possibleConstructorReturn(this, (FirstPersonPlayer.__proto__ || Object.getPrototypeOf(FirstPersonPlayer)).call(this));
-
-    _this.onMouseMove = function (event) {
-      var movementX = event.movementX;
-      var movementY = event.movementY;
-
-      _this.frameAngle.x = movementY * _this.pixelRatio.y;
-      _this.frameAngle.y = movementX * _this.pixelRatio.x;
-      _this.orientation.sub(_this.frameAngle);
-      _this.orientation.x = Math.max(Math.min(_this.orientation.x, VANGLE_MAX), VANGLE_MIN);
-    };
-
-    _this.onMouseDown = function (event) {
-      switch (event.button) {
-        case 0:
-          _this.fire(true);break;
-        case 2:
-          _this.aim(true);break;
-      }
-    };
-
-    _this.onMouseUp = function (event) {
-      switch (event.button) {
-        case 0:
-          _this.fire(false);break;
-        case 2:
-          _this.aim(false);break;
-      }
-    };
-
-    _this.onKeyDown = function (event) {
-      switch (event.keyCode) {
-        case 38: /*up*/
-        case 87:
-          /*W*/_this.keys.forward = 1;break;
-        case 37: /*left*/
-        case 65:
-          /*A*/_this.keys.left = 1;break;
-        case 40: /*down*/
-        case 83:
-          /*S*/_this.keys.back = 1;break;
-        case 39: /*right*/
-        case 68:
-          /*D*/_this.keys.right = 1;break;
-        case 16:
-          /*run*/_this.toggleRun();break;
-        case 221:
-          /*]*/_this.app.toggleCamera();break;
-        case 17:
-          /*control*/_this.aim(true);break;
-      }
-    };
-
-    _this.onKeyUp = function (event) {
-      switch (event.keyCode) {
-        case 38: /*up*/
-        case 87:
-          /*W*/_this.keys.forward = 0;break;
-        case 37: /*left*/
-        case 65:
-          /*A*/_this.keys.left = 0;break;
-        case 40: /*down*/
-        case 83:
-          /*S*/_this.keys.back = 0;break;
-        case 39: /*right*/
-        case 68:
-          /*D*/_this.keys.right = 0;break;
-        case 17:
-          /*control*/_this.aim(false);break;
-      }
-    };
-
-    _this.app = app;
-    _this.tmpVec3 = new Vector3();
-    _this.frameMotion = new Vector3();
-    _this.frameAngle = new Vector2();
-    _this.orientation = new Vector2(0, Math.PI / 2);
-    _this.target = new Vector3();
-    _this.sensitivity = 2.5;
-    _this.smoothLocalFrameAngle = new Vector2();
-    _this.smoothLocalFrameMotion = new Vector3();
-    _this.smoothRun = 0;
-    _this.smoothMove = 0;
-    _this.smoothAim = 0;
-    _this.smoothCooldown = 0;
-    _this.keys = {
-      forward: 0,
-      back: 0,
-      left: 0,
-      right: 0,
-      run: 0,
-      aim: 0
-    };
-    _this.aimTiming = 0;
-    _this.fireTiming = 0;
-    _this.walkSpeed = 10 * KMPH_TO_MPS;
-    _this.runSpeed = 20 * KMPH_TO_MPS;
-    _this.pixelRatio = new Vector2();
-    _this.onWindowResize();
-    _this.head = new Object3D();
-    _this.headRotation = new Euler(0, 0, 0);
-    _this.headPosition = new Vector3(0, 1.7, 0);
-    _this.head.position.copy(_this.headPosition);
-    _this.add(_this.head);
-    _this.gunRotation = new Euler(-Math.PI / 2, 0, Math.PI);
-
-    _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
-    _this.camera.position.set(0, 0, 0);
-    _this.head.add(_this.camera);
-    _this.addGun();
-
-    _this.initListeners();
-    return _this;
-  }
-
-  createClass(FirstPersonPlayer, [{
-    key: 'addGun',
-    value: function addGun() {
-      var geometry = this.app.loader.getAsset('/models/gun/gun.json').geometry;
-      var material = GrayBox.createPBRMaterial({
-        map: this.app.loader.getAsset('/models/gun/gun.albedo.jpg').texture,
-        aoMap: this.app.loader.getAsset('/models/gun/gun.ao.jpg').texture,
-        roughnessMap: this.app.loader.getAsset('/models/gun/gun.roughness.jpg').texture,
-        metalnessMap: this.app.loader.getAsset('/models/gun/gun.metalness.jpg').texture,
-        envMap: this.app.getCubeMap(),
-        roughness: 1,
-        metalness: 1
-      });
-      var x = GUN_POS.x;
-      var y = GUN_POS.y;
-      var z = GUN_POS.z;
-
-      this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
-      this.gun.castShadow = false;
-      this.gun.receiveShadow = false;
-      this.gun.rotation.copy(this.gunRotation);
-      this.head.add(this.gun);
-      var centerTex = this.app.loader.getAsset('/textures/reticle.default.center.png').texture;
-      var sidesTex = this.app.loader.getAsset('/textures/reticle.default.sides.png').texture;
-      var s = RETICLE_SCALE;
-      var centerReticle = GrayBox.createSprite(centerTex, 0, 0, -1, s, s, s);
-      var sidesReticle = GrayBox.createSprite(sidesTex, 0, 0, -1, s, s, s);
-      this.reticles = [centerReticle, sidesReticle];
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = this.reticles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var ret = _step.value;
-
-          ret.material.depthTest = false;
-          ret.material.depthWrite = false;
-          ret.material.blending = AdditiveBlending;
-          this.camera.add(ret);
-        }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'tick',
-    value: function tick(dt) {
-      this.frameMotion.set(0, 0, 0);
-
-      this.frameMotion.z -= this.keys.forward;
-      this.frameMotion.z += this.keys.back;
-      this.frameMotion.x -= this.keys.left;
-      this.frameMotion.x += this.keys.right;
-      this.frameMotion.normalize();
-
-      if (this.frameMotion.z == 0 && this.frameMotion.x == 0) {
-        // Cancel Run if no motion.
-        this.run(false);
-        this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
-      } else {
-        this.smoothMove = lerp(this.smoothMove, 1, dt / MOVE_SMOOTH_TIME);
-      }
-      var speed = this.walkSpeed;
-      if (this.keys.run) {
-        speed = this.runSpeed;
-      }
-      speed *= dt;
-
-      // Save and smooth local motion and orientation for later
-      var localFrameMotion = this.tmpVec3;
-      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
-      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
-      this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
-      this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
-      this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
-
-      // Apply motion
-      // Transform motion to world space
-      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
-      this.position.add(this.frameMotion);
-
-      this.head.position.copy(this.headPosition);
-      this.head.rotation.copy(this.headRotation);
-
-      // Apply orientation
-      // Vertical angle on the head
-      this.head.rotation.x = this.orientation.x;
-      // Horizontal angle on the body
-      this.rotation.y = this.orientation.y;
-
-      // Reset gun rotation and position
-      this.gun.rotation.copy(this.gunRotation);
-      this.gun.position.copy(GUN_POS);
-
-      this.tickAim(dt);
-      this.tickWobble(dt);
-      this.tickFire(dt);
-      this.tickReticles(dt);
-
-      this.camera.updateProjectionMatrix();
-    }
-  }, {
-    key: 'tickAim',
-    value: function tickAim(dt) {
-      if (this.aimTiming < 1 && this.keys.aim) {
-        this.aimTiming += dt / ADS_TIME;
-      } else if (this.aimTiming > 0 && !this.keys.aim) {
-        this.aimTiming -= dt / ADS_TIME;
-      }
-      this.smoothAim = smootherstep(this.aimTiming, 0, 1);
-      this.gun.position.lerpVectors(GUN_POS, GUN_POS_ADS, this.smoothAim);
-      this.gun.position.lerp(GUN_POS_RUN, this.smoothRun);
-      this.camera.fov = lerp(this.app.fov, this.app.fov * FOV_ADS_MUL, this.smoothAim);
-    }
-  }, {
-    key: 'tickWobble',
-    value: function tickWobble(dt) {
-      // Motion wobble
-      var walkWobbleX = Math.cos(this.app.time * 6.0) * 0.005;
-      var runWobbleX = Math.cos(this.app.time * 10.0) * 0.008;
-      var breathWobbleX = 0;
-      var walkWobbleY = Math.cos(this.app.time * 12.0) * 0.003;
-      var runWobbleY = Math.cos(this.app.time * 20.0) * 0.006;
-      var breathWobbleY = Math.sin(this.app.time * 2.0) * 0.002;
-
-      var aimWobbleAttenuation = 1.0 - this.smoothAim * 0.8;
-      var wobbleX = aimWobbleAttenuation * lerp(breathWobbleX, lerp(walkWobbleX, runWobbleX, this.smoothRun), this.smoothMove);
-      var wobbleY = aimWobbleAttenuation * lerp(breathWobbleY, lerp(walkWobbleY, runWobbleY, this.smoothRun), this.smoothMove);
-
-      this.camera.position.y = wobbleY;
-      this.camera.position.x = wobbleX;
-      this.head.position.x += wobbleX * 2;
-      this.head.position.y += wobbleY * 2;
-
-      // Aim wobble+lag
-      this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
-      this.gun.rotation.x += this.smoothLocalFrameAngle.x * 0.5 // Vertical
-      + wobbleY * 1 + this.smoothRun * 0.7; // Run rotation
-      this.gun.rotation.z += this.smoothLocalFrameAngle.y * 0.5 // Horizontal
-      - wobbleX * 3 + this.smoothRun * 0.15; // Run rotation
-      // Roll when strafing
-      this.gun.rotation.y += this.smoothLocalFrameMotion.x * 1; // Roll
-    }
-  }, {
-    key: 'tickFire',
-    value: function tickFire(dt) {
-      if (this.fireTiming > 0.0) {
-        this.fireTiming -= dt;
-        this.fireTiming = Math.max(this.fireTiming, 0);
-      } else if (this.keys.fire && !this.smoothRun) {
-        this.fireTiming = FIRE_COOLDOWN;
-        this.orientation.x += FIRE_KICK_FORCE * 0.03;
-        this.orientation.y -= FIRE_KICK_FORCE * 0.01;
-      }
-      // TODO: VFX
-      // TODO: Really need custom curves for these...
-      var kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
-      if (this.fireTiming > kickTime) {
-        this.smoothCooldown = 1 - smootherstep(this.fireTiming, kickTime, FIRE_COOLDOWN);
-      } else {
-        this.smoothCooldown = smootherstep(this.fireTiming, 0, kickTime);
-      }
-      var kick = this.smoothCooldown * FIRE_KICK_FORCE;
-      this.gun.position.x += 0.04 * kick;
-      this.gun.position.y += 0.08 * kick;
-      this.gun.position.z += 0.12 * kick;
-      this.gun.rotation.x += 0.6 * kick;
-      this.gun.rotation.y += 0.3 * kick;
-      this.head.rotation.x += 0.15 * kick;
-      this.camera.fov += 5 * kick;
-    }
-  }, {
-    key: 'tickReticles',
-    value: function tickReticles(dt) {
-      var baseOpacity = 1.0 - Math.max(this.smoothAim, this.smoothRun);
-      var fireOpacity = 1.0 - Math.min(this.fireTiming / 0.1, 1);
-      this.reticles[0].material.opacity = baseOpacity * fireOpacity;
-      this.reticles[1].material.opacity = baseOpacity * RETICLE_SIDES_OPACITY * (1 - this.smoothCooldown);
-      this.reticles[1].scale.setScalar(RETICLE_SCALE * (1 + this.smoothCooldown));
-    }
-  }, {
-    key: 'toggleRun',
-    value: function toggleRun() {
-      this.run(!this.keys.run);
-    }
-  }, {
-    key: 'run',
-    value: function run(enable) {
-      if (!enable) {
-        this.keys.run = 0;
-      } else if (!this.keys.aim) {
-        this.fire(false);
-        this.keys.run = 1;
-      }
-    }
-  }, {
-    key: 'aim',
-    value: function aim(enable) {
-      this.keys.aim = enable ? 1 : 0;
-      if (enable) {
-        this.run(false);
-      }
-    }
-  }, {
-    key: 'fire',
-    value: function fire(enable) {
-      this.keys.fire = enable ? 1 : 0;
-      if (enable) {
-        this.run(false);
-      }
-    }
-  }, {
-    key: 'initListeners',
-    value: function initListeners() {
-      window.addEventListener('keydown', this.onKeyDown, false);
-      window.addEventListener('keyup', this.onKeyUp, false);
-      window.addEventListener('mousemove', this.onMouseMove, false);
-      window.addEventListener('mousedown', this.onMouseDown, false);
-      window.addEventListener('mouseup', this.onMouseUp, false);
-    }
-  }, {
-    key: 'onWindowResize',
-    value: function onWindowResize() {
-      this.pixelRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
-    }
-  }]);
-  return FirstPersonPlayer;
-}(Object3D);
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-var Cache = {
-
-	enabled: false,
-
-	files: {},
-
-	add: function ( key, file ) {
-
-		if ( this.enabled === false ) return;
-
-		// console.log( 'THREE.Cache', 'Adding key:', key );
-
-		this.files[ key ] = file;
-
-	},
-
-	get: function ( key ) {
-
-		if ( this.enabled === false ) return;
-
-		// console.log( 'THREE.Cache', 'Checking key:', key );
-
-		return this.files[ key ];
-
-	},
-
-	remove: function ( key ) {
-
-		delete this.files[ key ];
-
-	},
-
-	clear: function () {
-
-		this.files = {};
-
-	}
-
-};
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function LoadingManager( onLoad, onProgress, onError ) {
-
-	var scope = this;
-
-	var isLoading = false, itemsLoaded = 0, itemsTotal = 0;
-
-	this.onStart = undefined;
-	this.onLoad = onLoad;
-	this.onProgress = onProgress;
-	this.onError = onError;
-
-	this.itemStart = function ( url ) {
-
-		itemsTotal ++;
-
-		if ( isLoading === false ) {
-
-			if ( scope.onStart !== undefined ) {
-
-				scope.onStart( url, itemsLoaded, itemsTotal );
-
-			}
-
-		}
-
-		isLoading = true;
-
-	};
-
-	this.itemEnd = function ( url ) {
-
-		itemsLoaded ++;
-
-		if ( scope.onProgress !== undefined ) {
-
-			scope.onProgress( url, itemsLoaded, itemsTotal );
-
-		}
-
-		if ( itemsLoaded === itemsTotal ) {
-
-			isLoading = false;
-
-			if ( scope.onLoad !== undefined ) {
-
-				scope.onLoad();
-
-			}
-
-		}
-
-	};
-
-	this.itemError = function ( url ) {
-
-		if ( scope.onError !== undefined ) {
-
-			scope.onError( url );
-
-		}
-
-	};
-
-}
-
-var DefaultLoadingManager = new LoadingManager();
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function XHRLoader( manager ) {
-
-	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
-
-}
-
-Object.assign( XHRLoader.prototype, {
-
-	load: function ( url, onLoad, onProgress, onError ) {
-
-		if ( url === undefined ) url = '';
-
-		if ( this.path !== undefined ) url = this.path + url;
-
-		var scope = this;
-
-		var cached = Cache.get( url );
-
-		if ( cached !== undefined ) {
-
-			scope.manager.itemStart( url );
-
-			setTimeout( function () {
-
-				if ( onLoad ) onLoad( cached );
-
-				scope.manager.itemEnd( url );
-
-			}, 0 );
-
-			return cached;
-
-		}
-
-		// Check for data: URI
-		var dataUriRegex = /^data:(.*?)(;base64)?,(.*)$/;
-		var dataUriRegexResult = url.match( dataUriRegex );
-
-		// Safari can not handle Data URIs through XMLHttpRequest so process manually
-		if ( dataUriRegexResult ) {
-
-			var mimeType = dataUriRegexResult[1];
-			var isBase64 = !!dataUriRegexResult[2];
-			var data = dataUriRegexResult[3];
-
-			data = window.decodeURIComponent(data);
-
-			if( isBase64 ) {
-				data = window.atob(data);
-			}
-
-			try {
-
-				var response;
-				var responseType = ( this.responseType || '' ).toLowerCase();
-
-				switch ( responseType ) {
-
-					case 'arraybuffer':
-					case 'blob':
-
-					 	response = new ArrayBuffer( data.length );
-						var view = new Uint8Array( response );
-						for ( var i = 0; i < data.length; i ++ ) {
-
-								view[ i ] = data.charCodeAt( i );
-
-						}
-
-						if ( responseType === 'blob' ) {
-
-							response = new Blob( [ response ], { "type" : mimeType } );
-
-						}
-
-						break;
-
-					case 'document':
-
-						var parser = new DOMParser();
-						response = parser.parseFromString( data, mimeType );
-
-						break;
-
-					case 'json':
-
-						response = JSON.parse( data );
-
-						break;
-
-					default: // 'text' or other
-
-						response = data;
-
-						break;
-
-				}
-
-				// Wait for next browser tick
-				window.setTimeout( function() {
-
-					if ( onLoad ) onLoad( response );
-
-					scope.manager.itemEnd( url );
-
-				}, 0);
-
-			} catch ( error ) {
-
-				// Wait for next browser tick
-				window.setTimeout( function() {
-
-					if ( onError ) onError( error );
-
-					scope.manager.itemError( url );
-
-				}, 0);
-
-			}
-
-		} else {
-
-			var request = new XMLHttpRequest();
-			request.open( 'GET', url, true );
-
-			request.addEventListener( 'load', function ( event ) {
-
-				var response = event.target.response;
-
-				Cache.add( url, response );
-
-				if ( this.status === 200 ) {
-
-					if ( onLoad ) onLoad( response );
-
-					scope.manager.itemEnd( url );
-
-				} else if ( this.status === 0 ) {
-
-					// Some browsers return HTTP Status 0 when using non-http protocol
-					// e.g. 'file://' or 'data://'. Handle as success.
-
-					console.warn( 'THREE.XHRLoader: HTTP Status 0 received.' );
-
-					if ( onLoad ) onLoad( response );
-
-					scope.manager.itemEnd( url );
-
-				} else {
-
-					if ( onError ) onError( event );
-
-					scope.manager.itemError( url );
-
-				}
-
-			}, false );
-
-			if ( onProgress !== undefined ) {
-
-				request.addEventListener( 'progress', function ( event ) {
-
-					onProgress( event );
-
-				}, false );
-
-			}
-
-			request.addEventListener( 'error', function ( event ) {
-
-				if ( onError ) onError( event );
-
-				scope.manager.itemError( url );
-
-			}, false );
-
-			if ( this.responseType !== undefined ) request.responseType = this.responseType;
-			if ( this.withCredentials !== undefined ) request.withCredentials = this.withCredentials;
-
-			if ( request.overrideMimeType ) request.overrideMimeType( 'text/plain' );
-
-			request.send( null );
-
-		}
-
-		scope.manager.itemStart( url );
-
-		return request;
-
-	},
-
-	setPath: function ( value ) {
-
-		this.path = value;
-		return this;
-
-	},
-
-	setResponseType: function ( value ) {
-
-		this.responseType = value;
-		return this;
-
-	},
-
-	setWithCredentials: function ( value ) {
-
-		this.withCredentials = value;
-		return this;
-
-	}
-
-} );
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function ImageLoader( manager ) {
-
-	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
-
-}
-
-Object.assign( ImageLoader.prototype, {
-
-	load: function ( url, onLoad, onProgress, onError ) {
-
-		var scope = this;
-
-		var image = document.createElementNS( 'http://www.w3.org/1999/xhtml', 'img' );
-		image.onload = function () {
-
-			image.onload = null;
-
-			URL.revokeObjectURL( image.src );
-
-			if ( onLoad ) onLoad( image );
-
-			scope.manager.itemEnd( url );
-
-		};
-		image.onerror = onError;
-
-		if ( url.indexOf( 'data:' ) === 0 ) {
-
-			image.src = url;
-
-		} else {
-
-			var loader = new XHRLoader();
-			loader.setPath( this.path );
-			loader.setResponseType( 'blob' );
-			loader.setWithCredentials( this.withCredentials );
-			loader.load( url, function ( blob ) {
-
-				image.src = URL.createObjectURL( blob );
-
-			}, onProgress, onError );
-
-		}
-
-		scope.manager.itemStart( url );
-
-		return image;
-
-	},
-
-	setCrossOrigin: function ( value ) {
-
-		this.crossOrigin = value;
-		return this;
-
-	},
-
-	setWithCredentials: function ( value ) {
-
-		this.withCredentials = value;
-		return this;
-
-	},
-
-	setPath: function ( value ) {
-
-		this.path = value;
-		return this;
-
-	}
-
-} );
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function TextureLoader( manager ) {
-
-	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
-
-}
-
-Object.assign( TextureLoader.prototype, {
-
-	load: function ( url, onLoad, onProgress, onError ) {
-
-		var texture = new Texture();
-
-		var loader = new ImageLoader( this.manager );
-		loader.setCrossOrigin( this.crossOrigin );
-		loader.setWithCredentials( this.withCredentials );
-		loader.setPath( this.path );
-		loader.load( url, function ( image ) {
-
-			// JPEGs can't have an alpha channel, so memory can be saved by storing them as RGB.
-			var isJPEG = url.search( /\.(jpg|jpeg)$/ ) > 0 || url.search( /^data\:image\/jpeg/ ) === 0;
-
-			texture.format = isJPEG ? RGBFormat : RGBAFormat;
-			texture.image = image;
-			texture.needsUpdate = true;
-
-			if ( onLoad !== undefined ) {
-
-				onLoad( texture );
-
-			}
-
-		}, onProgress, onError );
-
-		return texture;
-
-	},
-
-	setCrossOrigin: function ( value ) {
-
-		this.crossOrigin = value;
-		return this;
-
-	},
-
-	setWithCredentials: function ( value ) {
-
-		this.withCredentials = value;
-		return this;
-
-	},
-
-	setPath: function ( value ) {
-
-		this.path = value;
-		return this;
-
-	}
-
-
-
-} );
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function ShadowMaterial() {
-
-	ShaderMaterial.call( this, {
-		uniforms: UniformsUtils.merge( [
-			UniformsLib[ "lights" ],
-			{
-				opacity: { value: 1.0 }
-			}
-		] ),
-		vertexShader: ShaderChunk[ 'shadow_vert' ],
-		fragmentShader: ShaderChunk[ 'shadow_frag' ]
-	} );
-
-	this.lights = true;
-	this.transparent = true;
-
-	Object.defineProperties( this, {
-		opacity: {
-			enumerable: true,
-			get: function () {
-				return this.uniforms.opacity.value;
-			},
-			set: function ( value ) {
-				this.uniforms.opacity.value = value;
-			}
-		}
-	} );
-
-}
-
-ShadowMaterial.prototype = Object.create( ShaderMaterial.prototype );
-ShadowMaterial.prototype.constructor = ShadowMaterial;
-
-ShadowMaterial.prototype.isShadowMaterial = true;
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function MultiMaterial( materials ) {
-
-	this.uuid = _Math.generateUUID();
-
-	this.type = 'MultiMaterial';
-
-	this.materials = materials instanceof Array ? materials : [];
-
-	this.visible = true;
-
-}
-
-MultiMaterial.prototype = {
-
-	constructor: MultiMaterial,
-
-	isMultiMaterial: true,
-
-	toJSON: function ( meta ) {
-
-		var output = {
-			metadata: {
-				version: 4.2,
-				type: 'material',
-				generator: 'MaterialExporter'
-			},
-			uuid: this.uuid,
-			type: this.type,
-			materials: []
-		};
-
-		var materials = this.materials;
-
-		for ( var i = 0, l = materials.length; i < l; i ++ ) {
-
-			var material = materials[ i ].toJSON( meta );
-			delete material.metadata;
-
-			output.materials.push( material );
-
-		}
-
-		output.visible = this.visible;
-
-		return output;
-
-	},
-
-	clone: function () {
-
-		var material = new this.constructor();
-
-		for ( var i = 0; i < this.materials.length; i ++ ) {
-
-			material.materials.push( this.materials[ i ].clone() );
-
-		}
-
-		material.visible = this.visible;
-
-		return material;
-
-	}
-
-};
-
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- * parameters = {
- *  reflectivity: <float>
- * }
- */
-
-function MeshPhysicalMaterial( parameters ) {
-
-	MeshStandardMaterial.call( this );
-
-	this.defines = { 'PHYSICAL': '' };
-
-	this.type = 'MeshPhysicalMaterial';
-
-	this.reflectivity = 0.5; // maps to F0 = 0.04
-
-	this.clearCoat = 0.0;
-	this.clearCoatRoughness = 0.0;
-
-	this.setValues( parameters );
-
-}
-
-MeshPhysicalMaterial.prototype = Object.create( MeshStandardMaterial.prototype );
-MeshPhysicalMaterial.prototype.constructor = MeshPhysicalMaterial;
-
-MeshPhysicalMaterial.prototype.isMeshPhysicalMaterial = true;
-
-MeshPhysicalMaterial.prototype.copy = function ( source ) {
-
-	MeshStandardMaterial.prototype.copy.call( this, source );
-
-	this.defines = { 'PHYSICAL': '' };
-
-	this.reflectivity = source.reflectivity;
-
-	this.clearCoat = source.clearCoat;
-	this.clearCoatRoughness = source.clearCoatRoughness;
-
-	return this;
-
-};
-
-/**
- * @author mrdoob / http://mrdoob.com/
- * @author alteredq / http://alteredqualia.com/
- *
- * parameters = {
- *  color: <hex>,
- *  specular: <hex>,
- *  shininess: <float>,
- *  opacity: <float>,
- *
- *  map: new THREE.Texture( <Image> ),
- *
- *  lightMap: new THREE.Texture( <Image> ),
- *  lightMapIntensity: <float>
- *
- *  aoMap: new THREE.Texture( <Image> ),
- *  aoMapIntensity: <float>
- *
- *  emissive: <hex>,
- *  emissiveIntensity: <float>
- *  emissiveMap: new THREE.Texture( <Image> ),
- *
- *  bumpMap: new THREE.Texture( <Image> ),
- *  bumpScale: <float>,
- *
- *  normalMap: new THREE.Texture( <Image> ),
- *  normalScale: <Vector2>,
- *
- *  displacementMap: new THREE.Texture( <Image> ),
- *  displacementScale: <float>,
- *  displacementBias: <float>,
- *
- *  specularMap: new THREE.Texture( <Image> ),
- *
- *  alphaMap: new THREE.Texture( <Image> ),
- *
- *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
- *  combine: THREE.Multiply,
- *  reflectivity: <float>,
- *  refractionRatio: <float>,
- *
- *  wireframe: <boolean>,
- *  wireframeLinewidth: <float>,
- *
- *  skinning: <bool>,
- *  morphTargets: <bool>,
- *  morphNormals: <bool>
- * }
- */
-
-function MeshPhongMaterial( parameters ) {
-
-	Material.call( this );
-
-	this.type = 'MeshPhongMaterial';
-
-	this.color = new Color( 0xffffff ); // diffuse
-	this.specular = new Color( 0x111111 );
-	this.shininess = 30;
-
-	this.map = null;
-
-	this.lightMap = null;
-	this.lightMapIntensity = 1.0;
-
-	this.aoMap = null;
-	this.aoMapIntensity = 1.0;
-
-	this.emissive = new Color( 0x000000 );
-	this.emissiveIntensity = 1.0;
-	this.emissiveMap = null;
-
-	this.bumpMap = null;
-	this.bumpScale = 1;
-
-	this.normalMap = null;
-	this.normalScale = new Vector2( 1, 1 );
-
-	this.displacementMap = null;
-	this.displacementScale = 1;
-	this.displacementBias = 0;
-
-	this.specularMap = null;
-
-	this.alphaMap = null;
-
-	this.envMap = null;
-	this.combine = MultiplyOperation;
-	this.reflectivity = 1;
-	this.refractionRatio = 0.98;
-
-	this.wireframe = false;
-	this.wireframeLinewidth = 1;
-	this.wireframeLinecap = 'round';
-	this.wireframeLinejoin = 'round';
-
-	this.skinning = false;
-	this.morphTargets = false;
-	this.morphNormals = false;
-
-	this.setValues( parameters );
-
-}
-
-MeshPhongMaterial.prototype = Object.create( Material.prototype );
-MeshPhongMaterial.prototype.constructor = MeshPhongMaterial;
-
-MeshPhongMaterial.prototype.isMeshPhongMaterial = true;
-
-MeshPhongMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-	this.specular.copy( source.specular );
-	this.shininess = source.shininess;
-
-	this.map = source.map;
-
-	this.lightMap = source.lightMap;
-	this.lightMapIntensity = source.lightMapIntensity;
-
-	this.aoMap = source.aoMap;
-	this.aoMapIntensity = source.aoMapIntensity;
-
-	this.emissive.copy( source.emissive );
-	this.emissiveMap = source.emissiveMap;
-	this.emissiveIntensity = source.emissiveIntensity;
-
-	this.bumpMap = source.bumpMap;
-	this.bumpScale = source.bumpScale;
-
-	this.normalMap = source.normalMap;
-	this.normalScale.copy( source.normalScale );
-
-	this.displacementMap = source.displacementMap;
-	this.displacementScale = source.displacementScale;
-	this.displacementBias = source.displacementBias;
-
-	this.specularMap = source.specularMap;
-
-	this.alphaMap = source.alphaMap;
-
-	this.envMap = source.envMap;
-	this.combine = source.combine;
-	this.reflectivity = source.reflectivity;
-	this.refractionRatio = source.refractionRatio;
-
-	this.wireframe = source.wireframe;
-	this.wireframeLinewidth = source.wireframeLinewidth;
-	this.wireframeLinecap = source.wireframeLinecap;
-	this.wireframeLinejoin = source.wireframeLinejoin;
-
-	this.skinning = source.skinning;
-	this.morphTargets = source.morphTargets;
-	this.morphNormals = source.morphNormals;
-
-	return this;
-
-};
-
-/**
- * @author mrdoob / http://mrdoob.com/
- *
- * parameters = {
- *  opacity: <float>,
- *
- *  wireframe: <boolean>,
- *  wireframeLinewidth: <float>
- * }
- */
-
-function MeshNormalMaterial( parameters ) {
-
-	Material.call( this, parameters );
-
-	this.type = 'MeshNormalMaterial';
-
-	this.wireframe = false;
-	this.wireframeLinewidth = 1;
-
-	this.fog = false;
-	this.lights = false;
-	this.morphTargets = false;
-
-	this.setValues( parameters );
-
-}
-
-MeshNormalMaterial.prototype = Object.create( Material.prototype );
-MeshNormalMaterial.prototype.constructor = MeshNormalMaterial;
-
-MeshNormalMaterial.prototype.isMeshNormalMaterial = true;
-
-MeshNormalMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.wireframe = source.wireframe;
-	this.wireframeLinewidth = source.wireframeLinewidth;
-
-	return this;
-
-};
-
-/**
- * @author mrdoob / http://mrdoob.com/
- * @author alteredq / http://alteredqualia.com/
- *
- * parameters = {
- *  color: <hex>,
- *  opacity: <float>,
- *
- *  map: new THREE.Texture( <Image> ),
- *
- *  lightMap: new THREE.Texture( <Image> ),
- *  lightMapIntensity: <float>
- *
- *  aoMap: new THREE.Texture( <Image> ),
- *  aoMapIntensity: <float>
- *
- *  emissive: <hex>,
- *  emissiveIntensity: <float>
- *  emissiveMap: new THREE.Texture( <Image> ),
- *
- *  specularMap: new THREE.Texture( <Image> ),
- *
- *  alphaMap: new THREE.Texture( <Image> ),
- *
- *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
- *  combine: THREE.Multiply,
- *  reflectivity: <float>,
- *  refractionRatio: <float>,
- *
- *  wireframe: <boolean>,
- *  wireframeLinewidth: <float>,
- *
- *  skinning: <bool>,
- *  morphTargets: <bool>,
- *  morphNormals: <bool>
- * }
- */
-
-function MeshLambertMaterial( parameters ) {
-
-	Material.call( this );
-
-	this.type = 'MeshLambertMaterial';
-
-	this.color = new Color( 0xffffff ); // diffuse
-
-	this.map = null;
-
-	this.lightMap = null;
-	this.lightMapIntensity = 1.0;
-
-	this.aoMap = null;
-	this.aoMapIntensity = 1.0;
-
-	this.emissive = new Color( 0x000000 );
-	this.emissiveIntensity = 1.0;
-	this.emissiveMap = null;
-
-	this.specularMap = null;
-
-	this.alphaMap = null;
-
-	this.envMap = null;
-	this.combine = MultiplyOperation;
-	this.reflectivity = 1;
-	this.refractionRatio = 0.98;
-
-	this.wireframe = false;
-	this.wireframeLinewidth = 1;
-	this.wireframeLinecap = 'round';
-	this.wireframeLinejoin = 'round';
-
-	this.skinning = false;
-	this.morphTargets = false;
-	this.morphNormals = false;
-
-	this.setValues( parameters );
-
-}
-
-MeshLambertMaterial.prototype = Object.create( Material.prototype );
-MeshLambertMaterial.prototype.constructor = MeshLambertMaterial;
-
-MeshLambertMaterial.prototype.isMeshLambertMaterial = true;
-
-MeshLambertMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-
-	this.map = source.map;
-
-	this.lightMap = source.lightMap;
-	this.lightMapIntensity = source.lightMapIntensity;
-
-	this.aoMap = source.aoMap;
-	this.aoMapIntensity = source.aoMapIntensity;
-
-	this.emissive.copy( source.emissive );
-	this.emissiveMap = source.emissiveMap;
-	this.emissiveIntensity = source.emissiveIntensity;
-
-	this.specularMap = source.specularMap;
-
-	this.alphaMap = source.alphaMap;
-
-	this.envMap = source.envMap;
-	this.combine = source.combine;
-	this.reflectivity = source.reflectivity;
-	this.refractionRatio = source.refractionRatio;
-
-	this.wireframe = source.wireframe;
-	this.wireframeLinewidth = source.wireframeLinewidth;
-	this.wireframeLinecap = source.wireframeLinecap;
-	this.wireframeLinejoin = source.wireframeLinejoin;
-
-	this.skinning = source.skinning;
-	this.morphTargets = source.morphTargets;
-	this.morphNormals = source.morphNormals;
-
-	return this;
-
-};
-
-/**
- * @author alteredq / http://alteredqualia.com/
- *
- * parameters = {
- *  color: <hex>,
- *  opacity: <float>,
- *
- *  linewidth: <float>,
- *
- *  scale: <float>,
- *  dashSize: <float>,
- *  gapSize: <float>
- * }
- */
-
-function LineDashedMaterial( parameters ) {
-
-	Material.call( this );
-
-	this.type = 'LineDashedMaterial';
-
-	this.color = new Color( 0xffffff );
-
-	this.linewidth = 1;
-
-	this.scale = 1;
-	this.dashSize = 3;
-	this.gapSize = 1;
-
-	this.lights = false;
-
-	this.setValues( parameters );
-
-}
-
-LineDashedMaterial.prototype = Object.create( Material.prototype );
-LineDashedMaterial.prototype.constructor = LineDashedMaterial;
-
-LineDashedMaterial.prototype.isLineDashedMaterial = true;
-
-LineDashedMaterial.prototype.copy = function ( source ) {
-
-	Material.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-
-	this.linewidth = source.linewidth;
-
-	this.scale = source.scale;
-	this.dashSize = source.dashSize;
-	this.gapSize = source.gapSize;
-
-	return this;
-
-};
-
-
-
-var Materials = Object.freeze({
-	ShadowMaterial: ShadowMaterial,
-	SpriteMaterial: SpriteMaterial,
-	RawShaderMaterial: RawShaderMaterial,
-	ShaderMaterial: ShaderMaterial,
-	PointsMaterial: PointsMaterial,
-	MultiMaterial: MultiMaterial,
-	MeshPhysicalMaterial: MeshPhysicalMaterial,
-	MeshStandardMaterial: MeshStandardMaterial,
-	MeshPhongMaterial: MeshPhongMaterial,
-	MeshNormalMaterial: MeshNormalMaterial,
-	MeshLambertMaterial: MeshLambertMaterial,
-	MeshDepthMaterial: MeshDepthMaterial,
-	MeshBasicMaterial: MeshBasicMaterial,
-	LineDashedMaterial: LineDashedMaterial,
-	LineBasicMaterial: LineBasicMaterial,
-	Material: Material
-});
-
-/**
- * @author mrdoob / http://mrdoob.com/
- */
-
-function MaterialLoader( manager ) {
-
-	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
-	this.textures = {};
-
-}
-
-Object.assign( MaterialLoader.prototype, {
-
-	load: function ( url, onLoad, onProgress, onError ) {
-
-		var scope = this;
-
-		var loader = new XHRLoader( scope.manager );
-		loader.load( url, function ( text ) {
-
-			onLoad( scope.parse( JSON.parse( text ) ) );
-
-		}, onProgress, onError );
-
-	},
-
-	setTextures: function ( value ) {
-
-		this.textures = value;
-
-	},
-
-	parse: function ( json ) {
-
-		var textures = this.textures;
-
-		function getTexture( name ) {
-
-			if ( textures[ name ] === undefined ) {
-
-				console.warn( 'THREE.MaterialLoader: Undefined texture', name );
-
-			}
-
-			return textures[ name ];
-
-		}
-
-		var material = new Materials[ json.type ]();
-
-		if ( json.uuid !== undefined ) material.uuid = json.uuid;
-		if ( json.name !== undefined ) material.name = json.name;
-		if ( json.color !== undefined ) material.color.setHex( json.color );
-		if ( json.roughness !== undefined ) material.roughness = json.roughness;
-		if ( json.metalness !== undefined ) material.metalness = json.metalness;
-		if ( json.emissive !== undefined ) material.emissive.setHex( json.emissive );
-		if ( json.specular !== undefined ) material.specular.setHex( json.specular );
-		if ( json.shininess !== undefined ) material.shininess = json.shininess;
-		if ( json.uniforms !== undefined ) material.uniforms = json.uniforms;
-		if ( json.vertexShader !== undefined ) material.vertexShader = json.vertexShader;
-		if ( json.fragmentShader !== undefined ) material.fragmentShader = json.fragmentShader;
-		if ( json.vertexColors !== undefined ) material.vertexColors = json.vertexColors;
-		if ( json.fog !== undefined ) material.fog = json.fog;
-		if ( json.shading !== undefined ) material.shading = json.shading;
-		if ( json.blending !== undefined ) material.blending = json.blending;
-		if ( json.side !== undefined ) material.side = json.side;
-		if ( json.opacity !== undefined ) material.opacity = json.opacity;
-		if ( json.transparent !== undefined ) material.transparent = json.transparent;
-		if ( json.alphaTest !== undefined ) material.alphaTest = json.alphaTest;
-		if ( json.depthTest !== undefined ) material.depthTest = json.depthTest;
-		if ( json.depthWrite !== undefined ) material.depthWrite = json.depthWrite;
-		if ( json.colorWrite !== undefined ) material.colorWrite = json.colorWrite;
-		if ( json.wireframe !== undefined ) material.wireframe = json.wireframe;
-		if ( json.wireframeLinewidth !== undefined ) material.wireframeLinewidth = json.wireframeLinewidth;
-		if ( json.wireframeLinecap !== undefined ) material.wireframeLinecap = json.wireframeLinecap;
-		if ( json.wireframeLinejoin !== undefined ) material.wireframeLinejoin = json.wireframeLinejoin;
-		if ( json.skinning !== undefined ) material.skinning = json.skinning;
-		if ( json.morphTargets !== undefined ) material.morphTargets = json.morphTargets;
-
-		// for PointsMaterial
-
-		if ( json.size !== undefined ) material.size = json.size;
-		if ( json.sizeAttenuation !== undefined ) material.sizeAttenuation = json.sizeAttenuation;
-
-		// maps
-
-		if ( json.map !== undefined ) material.map = getTexture( json.map );
-
-		if ( json.alphaMap !== undefined ) {
-
-			material.alphaMap = getTexture( json.alphaMap );
-			material.transparent = true;
-
-		}
-
-		if ( json.bumpMap !== undefined ) material.bumpMap = getTexture( json.bumpMap );
-		if ( json.bumpScale !== undefined ) material.bumpScale = json.bumpScale;
-
-		if ( json.normalMap !== undefined ) material.normalMap = getTexture( json.normalMap );
-		if ( json.normalScale !== undefined ) {
-
-			var normalScale = json.normalScale;
-
-			if ( Array.isArray( normalScale ) === false ) {
-
-				// Blender exporter used to export a scalar. See #7459
-
-				normalScale = [ normalScale, normalScale ];
-
-			}
-
-			material.normalScale = new Vector2().fromArray( normalScale );
-
-		}
-
-		if ( json.displacementMap !== undefined ) material.displacementMap = getTexture( json.displacementMap );
-		if ( json.displacementScale !== undefined ) material.displacementScale = json.displacementScale;
-		if ( json.displacementBias !== undefined ) material.displacementBias = json.displacementBias;
-
-		if ( json.roughnessMap !== undefined ) material.roughnessMap = getTexture( json.roughnessMap );
-		if ( json.metalnessMap !== undefined ) material.metalnessMap = getTexture( json.metalnessMap );
-
-		if ( json.emissiveMap !== undefined ) material.emissiveMap = getTexture( json.emissiveMap );
-		if ( json.emissiveIntensity !== undefined ) material.emissiveIntensity = json.emissiveIntensity;
-
-		if ( json.specularMap !== undefined ) material.specularMap = getTexture( json.specularMap );
-
-		if ( json.envMap !== undefined ) material.envMap = getTexture( json.envMap );
-
-		if ( json.reflectivity !== undefined ) material.reflectivity = json.reflectivity;
-
-		if ( json.lightMap !== undefined ) material.lightMap = getTexture( json.lightMap );
-		if ( json.lightMapIntensity !== undefined ) material.lightMapIntensity = json.lightMapIntensity;
-
-		if ( json.aoMap !== undefined ) material.aoMap = getTexture( json.aoMap );
-		if ( json.aoMapIntensity !== undefined ) material.aoMapIntensity = json.aoMapIntensity;
-
-		// MultiMaterial
-
-		if ( json.materials !== undefined ) {
-
-			for ( var i = 0, l = json.materials.length; i < l; i ++ ) {
-
-				material.materials.push( this.parse( json.materials[ i ] ) );
-
-			}
-
-		}
-
-		return material;
-
-	}
-
-} );
-
-/**
- * @author alteredq / http://alteredqualia.com/
- */
-
-function Loader$1() {
-
-	this.onLoadStart = function () {};
-	this.onLoadProgress = function () {};
-	this.onLoadComplete = function () {};
-
-}
-
-Loader$1.prototype = {
-
-	constructor: Loader$1,
-
-	crossOrigin: undefined,
-
-	extractUrlBase: function ( url ) {
-
-		var parts = url.split( '/' );
-
-		if ( parts.length === 1 ) return './';
-
-		parts.pop();
-
-		return parts.join( '/' ) + '/';
-
-	},
-
-	initMaterials: function ( materials, texturePath, crossOrigin ) {
-
-		var array = [];
-
-		for ( var i = 0; i < materials.length; ++ i ) {
-
-			array[ i ] = this.createMaterial( materials[ i ], texturePath, crossOrigin );
-
-		}
-
-		return array;
-
-	},
-
-	createMaterial: ( function () {
-
-		var color, textureLoader, materialLoader;
-
-		return function createMaterial( m, texturePath, crossOrigin ) {
-
-			if ( color === undefined ) color = new Color();
-			if ( textureLoader === undefined ) textureLoader = new TextureLoader();
-			if ( materialLoader === undefined ) materialLoader = new MaterialLoader();
-
-			// convert from old material format
-
-			var textures = {};
-
-			function loadTexture( path, repeat, offset, wrap, anisotropy ) {
-
-				var fullPath = texturePath + path;
-				var loader = Loader$1.Handlers.get( fullPath );
-
-				var texture;
-
-				if ( loader !== null ) {
-
-					texture = loader.load( fullPath );
-
-				} else {
-
-					textureLoader.setCrossOrigin( crossOrigin );
-					texture = textureLoader.load( fullPath );
-
-				}
-
-				if ( repeat !== undefined ) {
-
-					texture.repeat.fromArray( repeat );
-
-					if ( repeat[ 0 ] !== 1 ) texture.wrapS = RepeatWrapping;
-					if ( repeat[ 1 ] !== 1 ) texture.wrapT = RepeatWrapping;
-
-				}
-
-				if ( offset !== undefined ) {
-
-					texture.offset.fromArray( offset );
-
-				}
-
-				if ( wrap !== undefined ) {
-
-					if ( wrap[ 0 ] === 'repeat' ) texture.wrapS = RepeatWrapping;
-					if ( wrap[ 0 ] === 'mirror' ) texture.wrapS = MirroredRepeatWrapping;
-
-					if ( wrap[ 1 ] === 'repeat' ) texture.wrapT = RepeatWrapping;
-					if ( wrap[ 1 ] === 'mirror' ) texture.wrapT = MirroredRepeatWrapping;
-
-				}
-
-				if ( anisotropy !== undefined ) {
-
-					texture.anisotropy = anisotropy;
-
-				}
-
-				var uuid = _Math.generateUUID();
-
-				textures[ uuid ] = texture;
-
-				return uuid;
-
-			}
-
-			//
-
-			var json = {
-				uuid: _Math.generateUUID(),
-				type: 'MeshLambertMaterial'
-			};
-
-			for ( var name in m ) {
-
-				var value = m[ name ];
-
-				switch ( name ) {
-					case 'DbgColor':
-					case 'DbgIndex':
-					case 'opticalDensity':
-					case 'illumination':
-						break;
-					case 'DbgName':
-						json.name = value;
-						break;
-					case 'blending':
-						json.blending = BlendingMode[ value ];
-						break;
-					case 'colorAmbient':
-					case 'mapAmbient':
-						console.warn( 'THREE.Loader.createMaterial:', name, 'is no longer supported.' );
-						break;
-					case 'colorDiffuse':
-						json.color = color.fromArray( value ).getHex();
-						break;
-					case 'colorSpecular':
-						json.specular = color.fromArray( value ).getHex();
-						break;
-					case 'colorEmissive':
-						json.emissive = color.fromArray( value ).getHex();
-						break;
-					case 'specularCoef':
-						json.shininess = value;
-						break;
-					case 'shading':
-						if ( value.toLowerCase() === 'basic' ) json.type = 'MeshBasicMaterial';
-						if ( value.toLowerCase() === 'phong' ) json.type = 'MeshPhongMaterial';
-						if ( value.toLowerCase() === 'standard' ) json.type = 'MeshStandardMaterial';
-						break;
-					case 'mapDiffuse':
-						json.map = loadTexture( value, m.mapDiffuseRepeat, m.mapDiffuseOffset, m.mapDiffuseWrap, m.mapDiffuseAnisotropy );
-						break;
-					case 'mapDiffuseRepeat':
-					case 'mapDiffuseOffset':
-					case 'mapDiffuseWrap':
-					case 'mapDiffuseAnisotropy':
-						break;
-					case 'mapEmissive':
-						json.emissiveMap = loadTexture( value, m.mapEmissiveRepeat, m.mapEmissiveOffset, m.mapEmissiveWrap, m.mapEmissiveAnisotropy );
-						break;
-					case 'mapEmissiveRepeat':
-					case 'mapEmissiveOffset':
-					case 'mapEmissiveWrap':
-					case 'mapEmissiveAnisotropy':
-						break;
-					case 'mapLight':
-						json.lightMap = loadTexture( value, m.mapLightRepeat, m.mapLightOffset, m.mapLightWrap, m.mapLightAnisotropy );
-						break;
-					case 'mapLightRepeat':
-					case 'mapLightOffset':
-					case 'mapLightWrap':
-					case 'mapLightAnisotropy':
-						break;
-					case 'mapAO':
-						json.aoMap = loadTexture( value, m.mapAORepeat, m.mapAOOffset, m.mapAOWrap, m.mapAOAnisotropy );
-						break;
-					case 'mapAORepeat':
-					case 'mapAOOffset':
-					case 'mapAOWrap':
-					case 'mapAOAnisotropy':
-						break;
-					case 'mapBump':
-						json.bumpMap = loadTexture( value, m.mapBumpRepeat, m.mapBumpOffset, m.mapBumpWrap, m.mapBumpAnisotropy );
-						break;
-					case 'mapBumpScale':
-						json.bumpScale = value;
-						break;
-					case 'mapBumpRepeat':
-					case 'mapBumpOffset':
-					case 'mapBumpWrap':
-					case 'mapBumpAnisotropy':
-						break;
-					case 'mapNormal':
-						json.normalMap = loadTexture( value, m.mapNormalRepeat, m.mapNormalOffset, m.mapNormalWrap, m.mapNormalAnisotropy );
-						break;
-					case 'mapNormalFactor':
-						json.normalScale = [ value, value ];
-						break;
-					case 'mapNormalRepeat':
-					case 'mapNormalOffset':
-					case 'mapNormalWrap':
-					case 'mapNormalAnisotropy':
-						break;
-					case 'mapSpecular':
-						json.specularMap = loadTexture( value, m.mapSpecularRepeat, m.mapSpecularOffset, m.mapSpecularWrap, m.mapSpecularAnisotropy );
-						break;
-					case 'mapSpecularRepeat':
-					case 'mapSpecularOffset':
-					case 'mapSpecularWrap':
-					case 'mapSpecularAnisotropy':
-						break;
-					case 'mapMetalness':
-						json.metalnessMap = loadTexture( value, m.mapMetalnessRepeat, m.mapMetalnessOffset, m.mapMetalnessWrap, m.mapMetalnessAnisotropy );
-						break;
-					case 'mapMetalnessRepeat':
-					case 'mapMetalnessOffset':
-					case 'mapMetalnessWrap':
-					case 'mapMetalnessAnisotropy':
-						break;
-					case 'mapRoughness':
-						json.roughnessMap = loadTexture( value, m.mapRoughnessRepeat, m.mapRoughnessOffset, m.mapRoughnessWrap, m.mapRoughnessAnisotropy );
-						break;
-					case 'mapRoughnessRepeat':
-					case 'mapRoughnessOffset':
-					case 'mapRoughnessWrap':
-					case 'mapRoughnessAnisotropy':
-						break;
-					case 'mapAlpha':
-						json.alphaMap = loadTexture( value, m.mapAlphaRepeat, m.mapAlphaOffset, m.mapAlphaWrap, m.mapAlphaAnisotropy );
-						break;
-					case 'mapAlphaRepeat':
-					case 'mapAlphaOffset':
-					case 'mapAlphaWrap':
-					case 'mapAlphaAnisotropy':
-						break;
-					case 'flipSided':
-						json.side = BackSide;
-						break;
-					case 'doubleSided':
-						json.side = DoubleSide;
-						break;
-					case 'transparency':
-						console.warn( 'THREE.Loader.createMaterial: transparency has been renamed to opacity' );
-						json.opacity = value;
-						break;
-					case 'depthTest':
-					case 'depthWrite':
-					case 'colorWrite':
-					case 'opacity':
-					case 'reflectivity':
-					case 'transparent':
-					case 'visible':
-					case 'wireframe':
-						json[ name ] = value;
-						break;
-					case 'vertexColors':
-						if ( value === true ) json.vertexColors = VertexColors;
-						if ( value === 'face' ) json.vertexColors = FaceColors;
-						break;
-					default:
-						console.error( 'THREE.Loader.createMaterial: Unsupported', name, value );
-						break;
-				}
-
-			}
-
-			if ( json.type === 'MeshBasicMaterial' ) delete json.emissive;
-			if ( json.type !== 'MeshPhongMaterial' ) delete json.specular;
-
-			if ( json.opacity < 1 ) json.transparent = true;
-
-			materialLoader.setTextures( textures );
-
-			return materialLoader.parse( json );
-
-		};
-
-	} )()
-
-};
-
-Loader$1.Handlers = {
-
-	handlers: [],
-
-	add: function ( regex, loader ) {
-
-		this.handlers.push( regex, loader );
-
-	},
-
-	get: function ( file ) {
-
-		var handlers = this.handlers;
-
-		for ( var i = 0, l = handlers.length; i < l; i += 2 ) {
-
-			var regex = handlers[ i ];
-			var loader  = handlers[ i + 1 ];
-
-			if ( regex.test( file ) ) {
-
-				return loader;
-
-			}
-
-		}
-
-		return null;
-
-	}
-
-};
-
-/**
- * @author tschw
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- */
-
-var AnimationUtils = {
-
-	// same as Array.prototype.slice, but also works on typed arrays
-	arraySlice: function( array, from, to ) {
-
-		if ( AnimationUtils.isTypedArray( array ) ) {
-
-			return new array.constructor( array.subarray( from, to ) );
-
-		}
-
-		return array.slice( from, to );
-
-	},
-
-	// converts an array to a specific type
-	convertArray: function( array, type, forceClone ) {
-
-		if ( ! array || // let 'undefined' and 'null' pass
-				! forceClone && array.constructor === type ) return array;
-
-		if ( typeof type.BYTES_PER_ELEMENT === 'number' ) {
-
-			return new type( array ); // create typed array
-
-		}
-
-		return Array.prototype.slice.call( array ); // create Array
-
-	},
-
-	isTypedArray: function( object ) {
-
-		return ArrayBuffer.isView( object ) &&
-				! ( object instanceof DataView );
-
-	},
-
-	// returns an array by which times and values can be sorted
-	getKeyframeOrder: function( times ) {
-
-		function compareTime( i, j ) {
-
-			return times[ i ] - times[ j ];
-
-		}
-
-		var n = times.length;
-		var result = new Array( n );
-		for ( var i = 0; i !== n; ++ i ) result[ i ] = i;
-
-		result.sort( compareTime );
-
-		return result;
-
-	},
-
-	// uses the array previously returned by 'getKeyframeOrder' to sort data
-	sortedArray: function( values, stride, order ) {
-
-		var nValues = values.length;
-		var result = new values.constructor( nValues );
-
-		for ( var i = 0, dstOffset = 0; dstOffset !== nValues; ++ i ) {
-
-			var srcOffset = order[ i ] * stride;
-
-			for ( var j = 0; j !== stride; ++ j ) {
-
-				result[ dstOffset ++ ] = values[ srcOffset + j ];
-
-			}
-
-		}
-
-		return result;
-
-	},
-
-	// function for parsing AOS keyframe formats
-	flattenJSON: function( jsonKeys, times, values, valuePropertyName ) {
-
-		var i = 1, key = jsonKeys[ 0 ];
-
-		while ( key !== undefined && key[ valuePropertyName ] === undefined ) {
-
-			key = jsonKeys[ i ++ ];
-
-		}
-
-		if ( key === undefined ) return; // no data
-
-		var value = key[ valuePropertyName ];
-		if ( value === undefined ) return; // no data
-
-		if ( Array.isArray( value ) ) {
-
-			do {
-
-				value = key[ valuePropertyName ];
-
-				if ( value !== undefined ) {
-
-					times.push( key.time );
-					values.push.apply( values, value ); // push all elements
-
-				}
-
-				key = jsonKeys[ i ++ ];
-
-			} while ( key !== undefined );
-
-		} else if ( value.toArray !== undefined ) {
-			// ...assume THREE.Math-ish
-
-			do {
-
-				value = key[ valuePropertyName ];
-
-				if ( value !== undefined ) {
-
-					times.push( key.time );
-					value.toArray( values, values.length );
-
-				}
-
-				key = jsonKeys[ i ++ ];
-
-			} while ( key !== undefined );
-
-		} else {
-			// otherwise push as-is
-
-			do {
-
-				value = key[ valuePropertyName ];
-
-				if ( value !== undefined ) {
-
-					times.push( key.time );
-					values.push( value );
-
-				}
-
-				key = jsonKeys[ i ++ ];
-
-			} while ( key !== undefined );
-
-		}
-
-	}
-
-};
-
-/**
- * Abstract base class of interpolants over parametric samples.
- *
- * The parameter domain is one dimensional, typically the time or a path
- * along a curve defined by the data.
- *
- * The sample values can have any dimensionality and derived classes may
- * apply special interpretations to the data.
- *
- * This class provides the interval seek in a Template Method, deferring
- * the actual interpolation to derived classes.
- *
- * Time complexity is O(1) for linear access crossing at most two points
- * and O(log N) for random access, where N is the number of positions.
- *
- * References:
- *
- * 		http://www.oodesign.com/template-method-pattern.html
- *
- * @author tschw
- */
-
-function Interpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
-
-	this.parameterPositions = parameterPositions;
-	this._cachedIndex = 0;
-
-	this.resultBuffer = resultBuffer !== undefined ?
-			resultBuffer : new sampleValues.constructor( sampleSize );
-	this.sampleValues = sampleValues;
-	this.valueSize = sampleSize;
-
-}
-
-Interpolant.prototype = {
-
-	constructor: Interpolant,
-
-	evaluate: function( t ) {
-
-		var pp = this.parameterPositions,
-			i1 = this._cachedIndex,
-
-			t1 = pp[   i1   ],
-			t0 = pp[ i1 - 1 ];
-
-		validate_interval: {
-
-			seek: {
-
-				var right;
-
-				linear_scan: {
-//- See http://jsperf.com/comparison-to-undefined/3
-//- slower code:
-//-
-//- 				if ( t >= t1 || t1 === undefined ) {
-					forward_scan: if ( ! ( t < t1 ) ) {
-
-						for ( var giveUpAt = i1 + 2; ;) {
-
-							if ( t1 === undefined ) {
-
-								if ( t < t0 ) break forward_scan;
-
-								// after end
-
-								i1 = pp.length;
-								this._cachedIndex = i1;
-								return this.afterEnd_( i1 - 1, t, t0 );
-
-							}
-
-							if ( i1 === giveUpAt ) break; // this loop
-
-							t0 = t1;
-							t1 = pp[ ++ i1 ];
-
-							if ( t < t1 ) {
-
-								// we have arrived at the sought interval
-								break seek;
-
-							}
-
-						}
-
-						// prepare binary search on the right side of the index
-						right = pp.length;
-						break linear_scan;
-
-					}
-
-//- slower code:
-//-					if ( t < t0 || t0 === undefined ) {
-					if ( ! ( t >= t0 ) ) {
-
-						// looping?
-
-						var t1global = pp[ 1 ];
-
-						if ( t < t1global ) {
-
-							i1 = 2; // + 1, using the scan for the details
-							t0 = t1global;
-
-						}
-
-						// linear reverse scan
-
-						for ( var giveUpAt = i1 - 2; ;) {
-
-							if ( t0 === undefined ) {
-
-								// before start
-
-								this._cachedIndex = 0;
-								return this.beforeStart_( 0, t, t1 );
-
-							}
-
-							if ( i1 === giveUpAt ) break; // this loop
-
-							t1 = t0;
-							t0 = pp[ -- i1 - 1 ];
-
-							if ( t >= t0 ) {
-
-								// we have arrived at the sought interval
-								break seek;
-
-							}
-
-						}
-
-						// prepare binary search on the left side of the index
-						right = i1;
-						i1 = 0;
-						break linear_scan;
-
-					}
-
-					// the interval is valid
-
-					break validate_interval;
-
-				} // linear scan
-
-				// binary search
-
-				while ( i1 < right ) {
-
-					var mid = ( i1 + right ) >>> 1;
-
-					if ( t < pp[ mid ] ) {
-
-						right = mid;
-
-					} else {
-
-						i1 = mid + 1;
-
-					}
-
-				}
-
-				t1 = pp[   i1   ];
-				t0 = pp[ i1 - 1 ];
-
-				// check boundary cases, again
-
-				if ( t0 === undefined ) {
-
-					this._cachedIndex = 0;
-					return this.beforeStart_( 0, t, t1 );
-
-				}
-
-				if ( t1 === undefined ) {
-
-					i1 = pp.length;
-					this._cachedIndex = i1;
-					return this.afterEnd_( i1 - 1, t0, t );
-
-				}
-
-			} // seek
-
-			this._cachedIndex = i1;
-
-			this.intervalChanged_( i1, t0, t1 );
-
-		} // validate_interval
-
-		return this.interpolate_( i1, t0, t, t1 );
-
-	},
-
-	settings: null, // optional, subclass-specific settings structure
-	// Note: The indirection allows central control of many interpolants.
-
-	// --- Protected interface
-
-	DefaultSettings_: {},
-
-	getSettings_: function() {
-
-		return this.settings || this.DefaultSettings_;
-
-	},
-
-	copySampleValue_: function( index ) {
-
-		// copies a sample value to the result buffer
-
-		var result = this.resultBuffer,
-			values = this.sampleValues,
-			stride = this.valueSize,
-			offset = index * stride;
-
-		for ( var i = 0; i !== stride; ++ i ) {
-
-			result[ i ] = values[ offset + i ];
-
-		}
-
-		return result;
-
-	},
-
-	// Template methods for derived classes:
-
-	interpolate_: function( i1, t0, t, t1 ) {
-
-		throw new Error( "call to abstract method" );
-		// implementations shall return this.resultBuffer
-
-	},
-
-	intervalChanged_: function( i1, t0, t1 ) {
-
-		// empty
-
-	}
-
-};
-
-Object.assign( Interpolant.prototype, {
-
-	beforeStart_: //( 0, t, t0 ), returns this.resultBuffer
-		Interpolant.prototype.copySampleValue_,
-
-	afterEnd_: //( N-1, tN-1, t ), returns this.resultBuffer
-		Interpolant.prototype.copySampleValue_
-
-} );
-
-/**
- * Fast and simple cubic spline interpolant.
- *
- * It was derived from a Hermitian construction setting the first derivative
- * at each sample position to the linear slope between neighboring positions
- * over their parameter interval.
- *
- * @author tschw
- */
-
-function CubicInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
-
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
-
-	this._weightPrev = -0;
-	this._offsetPrev = -0;
-	this._weightNext = -0;
-	this._offsetNext = -0;
-
-}
-
-CubicInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
-
-	constructor: CubicInterpolant,
-
-	DefaultSettings_: {
-
-		endingStart: 	ZeroCurvatureEnding,
-		endingEnd:		ZeroCurvatureEnding
-
-	},
-
-	intervalChanged_: function( i1, t0, t1 ) {
-
-		var pp = this.parameterPositions,
-			iPrev = i1 - 2,
-			iNext = i1 + 1,
-
-			tPrev = pp[ iPrev ],
-			tNext = pp[ iNext ];
-
-		if ( tPrev === undefined ) {
-
-			switch ( this.getSettings_().endingStart ) {
-
-				case ZeroSlopeEnding:
-
-					// f'(t0) = 0
-					iPrev = i1;
-					tPrev = 2 * t0 - t1;
-
-					break;
-
-				case WrapAroundEnding:
-
-					// use the other end of the curve
-					iPrev = pp.length - 2;
-					tPrev = t0 + pp[ iPrev ] - pp[ iPrev + 1 ];
-
-					break;
-
-				default: // ZeroCurvatureEnding
-
-					// f''(t0) = 0 a.k.a. Natural Spline
-					iPrev = i1;
-					tPrev = t1;
-
-			}
-
-		}
-
-		if ( tNext === undefined ) {
-
-			switch ( this.getSettings_().endingEnd ) {
-
-				case ZeroSlopeEnding:
-
-					// f'(tN) = 0
-					iNext = i1;
-					tNext = 2 * t1 - t0;
-
-					break;
-
-				case WrapAroundEnding:
-
-					// use the other end of the curve
-					iNext = 1;
-					tNext = t1 + pp[ 1 ] - pp[ 0 ];
-
-					break;
-
-				default: // ZeroCurvatureEnding
-
-					// f''(tN) = 0, a.k.a. Natural Spline
-					iNext = i1 - 1;
-					tNext = t0;
-
-			}
-
-		}
-
-		var halfDt = ( t1 - t0 ) * 0.5,
-			stride = this.valueSize;
-
-		this._weightPrev = halfDt / ( t0 - tPrev );
-		this._weightNext = halfDt / ( tNext - t1 );
-		this._offsetPrev = iPrev * stride;
-		this._offsetNext = iNext * stride;
-
-	},
-
-	interpolate_: function( i1, t0, t, t1 ) {
-
-		var result = this.resultBuffer,
-			values = this.sampleValues,
-			stride = this.valueSize,
-
-			o1 = i1 * stride,		o0 = o1 - stride,
-			oP = this._offsetPrev, 	oN = this._offsetNext,
-			wP = this._weightPrev,	wN = this._weightNext,
-
-			p = ( t - t0 ) / ( t1 - t0 ),
-			pp = p * p,
-			ppp = pp * p;
-
-		// evaluate polynomials
-
-		var sP =     - wP   * ppp   +         2 * wP    * pp    -          wP   * p;
-		var s0 = ( 1 + wP ) * ppp   + (-1.5 - 2 * wP )  * pp    + ( -0.5 + wP ) * p     + 1;
-		var s1 = (-1 - wN ) * ppp   + ( 1.5 +   wN   )  * pp    +    0.5        * p;
-		var sN =       wN   * ppp   -           wN      * pp;
-
-		// combine data linearly
-
-		for ( var i = 0; i !== stride; ++ i ) {
-
-			result[ i ] =
-					sP * values[ oP + i ] +
-					s0 * values[ o0 + i ] +
-					s1 * values[ o1 + i ] +
-					sN * values[ oN + i ];
-
-		}
-
-		return result;
-
-	}
-
-} );
-
-/**
- * @author tschw
- */
-
-function LinearInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
-
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
-
-}
-
-LinearInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
-
-	constructor: LinearInterpolant,
-
-	interpolate_: function( i1, t0, t, t1 ) {
-
-		var result = this.resultBuffer,
-			values = this.sampleValues,
-			stride = this.valueSize,
-
-			offset1 = i1 * stride,
-			offset0 = offset1 - stride,
-
-			weight1 = ( t - t0 ) / ( t1 - t0 ),
-			weight0 = 1 - weight1;
-
-		for ( var i = 0; i !== stride; ++ i ) {
-
-			result[ i ] =
-					values[ offset0 + i ] * weight0 +
-					values[ offset1 + i ] * weight1;
-
-		}
-
-		return result;
-
-	}
-
-} );
-
-/**
- *
- * Interpolant that evaluates to the sample value at the position preceeding
- * the parameter.
- *
- * @author tschw
- */
-
-function DiscreteInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
-
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
-
-}
-
-DiscreteInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
-
-	constructor: DiscreteInterpolant,
-
-	interpolate_: function( i1, t0, t, t1 ) {
-
-		return this.copySampleValue_( i1 - 1 );
-
-	}
-
-} );
-
-var KeyframeTrackPrototype;
-
-KeyframeTrackPrototype = {
-
-	TimeBufferType: Float32Array,
-	ValueBufferType: Float32Array,
-
-	DefaultInterpolation: InterpolateLinear,
-
-	InterpolantFactoryMethodDiscrete: function( result ) {
-
-		return new DiscreteInterpolant(
-				this.times, this.values, this.getValueSize(), result );
-
-	},
-
-	InterpolantFactoryMethodLinear: function( result ) {
-
-		return new LinearInterpolant(
-				this.times, this.values, this.getValueSize(), result );
-
-	},
-
-	InterpolantFactoryMethodSmooth: function( result ) {
-
-		return new CubicInterpolant(
-				this.times, this.values, this.getValueSize(), result );
-
-	},
-
-	setInterpolation: function( interpolation ) {
-
-		var factoryMethod;
-
-		switch ( interpolation ) {
-
-			case InterpolateDiscrete:
-
-				factoryMethod = this.InterpolantFactoryMethodDiscrete;
-
-				break;
-
-			case InterpolateLinear:
-
-				factoryMethod = this.InterpolantFactoryMethodLinear;
-
-				break;
-
-			case InterpolateSmooth:
-
-				factoryMethod = this.InterpolantFactoryMethodSmooth;
-
-				break;
-
-		}
-
-		if ( factoryMethod === undefined ) {
-
-			var message = "unsupported interpolation for " +
-					this.ValueTypeName + " keyframe track named " + this.name;
-
-			if ( this.createInterpolant === undefined ) {
-
-				// fall back to default, unless the default itself is messed up
-				if ( interpolation !== this.DefaultInterpolation ) {
-
-					this.setInterpolation( this.DefaultInterpolation );
-
-				} else {
-
-					throw new Error( message ); // fatal, in this case
-
-				}
-
-			}
-
-			console.warn( message );
-			return;
-
-		}
-
-		this.createInterpolant = factoryMethod;
-
-	},
-
-	getInterpolation: function() {
-
-		switch ( this.createInterpolant ) {
-
-			case this.InterpolantFactoryMethodDiscrete:
-
-				return InterpolateDiscrete;
-
-			case this.InterpolantFactoryMethodLinear:
-
-				return InterpolateLinear;
-
-			case this.InterpolantFactoryMethodSmooth:
-
-				return InterpolateSmooth;
-
-		}
-
-	},
-
-	getValueSize: function() {
-
-		return this.values.length / this.times.length;
-
-	},
-
-	// move all keyframes either forwards or backwards in time
-	shift: function( timeOffset ) {
-
-		if( timeOffset !== 0.0 ) {
-
-			var times = this.times;
-
-			for( var i = 0, n = times.length; i !== n; ++ i ) {
-
-				times[ i ] += timeOffset;
-
-			}
-
-		}
-
-		return this;
-
-	},
-
-	// scale all keyframe times by a factor (useful for frame <-> seconds conversions)
-	scale: function( timeScale ) {
-
-		if( timeScale !== 1.0 ) {
-
-			var times = this.times;
-
-			for( var i = 0, n = times.length; i !== n; ++ i ) {
-
-				times[ i ] *= timeScale;
-
-			}
-
-		}
-
-		return this;
-
-	},
-
-	// removes keyframes before and after animation without changing any values within the range [startTime, endTime].
-	// IMPORTANT: We do not shift around keys to the start of the track time, because for interpolated keys this will change their values
-	trim: function( startTime, endTime ) {
-
-		var times = this.times,
-			nKeys = times.length,
-			from = 0,
-			to = nKeys - 1;
-
-		while ( from !== nKeys && times[ from ] < startTime ) ++ from;
-		while ( to !== -1 && times[ to ] > endTime ) -- to;
-
-		++ to; // inclusive -> exclusive bound
-
-		if( from !== 0 || to !== nKeys ) {
-
-			// empty tracks are forbidden, so keep at least one keyframe
-			if ( from >= to ) to = Math.max( to , 1 ), from = to - 1;
-
-			var stride = this.getValueSize();
-			this.times = AnimationUtils.arraySlice( times, from, to );
-			this.values = AnimationUtils.
-					arraySlice( this.values, from * stride, to * stride );
-
-		}
-
-		return this;
-
-	},
-
-	// ensure we do not get a GarbageInGarbageOut situation, make sure tracks are at least minimally viable
-	validate: function() {
-
-		var valid = true;
-
-		var valueSize = this.getValueSize();
-		if ( valueSize - Math.floor( valueSize ) !== 0 ) {
-
-			console.error( "invalid value size in track", this );
-			valid = false;
-
-		}
-
-		var times = this.times,
-			values = this.values,
-
-			nKeys = times.length;
-
-		if( nKeys === 0 ) {
-
-			console.error( "track is empty", this );
-			valid = false;
-
-		}
-
-		var prevTime = null;
-
-		for( var i = 0; i !== nKeys; i ++ ) {
-
-			var currTime = times[ i ];
-
-			if ( typeof currTime === 'number' && isNaN( currTime ) ) {
-
-				console.error( "time is not a valid number", this, i, currTime );
-				valid = false;
-				break;
-
-			}
-
-			if( prevTime !== null && prevTime > currTime ) {
-
-				console.error( "out of order keys", this, i, currTime, prevTime );
-				valid = false;
-				break;
-
-			}
-
-			prevTime = currTime;
-
-		}
-
-		if ( values !== undefined ) {
-
-			if ( AnimationUtils.isTypedArray( values ) ) {
-
-				for ( var i = 0, n = values.length; i !== n; ++ i ) {
-
-					var value = values[ i ];
-
-					if ( isNaN( value ) ) {
-
-						console.error( "value is not a valid number", this, i, value );
-						valid = false;
-						break;
-
-					}
-
-				}
-
-			}
-
-		}
-
-		return valid;
-
-	},
-
-	// removes equivalent sequential keys as common in morph target sequences
-	// (0,0,0,0,1,1,1,0,0,0,0,0,0,0) --> (0,0,1,1,0,0)
-	optimize: function() {
-
-		var times = this.times,
-			values = this.values,
-			stride = this.getValueSize(),
-
-			smoothInterpolation = this.getInterpolation() === InterpolateSmooth,
-
-			writeIndex = 1,
-			lastIndex = times.length - 1;
-
-		for( var i = 1; i < lastIndex; ++ i ) {
-
-			var keep = false;
-
-			var time = times[ i ];
-			var timeNext = times[ i + 1 ];
-
-			// remove adjacent keyframes scheduled at the same time
-
-			if ( time !== timeNext && ( i !== 1 || time !== time[ 0 ] ) ) {
-
-				if ( ! smoothInterpolation ) {
-
-					// remove unnecessary keyframes same as their neighbors
-
-					var offset = i * stride,
-						offsetP = offset - stride,
-						offsetN = offset + stride;
-
-					for ( var j = 0; j !== stride; ++ j ) {
-
-						var value = values[ offset + j ];
-
-						if ( value !== values[ offsetP + j ] ||
-								value !== values[ offsetN + j ] ) {
-
-							keep = true;
-							break;
-
-						}
-
-					}
-
-				} else keep = true;
-
-			}
-
-			// in-place compaction
-
-			if ( keep ) {
-
-				if ( i !== writeIndex ) {
-
-					times[ writeIndex ] = times[ i ];
-
-					var readOffset = i * stride,
-						writeOffset = writeIndex * stride;
-
-					for ( var j = 0; j !== stride; ++ j )
-
-						values[ writeOffset + j ] = values[ readOffset + j ];
-
-				}
-
-				++ writeIndex;
-
-			}
-
-		}
-
-		// flush last keyframe (compaction looks ahead)
-
-		if ( lastIndex > 0 ) {
-
-			times[ writeIndex ] = times[ lastIndex ];
-
-			for ( var readOffset = lastIndex * stride, writeOffset = writeIndex * stride, j = 0; j !== stride; ++ j )
-
-				values[ writeOffset + j ] = values[ readOffset + j ];
-
-			++ writeIndex;
-
-		}
-
-		if ( writeIndex !== times.length ) {
-
-			this.times = AnimationUtils.arraySlice( times, 0, writeIndex );
-			this.values = AnimationUtils.arraySlice( values, 0, writeIndex * stride );
-
-		}
-
-		return this;
-
-	}
-
-};
-
-function KeyframeTrackConstructor( name, times, values, interpolation ) {
-
-	if( name === undefined ) throw new Error( "track name is undefined" );
-
-	if( times === undefined || times.length === 0 ) {
-
-		throw new Error( "no keyframes in track named " + name );
-
-	}
-
-	this.name = name;
-
-	this.times = AnimationUtils.convertArray( times, this.TimeBufferType );
-	this.values = AnimationUtils.convertArray( values, this.ValueBufferType );
-
-	this.setInterpolation( interpolation || this.DefaultInterpolation );
-
-	this.validate();
-	this.optimize();
-
-}
-
-/**
- *
- * A Track of vectored keyframe values.
- *
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function VectorKeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
-
-}
-
-VectorKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: VectorKeyframeTrack,
-
-	ValueTypeName: 'vector'
-
-	// ValueBufferType is inherited
-
-	// DefaultInterpolation is inherited
-
-} );
-
-/**
- * Spherical linear unit quaternion interpolant.
- *
- * @author tschw
- */
-
-function QuaternionLinearInterpolant(
-		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
-
-	Interpolant.call(
-			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
-
-}
-
-QuaternionLinearInterpolant.prototype =
-		Object.assign( Object.create( Interpolant.prototype ), {
-
-	constructor: QuaternionLinearInterpolant,
-
-	interpolate_: function( i1, t0, t, t1 ) {
-
-		var result = this.resultBuffer,
-			values = this.sampleValues,
-			stride = this.valueSize,
-
-			offset = i1 * stride,
-
-			alpha = ( t - t0 ) / ( t1 - t0 );
-
-		for ( var end = offset + stride; offset !== end; offset += 4 ) {
-
-			Quaternion.slerpFlat( result, 0,
-					values, offset - stride, values, offset, alpha );
-
-		}
-
-		return result;
-
-	}
-
-} );
-
-/**
- *
- * A Track of quaternion keyframe values.
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function QuaternionKeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
-
-}
-
-QuaternionKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: QuaternionKeyframeTrack,
-
-	ValueTypeName: 'quaternion',
-
-	// ValueBufferType is inherited
-
-	DefaultInterpolation: InterpolateLinear,
-
-	InterpolantFactoryMethodLinear: function( result ) {
-
-		return new QuaternionLinearInterpolant(
-				this.times, this.values, this.getValueSize(), result );
-
-	},
-
-	InterpolantFactoryMethodSmooth: undefined // not yet implemented
-
-} );
-
-/**
- *
- * A Track of numeric keyframe values.
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function NumberKeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
-
-}
-
-NumberKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: NumberKeyframeTrack,
-
-	ValueTypeName: 'number',
-
-	// ValueBufferType is inherited
-
-	// DefaultInterpolation is inherited
-
-} );
-
-/**
- *
- * A Track that interpolates Strings
- *
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function StringKeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
-
-}
-
-StringKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: StringKeyframeTrack,
-
-	ValueTypeName: 'string',
-	ValueBufferType: Array,
-
-	DefaultInterpolation: InterpolateDiscrete,
-
-	InterpolantFactoryMethodLinear: undefined,
-
-	InterpolantFactoryMethodSmooth: undefined
-
-} );
-
-/**
- *
- * A Track of Boolean keyframe values.
- *
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function BooleanKeyframeTrack( name, times, values ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values );
-
-}
-
-BooleanKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: BooleanKeyframeTrack,
-
-	ValueTypeName: 'bool',
-	ValueBufferType: Array,
-
-	DefaultInterpolation: InterpolateDiscrete,
-
-	InterpolantFactoryMethodLinear: undefined,
-	InterpolantFactoryMethodSmooth: undefined
-
-	// Note: Actually this track could have a optimized / compressed
-	// representation of a single value and a custom interpolant that
-	// computes "firstValue ^ isOdd( index )".
-
-} );
-
-/**
- *
- * A Track of keyframe values that represent color.
- *
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function ColorKeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
-
-}
-
-ColorKeyframeTrack.prototype =
-		Object.assign( Object.create( KeyframeTrackPrototype ), {
-
-	constructor: ColorKeyframeTrack,
-
-	ValueTypeName: 'color'
-
-	// ValueBufferType is inherited
-
-	// DefaultInterpolation is inherited
-
-
-	// Note: Very basic implementation and nothing special yet.
-	// However, this is the place for color space parameterization.
-
-} );
-
-/**
- *
- * A timed sequence of keyframes for a specific property.
- *
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- * @author tschw
- */
-
-function KeyframeTrack( name, times, values, interpolation ) {
-
-	KeyframeTrackConstructor.apply( this, arguments );
-
-}
-
-KeyframeTrack.prototype = KeyframeTrackPrototype;
-KeyframeTrackPrototype.constructor = KeyframeTrack;
-
-// Static methods:
-
-Object.assign( KeyframeTrack, {
-
-	// Serialization (in static context, because of constructor invocation
-	// and automatic invocation of .toJSON):
-
-	parse: function( json ) {
-
-		if( json.type === undefined ) {
-
-			throw new Error( "track type undefined, can not parse" );
-
-		}
-
-		var trackType = KeyframeTrack._getTrackTypeForValueTypeName( json.type );
-
-		if ( json.times === undefined ) {
-
-			var times = [], values = [];
-
-			AnimationUtils.flattenJSON( json.keys, times, values, 'value' );
-
-			json.times = times;
-			json.values = values;
-
-		}
-
-		// derived classes can define a static parse method
-		if ( trackType.parse !== undefined ) {
-
-			return trackType.parse( json );
-
-		} else {
-
-			// by default, we asssume a constructor compatible with the base
-			return new trackType(
-					json.name, json.times, json.values, json.interpolation );
-
-		}
-
-	},
-
-	toJSON: function( track ) {
-
-		var trackType = track.constructor;
-
-		var json;
-
-		// derived classes can define a static toJSON method
-		if ( trackType.toJSON !== undefined ) {
-
-			json = trackType.toJSON( track );
-
-		} else {
-
-			// by default, we assume the data can be serialized as-is
-			json = {
-
-				'name': track.name,
-				'times': AnimationUtils.convertArray( track.times, Array ),
-				'values': AnimationUtils.convertArray( track.values, Array )
-
-			};
-
-			var interpolation = track.getInterpolation();
-
-			if ( interpolation !== track.DefaultInterpolation ) {
-
-				json.interpolation = interpolation;
-
-			}
-
-		}
-
-		json.type = track.ValueTypeName; // mandatory
-
-		return json;
-
-	},
-
-	_getTrackTypeForValueTypeName: function( typeName ) {
-
-		switch( typeName.toLowerCase() ) {
-
-			case "scalar":
-			case "double":
-			case "float":
-			case "number":
-			case "integer":
-
-				return NumberKeyframeTrack;
-
-			case "vector":
-			case "vector2":
-			case "vector3":
-			case "vector4":
-
-				return VectorKeyframeTrack;
-
-			case "color":
-
-				return ColorKeyframeTrack;
-
-			case "quaternion":
-
-				return QuaternionKeyframeTrack;
-
-			case "bool":
-			case "boolean":
-
-				return BooleanKeyframeTrack;
-
-			case "string":
-
-				return StringKeyframeTrack;
-
-		}
-
-		throw new Error( "Unsupported typeName: " + typeName );
-
-	}
-
-} );
-
-/**
- *
- * Reusable set of Tracks that represent an animation.
- *
- * @author Ben Houston / http://clara.io/
- * @author David Sarno / http://lighthaus.us/
- */
-
-function AnimationClip( name, duration, tracks ) {
-
-	this.name = name;
-	this.tracks = tracks;
-	this.duration = ( duration !== undefined ) ? duration : -1;
-
-	this.uuid = _Math.generateUUID();
-
-	// this means it should figure out its duration by scanning the tracks
-	if ( this.duration < 0 ) {
-
-		this.resetDuration();
-
-	}
-
-	this.optimize();
-
-}
-
-AnimationClip.prototype = {
-
-	constructor: AnimationClip,
-
-	resetDuration: function() {
-
-		var tracks = this.tracks,
-			duration = 0;
-
-		for ( var i = 0, n = tracks.length; i !== n; ++ i ) {
-
-			var track = this.tracks[ i ];
-
-			duration = Math.max(
-					duration, track.times[ track.times.length - 1 ] );
-
-		}
-
-		this.duration = duration;
-
-	},
-
-	trim: function() {
-
-		for ( var i = 0; i < this.tracks.length; i ++ ) {
-
-			this.tracks[ i ].trim( 0, this.duration );
-
-		}
-
-		return this;
-
-	},
-
-	optimize: function() {
-
-		for ( var i = 0; i < this.tracks.length; i ++ ) {
-
-			this.tracks[ i ].optimize();
-
-		}
-
-		return this;
-
-	}
-
-};
-
-// Static methods:
-
-Object.assign( AnimationClip, {
-
-	parse: function( json ) {
-
-		var tracks = [],
-			jsonTracks = json.tracks,
-			frameTime = 1.0 / ( json.fps || 1.0 );
-
-		for ( var i = 0, n = jsonTracks.length; i !== n; ++ i ) {
-
-			tracks.push( KeyframeTrack.parse( jsonTracks[ i ] ).scale( frameTime ) );
-
-		}
-
-		return new AnimationClip( json.name, json.duration, tracks );
-
-	},
-
-
-	toJSON: function( clip ) {
-
-		var tracks = [],
-			clipTracks = clip.tracks;
-
-		var json = {
-
-			'name': clip.name,
-			'duration': clip.duration,
-			'tracks': tracks
-
-		};
-
-		for ( var i = 0, n = clipTracks.length; i !== n; ++ i ) {
-
-			tracks.push( KeyframeTrack.toJSON( clipTracks[ i ] ) );
-
-		}
-
-		return json;
-
-	},
-
-
-	CreateFromMorphTargetSequence: function( name, morphTargetSequence, fps, noLoop ) {
-
-		var numMorphTargets = morphTargetSequence.length;
-		var tracks = [];
-
-		for ( var i = 0; i < numMorphTargets; i ++ ) {
-
-			var times = [];
-			var values = [];
-
-			times.push(
-					( i + numMorphTargets - 1 ) % numMorphTargets,
-					i,
-					( i + 1 ) % numMorphTargets );
-
-			values.push( 0, 1, 0 );
-
-			var order = AnimationUtils.getKeyframeOrder( times );
-			times = AnimationUtils.sortedArray( times, 1, order );
-			values = AnimationUtils.sortedArray( values, 1, order );
-
-			// if there is a key at the first frame, duplicate it as the
-			// last frame as well for perfect loop.
-			if ( ! noLoop && times[ 0 ] === 0 ) {
-
-				times.push( numMorphTargets );
-				values.push( values[ 0 ] );
-
-			}
-
-			tracks.push(
-					new NumberKeyframeTrack(
-						'.morphTargetInfluences[' + morphTargetSequence[ i ].name + ']',
-						times, values
-					).scale( 1.0 / fps ) );
-		}
-
-		return new AnimationClip( name, -1, tracks );
-
-	},
-
-	findByName: function( objectOrClipArray, name ) {
-
-		var clipArray = objectOrClipArray;
-
-		if ( ! Array.isArray( objectOrClipArray ) ) {
-
-			var o = objectOrClipArray;
-			clipArray = o.geometry && o.geometry.animations || o.animations;
-
-		}
-
-		for ( var i = 0; i < clipArray.length; i ++ ) {
-
-			if ( clipArray[ i ].name === name ) {
-
-				return clipArray[ i ];
-
-			}
-		}
-
-		return null;
-
-	},
-
-	CreateClipsFromMorphTargetSequences: function( morphTargets, fps, noLoop ) {
-
-		var animationToMorphTargets = {};
-
-		// tested with https://regex101.com/ on trick sequences
-		// such flamingo_flyA_003, flamingo_run1_003, crdeath0059
-		var pattern = /^([\w-]*?)([\d]+)$/;
-
-		// sort morph target names into animation groups based
-		// patterns like Walk_001, Walk_002, Run_001, Run_002
-		for ( var i = 0, il = morphTargets.length; i < il; i ++ ) {
-
-			var morphTarget = morphTargets[ i ];
-			var parts = morphTarget.name.match( pattern );
-
-			if ( parts && parts.length > 1 ) {
-
-				var name = parts[ 1 ];
-
-				var animationMorphTargets = animationToMorphTargets[ name ];
-				if ( ! animationMorphTargets ) {
-
-					animationToMorphTargets[ name ] = animationMorphTargets = [];
-
-				}
-
-				animationMorphTargets.push( morphTarget );
-
-			}
-
-		}
-
-		var clips = [];
-
-		for ( var name in animationToMorphTargets ) {
-
-			clips.push( AnimationClip.CreateFromMorphTargetSequence( name, animationToMorphTargets[ name ], fps, noLoop ) );
-
-		}
-
-		return clips;
-
-	},
-
-	// parse the animation.hierarchy format
-	parseAnimation: function( animation, bones ) {
-
-		if ( ! animation ) {
-
-			console.error( "  no animation in JSONLoader data" );
-			return null;
-
-		}
-
-		var addNonemptyTrack = function(
-				trackType, trackName, animationKeys, propertyName, destTracks ) {
-
-			// only return track if there are actually keys.
-			if ( animationKeys.length !== 0 ) {
-
-				var times = [];
-				var values = [];
-
-				AnimationUtils.flattenJSON(
-						animationKeys, times, values, propertyName );
-
-				// empty keys are filtered out, so check again
-				if ( times.length !== 0 ) {
-
-					destTracks.push( new trackType( trackName, times, values ) );
-
-				}
-
-			}
-
-		};
-
-		var tracks = [];
-
-		var clipName = animation.name || 'default';
-		// automatic length determination in AnimationClip.
-		var duration = animation.length || -1;
-		var fps = animation.fps || 30;
-
-		var hierarchyTracks = animation.hierarchy || [];
-
-		for ( var h = 0; h < hierarchyTracks.length; h ++ ) {
-
-			var animationKeys = hierarchyTracks[ h ].keys;
-
-			// skip empty tracks
-			if ( ! animationKeys || animationKeys.length === 0 ) continue;
-
-			// process morph targets in a way exactly compatible
-			// with AnimationHandler.init( animation )
-			if ( animationKeys[0].morphTargets ) {
-
-				// figure out all morph targets used in this track
-				var morphTargetNames = {};
-				for ( var k = 0; k < animationKeys.length; k ++ ) {
-
-					if ( animationKeys[k].morphTargets ) {
-
-						for ( var m = 0; m < animationKeys[k].morphTargets.length; m ++ ) {
-
-							morphTargetNames[ animationKeys[k].morphTargets[m] ] = -1;
-						}
-
-					}
-
-				}
-
-				// create a track for each morph target with all zero
-				// morphTargetInfluences except for the keys in which
-				// the morphTarget is named.
-				for ( var morphTargetName in morphTargetNames ) {
-
-					var times = [];
-					var values = [];
-
-					for ( var m = 0;
-							m !== animationKeys[k].morphTargets.length; ++ m ) {
-
-						var animationKey = animationKeys[k];
-
-						times.push( animationKey.time );
-						values.push( ( animationKey.morphTarget === morphTargetName ) ? 1 : 0 );
-
-					}
-
-					tracks.push( new NumberKeyframeTrack(
-							'.morphTargetInfluence[' + morphTargetName + ']', times, values ) );
-
-				}
-
-				duration = morphTargetNames.length * ( fps || 1.0 );
-
-			} else {
-				// ...assume skeletal animation
-
-				var boneName = '.bones[' + bones[ h ].name + ']';
-
-				addNonemptyTrack(
-						VectorKeyframeTrack, boneName + '.position',
-						animationKeys, 'pos', tracks );
-
-				addNonemptyTrack(
-						QuaternionKeyframeTrack, boneName + '.quaternion',
-						animationKeys, 'rot', tracks );
-
-				addNonemptyTrack(
-						VectorKeyframeTrack, boneName + '.scale',
-						animationKeys, 'scl', tracks );
-
-			}
-
-		}
-
-		if ( tracks.length === 0 ) {
-
-			return null;
-
-		}
-
-		var clip = new AnimationClip( clipName, duration, tracks );
-
-		return clip;
-
-	}
-
-} );
-
-/**
- * @author mrdoob / http://mrdoob.com/
- * @author alteredq / http://alteredqualia.com/
- */
-
-function JSONLoader( manager ) {
-
-	if ( typeof manager === 'boolean' ) {
-
-		console.warn( 'THREE.JSONLoader: showStatus parameter has been removed from constructor.' );
-		manager = undefined;
-
-	}
-
-	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
-
-	this.withCredentials = false;
-
-}
-
-Object.assign( JSONLoader.prototype, {
-
-	load: function( url, onLoad, onProgress, onError ) {
-
-		var scope = this;
-
-		var texturePath = this.texturePath && ( typeof this.texturePath === "string" ) ? this.texturePath : Loader$1.prototype.extractUrlBase( url );
-
-		var loader = new XHRLoader( this.manager );
-		loader.setWithCredentials( this.withCredentials );
-		loader.load( url, function ( text ) {
-
-			var json = JSON.parse( text );
-			var metadata = json.metadata;
-
-			if ( metadata !== undefined ) {
-
-				var type = metadata.type;
-
-				if ( type !== undefined ) {
-
-					if ( type.toLowerCase() === 'object' ) {
-
-						console.error( 'THREE.JSONLoader: ' + url + ' should be loaded with THREE.ObjectLoader instead.' );
-						return;
-
-					}
-
-					if ( type.toLowerCase() === 'scene' ) {
-
-						console.error( 'THREE.JSONLoader: ' + url + ' should be loaded with THREE.SceneLoader instead.' );
-						return;
-
-					}
-
-				}
-
-			}
-
-			var object = scope.parse( json, texturePath );
-			onLoad( object.geometry, object.materials );
-
-		}, onProgress, onError );
-
-	},
-
-	setTexturePath: function ( value ) {
-
-		this.texturePath = value;
-
-	},
-
-	parse: function ( json, texturePath ) {
-
-		var geometry = new Geometry(),
-		scale = ( json.scale !== undefined ) ? 1.0 / json.scale : 1.0;
-
-		parseModel( scale );
-
-		parseSkin();
-		parseMorphing( scale );
-		parseAnimations();
-
-		geometry.computeFaceNormals();
-		geometry.computeBoundingSphere();
-
-		function parseModel( scale ) {
-
-			function isBitSet( value, position ) {
-
-				return value & ( 1 << position );
-
-			}
-
-			var i, j, fi,
-
-			offset, zLength,
-
-		colorIndex, normalIndex, uvIndex, materialIndex,
-
-			type,
-			isQuad,
-			hasMaterial,
-			hasFaceVertexUv,
-			hasFaceNormal, hasFaceVertexNormal,
-			hasFaceColor, hasFaceVertexColor,
-
-		vertex, face, faceA, faceB, hex, normal,
-
-			uvLayer, uv, u, v,
-
-			faces = json.faces,
-			vertices = json.vertices,
-			normals = json.normals,
-			colors = json.colors,
-
-			nUvLayers = 0;
-
-			if ( json.uvs !== undefined ) {
-
-				// disregard empty arrays
-
-				for ( i = 0; i < json.uvs.length; i ++ ) {
-
-					if ( json.uvs[ i ].length ) nUvLayers ++;
-
-				}
-
-				for ( i = 0; i < nUvLayers; i ++ ) {
-
-					geometry.faceVertexUvs[ i ] = [];
-
-				}
-
-			}
-
-			offset = 0;
-			zLength = vertices.length;
-
-			while ( offset < zLength ) {
-
-				vertex = new Vector3();
-
-				vertex.x = vertices[ offset ++ ] * scale;
-				vertex.y = vertices[ offset ++ ] * scale;
-				vertex.z = vertices[ offset ++ ] * scale;
-
-				geometry.vertices.push( vertex );
-
-			}
-
-			offset = 0;
-			zLength = faces.length;
-
-			while ( offset < zLength ) {
-
-				type = faces[ offset ++ ];
-
-
-				isQuad              = isBitSet( type, 0 );
-				hasMaterial         = isBitSet( type, 1 );
-				hasFaceVertexUv     = isBitSet( type, 3 );
-				hasFaceNormal       = isBitSet( type, 4 );
-				hasFaceVertexNormal = isBitSet( type, 5 );
-				hasFaceColor	     = isBitSet( type, 6 );
-				hasFaceVertexColor  = isBitSet( type, 7 );
-
-				// console.log("type", type, "bits", isQuad, hasMaterial, hasFaceVertexUv, hasFaceNormal, hasFaceVertexNormal, hasFaceColor, hasFaceVertexColor);
-
-				if ( isQuad ) {
-
-					faceA = new Face3();
-					faceA.a = faces[ offset ];
-					faceA.b = faces[ offset + 1 ];
-					faceA.c = faces[ offset + 3 ];
-
-					faceB = new Face3();
-					faceB.a = faces[ offset + 1 ];
-					faceB.b = faces[ offset + 2 ];
-					faceB.c = faces[ offset + 3 ];
-
-					offset += 4;
-
-					if ( hasMaterial ) {
-
-						materialIndex = faces[ offset ++ ];
-						faceA.materialIndex = materialIndex;
-						faceB.materialIndex = materialIndex;
-
-					}
-
-					// to get face <=> uv index correspondence
-
-					fi = geometry.faces.length;
-
-					if ( hasFaceVertexUv ) {
-
-						for ( i = 0; i < nUvLayers; i ++ ) {
-
-							uvLayer = json.uvs[ i ];
-
-							geometry.faceVertexUvs[ i ][ fi ] = [];
-							geometry.faceVertexUvs[ i ][ fi + 1 ] = [];
-
-							for ( j = 0; j < 4; j ++ ) {
-
-								uvIndex = faces[ offset ++ ];
-
-								u = uvLayer[ uvIndex * 2 ];
-								v = uvLayer[ uvIndex * 2 + 1 ];
-
-								uv = new Vector2( u, v );
-
-								if ( j !== 2 ) geometry.faceVertexUvs[ i ][ fi ].push( uv );
-								if ( j !== 0 ) geometry.faceVertexUvs[ i ][ fi + 1 ].push( uv );
-
-							}
-
-						}
-
-					}
-
-					if ( hasFaceNormal ) {
-
-						normalIndex = faces[ offset ++ ] * 3;
-
-						faceA.normal.set(
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ]
-						);
-
-						faceB.normal.copy( faceA.normal );
-
-					}
-
-					if ( hasFaceVertexNormal ) {
-
-						for ( i = 0; i < 4; i ++ ) {
-
-							normalIndex = faces[ offset ++ ] * 3;
-
-							normal = new Vector3(
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ]
-							);
-
-
-							if ( i !== 2 ) faceA.vertexNormals.push( normal );
-							if ( i !== 0 ) faceB.vertexNormals.push( normal );
-
-						}
-
-					}
-
-
-					if ( hasFaceColor ) {
-
-						colorIndex = faces[ offset ++ ];
-						hex = colors[ colorIndex ];
-
-						faceA.color.setHex( hex );
-						faceB.color.setHex( hex );
-
-					}
-
-
-					if ( hasFaceVertexColor ) {
-
-						for ( i = 0; i < 4; i ++ ) {
-
-							colorIndex = faces[ offset ++ ];
-							hex = colors[ colorIndex ];
-
-							if ( i !== 2 ) faceA.vertexColors.push( new Color( hex ) );
-							if ( i !== 0 ) faceB.vertexColors.push( new Color( hex ) );
-
-						}
-
-					}
-
-					geometry.faces.push( faceA );
-					geometry.faces.push( faceB );
-
-				} else {
-
-					face = new Face3();
-					face.a = faces[ offset ++ ];
-					face.b = faces[ offset ++ ];
-					face.c = faces[ offset ++ ];
-
-					if ( hasMaterial ) {
-
-						materialIndex = faces[ offset ++ ];
-						face.materialIndex = materialIndex;
-
-					}
-
-					// to get face <=> uv index correspondence
-
-					fi = geometry.faces.length;
-
-					if ( hasFaceVertexUv ) {
-
-						for ( i = 0; i < nUvLayers; i ++ ) {
-
-							uvLayer = json.uvs[ i ];
-
-							geometry.faceVertexUvs[ i ][ fi ] = [];
-
-							for ( j = 0; j < 3; j ++ ) {
-
-								uvIndex = faces[ offset ++ ];
-
-								u = uvLayer[ uvIndex * 2 ];
-								v = uvLayer[ uvIndex * 2 + 1 ];
-
-								uv = new Vector2( u, v );
-
-								geometry.faceVertexUvs[ i ][ fi ].push( uv );
-
-							}
-
-						}
-
-					}
-
-					if ( hasFaceNormal ) {
-
-						normalIndex = faces[ offset ++ ] * 3;
-
-						face.normal.set(
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ]
-						);
-
-					}
-
-					if ( hasFaceVertexNormal ) {
-
-						for ( i = 0; i < 3; i ++ ) {
-
-							normalIndex = faces[ offset ++ ] * 3;
-
-							normal = new Vector3(
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ]
-							);
-
-							face.vertexNormals.push( normal );
-
-						}
-
-					}
-
-
-					if ( hasFaceColor ) {
-
-						colorIndex = faces[ offset ++ ];
-						face.color.setHex( colors[ colorIndex ] );
-
-					}
-
-
-					if ( hasFaceVertexColor ) {
-
-						for ( i = 0; i < 3; i ++ ) {
-
-							colorIndex = faces[ offset ++ ];
-							face.vertexColors.push( new Color( colors[ colorIndex ] ) );
-
-						}
-
-					}
-
-					geometry.faces.push( face );
-
-				}
-
-			}
-
-		}
-
-		function parseSkin() {
-
-			var influencesPerVertex = ( json.influencesPerVertex !== undefined ) ? json.influencesPerVertex : 2;
-
-			if ( json.skinWeights ) {
-
-				for ( var i = 0, l = json.skinWeights.length; i < l; i += influencesPerVertex ) {
-
-					var x =                               json.skinWeights[ i ];
-					var y = ( influencesPerVertex > 1 ) ? json.skinWeights[ i + 1 ] : 0;
-					var z = ( influencesPerVertex > 2 ) ? json.skinWeights[ i + 2 ] : 0;
-					var w = ( influencesPerVertex > 3 ) ? json.skinWeights[ i + 3 ] : 0;
-
-					geometry.skinWeights.push( new Vector4( x, y, z, w ) );
-
-				}
-
-			}
-
-			if ( json.skinIndices ) {
-
-				for ( var i = 0, l = json.skinIndices.length; i < l; i += influencesPerVertex ) {
-
-					var a =                               json.skinIndices[ i ];
-					var b = ( influencesPerVertex > 1 ) ? json.skinIndices[ i + 1 ] : 0;
-					var c = ( influencesPerVertex > 2 ) ? json.skinIndices[ i + 2 ] : 0;
-					var d = ( influencesPerVertex > 3 ) ? json.skinIndices[ i + 3 ] : 0;
-
-					geometry.skinIndices.push( new Vector4( a, b, c, d ) );
-
-				}
-
-			}
-
-			geometry.bones = json.bones;
-
-			if ( geometry.bones && geometry.bones.length > 0 && ( geometry.skinWeights.length !== geometry.skinIndices.length || geometry.skinIndices.length !== geometry.vertices.length ) ) {
-
-				console.warn( 'When skinning, number of vertices (' + geometry.vertices.length + '), skinIndices (' +
-					geometry.skinIndices.length + '), and skinWeights (' + geometry.skinWeights.length + ') should match.' );
-
-			}
-
-		}
-
-		function parseMorphing( scale ) {
-
-			if ( json.morphTargets !== undefined ) {
-
-				for ( var i = 0, l = json.morphTargets.length; i < l; i ++ ) {
-
-					geometry.morphTargets[ i ] = {};
-					geometry.morphTargets[ i ].name = json.morphTargets[ i ].name;
-					geometry.morphTargets[ i ].vertices = [];
-
-					var dstVertices = geometry.morphTargets[ i ].vertices;
-					var srcVertices = json.morphTargets[ i ].vertices;
-
-					for ( var v = 0, vl = srcVertices.length; v < vl; v += 3 ) {
-
-						var vertex = new Vector3();
-						vertex.x = srcVertices[ v ] * scale;
-						vertex.y = srcVertices[ v + 1 ] * scale;
-						vertex.z = srcVertices[ v + 2 ] * scale;
-
-						dstVertices.push( vertex );
-
-					}
-
-				}
-
-			}
-
-			if ( json.morphColors !== undefined && json.morphColors.length > 0 ) {
-
-				console.warn( 'THREE.JSONLoader: "morphColors" no longer supported. Using them as face colors.' );
-
-				var faces = geometry.faces;
-				var morphColors = json.morphColors[ 0 ].colors;
-
-				for ( var i = 0, l = faces.length; i < l; i ++ ) {
-
-					faces[ i ].color.fromArray( morphColors, i * 3 );
-
-				}
-
-			}
-
-		}
-
-		function parseAnimations() {
-
-			var outputAnimations = [];
-
-			// parse old style Bone/Hierarchy animations
-			var animations = [];
-
-			if ( json.animation !== undefined ) {
-
-				animations.push( json.animation );
-
-			}
-
-			if ( json.animations !== undefined ) {
-
-				if ( json.animations.length ) {
-
-					animations = animations.concat( json.animations );
-
-				} else {
-
-					animations.push( json.animations );
-
-				}
-
-			}
-
-			for ( var i = 0; i < animations.length; i ++ ) {
-
-				var clip = AnimationClip.parseAnimation( animations[ i ], geometry.bones );
-				if ( clip ) outputAnimations.push( clip );
-
-			}
-
-			// parse implicit morph animations
-			if ( geometry.morphTargets ) {
-
-				// TODO: Figure out what an appropraite FPS is for morph target animations -- defaulting to 10, but really it is completely arbitrary.
-				var morphAnimationClips = AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10 );
-				outputAnimations = outputAnimations.concat( morphAnimationClips );
-
-			}
-
-			if ( outputAnimations.length > 0 ) geometry.animations = outputAnimations;
-
-		}
-
-		if ( json.materials === undefined || json.materials.length === 0 ) {
-
-			return { geometry: geometry };
-
-		} else {
-
-			var materials = Loader$1.prototype.initMaterials( json.materials, texturePath, this.crossOrigin );
-
-			return { geometry: geometry, materials: materials };
-
-		}
-
-	}
-
-} );
-
-var AssetError = function () {
-  function AssetError(error, path) {
-    classCallCheck(this, AssetError);
-
-    this.error = error;
-    this.path = path;
-    this.stack = new Error().stack;
-  }
-
-  createClass(AssetError, [{
-    key: 'toString',
-    value: function toString() {
-      return 'Error loading \'' + this.path + '\': ' + this.error + '.';
-    }
-  }]);
-  return AssetError;
-}();
-
-var Asset = function Asset(path) {
-  classCallCheck(this, Asset);
-
-  this.path = path;
-};
-
-var ModelAsset = function (_Asset) {
-  inherits(ModelAsset, _Asset);
-
-  function ModelAsset(path, geometry, material) {
-    classCallCheck(this, ModelAsset);
-
-    var _this = possibleConstructorReturn(this, (ModelAsset.__proto__ || Object.getPrototypeOf(ModelAsset)).call(this, path));
-
-    _this.geometry = geometry;
-    _this.material = material;
-    return _this;
-  }
-
-  return ModelAsset;
-}(Asset);
-
-var TextureAsset = function (_Asset2) {
-  inherits(TextureAsset, _Asset2);
-
-  function TextureAsset(path, texture) {
-    classCallCheck(this, TextureAsset);
-
-    var _this2 = possibleConstructorReturn(this, (TextureAsset.__proto__ || Object.getPrototypeOf(TextureAsset)).call(this, path));
-
-    _this2.texture = texture;
-    _this2.texture.anisotropy = 4;
-    return _this2;
-  }
-
-  return TextureAsset;
-}(Asset);
-
-var Loader = function () {
-  function Loader(root) {
-    classCallCheck(this, Loader);
-
-    this.root = root || '';
-    this.textureLoader = new TextureLoader();
-    this.jsonLoader = new JSONLoader();
-    this.cache = {};
-    this.typeToMethod = {
-      'texture': this.loadTexture,
-      'json/model': this.loadModelJSON
-    };
-  }
-
-  createClass(Loader, [{
-    key: 'getAsset',
-    value: function getAsset(path) {
-      return this.cache[path];
-    }
-  }, {
-    key: 'loadAssets',
-    value: function loadAssets(assetList, onComplete, onProgress, onError) {
-      var loaded = 0;
-      var failed = 0;
-      var errors = [];
-      var total = assetList.length;
-
-      var checkProgress = function checkProgress(path, asset, error) {
-        if (onProgress != null) {
-          onProgress(loaded, failed, total, path, asset, error);
-        }
-        if (loaded + failed == total && onComplete != null) {
-          onComplete(errors, total, loaded, failed);
-        }
-      };
-
-      var loadCb = function loadCb(asset) {
-        loaded++;
-        checkProgress(asset.path, asset, null);
-      };
-
-      var errorCb = function errorCb(error, path) {
-        failed++;
-        var err = new AssetError(error, path);
-        errors.push(err);
-        onError(err);
-        checkProgress(path, null, error);
-      };
-
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = assetList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var item = _step.value;
-          var path = item.path;
-          var type = item.type;
-
-          var method = this.typeToMethod[type];
-          if (method == null) {
-            errorCb('Unsupported type \'' + type + '\'', path);
-          } else {
-            method.call(this, path, loadCb, errorCb);
-          }
-        }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
-    }
-  }, {
-    key: 'loadModelJSON',
-    value: function loadModelJSON(path, loadCb, errorCb) {
-      var _this3 = this;
-
-      if (this.cache[path] != null) {
-        return this.cache[path];
-      }
-      this.jsonLoader.load(this.resolvePath(path), function (geometry, material) {
-        var asset = _this3.cache[path] = new ModelAsset(path, geometry, material);
-        loadCb(asset);
-      }, undefined, function (error) {
-        errorCb(error, path);
-      });
-    }
-  }, {
-    key: 'loadTexture',
-    value: function loadTexture(path, loadCb, errorCb) {
-      var _this4 = this;
-
-      if (this.cache[path] != null) {
-        return this.cache[path];
-      }
-      this.textureLoader.load(this.resolvePath(path), function (texture) {
-        var asset = _this4.cache[path] = new TextureAsset(path, texture);
-        loadCb(asset);
-      }, undefined, function (error) {
-        errorCb(error, path);
-      });
-    }
-  }, {
-    key: 'resolvePath',
-    value: function resolvePath(path) {
-      if (path[0] === '/') {
-        path = this.root + path;
-      }
-      return path;
-    }
-  }]);
-  return Loader;
-}();
-
 var Mat3_1 = Mat3$1;
 
 var Vec3$4 = Vec3_1;
@@ -43347,8 +38967,6 @@ TupleDictionary$1.prototype.reset = function() {
     }
 };
 
-var Plane_1 = Plane$2;
-
 var Shape$8 = Shape_1;
 var Vec3$21 = Vec3_1;
 
@@ -44651,28 +40269,46 @@ var Physics = function () {
     this.objectToBody = {};
     this.staticBodies = new IterableDict();
     this.dynamicBodies = new IterableDict();
+    this.cRaycastOptions = {};
+    this.cRaycastResult = new RaycastResult_1();
+    this.cPosition = new Vec3_1();
+    this.cNormal = new Vec3_1();
   }
 
   createClass(Physics, [{
     key: 'getBodyOfObject',
     value: function getBodyOfObject(object) {
-      return this.objectToBody[object.uuid];
+      if (object != null) {
+        return this.objectToBody[object.uuid];
+      }
+      return null;
     }
   }, {
     key: 'getObjectOfBody',
     value: function getObjectOfBody(body) {
-      return this.bodyToObject[body.id];
+      if (body != null) {
+        return this.bodyToObject[body.id];
+      }
+      return null;
     }
   }, {
-    key: 'createGroundBody',
-    value: function createGroundBody(object) {
-      var plane = new Plane_1();
-      var body = new Body_1({ mass: 0 });
-      body.addShape(plane);
-      this.registerAndBind(body, object, false);
-      body.quaternion.setFromAxisAngle(new Vec3_1(1, 0, 0), -Math.PI / 2);
-      console.log("XXX GROUND", body);
-      this.ground = body;
+    key: 'raycastClosest',
+    value: function raycastClosest(from, to) {
+      var result = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new PhysicsRaycastResult();
+
+      var hit = this.world.raycastClosest(from, to, this.cRaycastOptions, this.cRaycastResult);
+      this.normalizeRaycastResult(this.cRaycastResult, result);
+      return hit;
+    }
+  }, {
+    key: 'applyImpulse',
+    value: function applyImpulse(object, position, normal) {
+      var body = this.getBodyOfObject(object);
+      if (body != null) {
+        this.cPosition.copy(position);
+        this.cNormal.copy(normal);
+        body.applyImpulse(this.cNormal, this.cPosition);
+      }
     }
   }, {
     key: 'createBoxBody',
@@ -44695,6 +40331,15 @@ var Physics = function () {
       this.objectToBody[object.uuid] = body;
       var container = dynamic ? this.dynamicBodies : this.staticBodies;
       container.set(body.id, body);
+    }
+  }, {
+    key: 'normalizeRaycastResult',
+    value: function normalizeRaycastResult(cannonResult, physicsResult) {
+      physicsResult.hit = cannonResult.hasHit;
+      physicsResult.object = this.getObjectOfBody(cannonResult.body);
+      physicsResult.normal.copy(cannonResult.hitNormalWorld);
+      physicsResult.position.copy(cannonResult.hitPointWorld);
+      physicsResult.distance = cannonResult.distance;
     }
   }, {
     key: 'tick',
@@ -44732,6 +40377,4437 @@ var Physics = function () {
     }
   }]);
   return Physics;
+}();
+
+var PhysicsRaycastResult = function PhysicsRaycastResult() {
+  classCallCheck(this, PhysicsRaycastResult);
+  this.hit = false;
+  this.object = null;
+  this.position = new Vector3();
+  this.normal = new Vector3();
+  this.distance = -1;
+};
+
+var smootherstep = _Math.smootherstep;
+var lerp = _Math.lerp;
+
+
+var KMPH_TO_MPS = 1000 / 3600;
+var VANGLE_MIN = -Math.PI / 2 + Math.PI / 12;
+var VANGLE_MAX = +Math.PI / 2 - Math.PI / 12;
+
+var ADS_TIME = 0.14;
+var FOV_ADS_MUL = 0.8;
+var ANGLE_LAG_SMOOTH_TIME = 0.1;
+var STRAFE_ROLL_SMOOTH_TIME = 0.2;
+var RUN_SMOOTH_TIME = 0.16;
+var MOVE_SMOOTH_TIME = 0.1;
+var STOP_SMOOTH_TIME = 0.2;
+var FIRE_COOLDOWN = 0.5;
+var FIRE_KICK_FORCE = 0.6;
+var FIRE_KICK_TIME = 0.05;
+var FIRE_RAYCAST_RANGE = 1000;
+var FIRE_INPULSE_FORCE = 12;
+
+var RETICLE_SIDES_OPACITY = 0.6;
+var RETICLE_SCALE = 0.1;
+
+var GUN_POS = new Vector3(0.12, -0.11, -0.28);
+var GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
+var GUN_POS_RUN = new Vector3(0.1, -0.07, -0.30);
+var FIRE_IMPULSE_OFFSET = new Vector3(0, 0.5, 0);
+
+var FirstPersonPlayer = function (_Object3D) {
+  inherits(FirstPersonPlayer, _Object3D);
+
+  function FirstPersonPlayer(app) {
+    classCallCheck(this, FirstPersonPlayer);
+
+    var _this = possibleConstructorReturn(this, (FirstPersonPlayer.__proto__ || Object.getPrototypeOf(FirstPersonPlayer)).call(this));
+
+    _this.onMouseMove = function (event) {
+      var movementX = event.movementX;
+      var movementY = event.movementY;
+
+      _this.frameAngle.x = movementY * _this.pixelRatio.y;
+      _this.frameAngle.y = movementX * _this.pixelRatio.x;
+      _this.orientation.sub(_this.frameAngle);
+      _this.orientation.x = Math.max(Math.min(_this.orientation.x, VANGLE_MAX), VANGLE_MIN);
+    };
+
+    _this.onMouseDown = function (event) {
+      switch (event.button) {
+        case 0:
+          _this.fire(true);break;
+        case 2:
+          _this.aim(true);break;
+      }
+    };
+
+    _this.onMouseUp = function (event) {
+      switch (event.button) {
+        case 0:
+          _this.fire(false);break;
+        case 2:
+          _this.aim(false);break;
+      }
+    };
+
+    _this.onKeyDown = function (event) {
+      switch (event.keyCode) {
+        case 38: /*up*/
+        case 87:
+          /*W*/_this.keys.forward = 1;break;
+        case 37: /*left*/
+        case 65:
+          /*A*/_this.keys.left = 1;break;
+        case 40: /*down*/
+        case 83:
+          /*S*/_this.keys.back = 1;break;
+        case 39: /*right*/
+        case 68:
+          /*D*/_this.keys.right = 1;break;
+        case 16:
+          /*run*/_this.toggleRun();break;
+        case 221:
+          /*]*/_this.app.toggleCamera();break;
+        case 17:
+          /*control*/_this.aim(true);break;
+      }
+    };
+
+    _this.onKeyUp = function (event) {
+      switch (event.keyCode) {
+        case 38: /*up*/
+        case 87:
+          /*W*/_this.keys.forward = 0;break;
+        case 37: /*left*/
+        case 65:
+          /*A*/_this.keys.left = 0;break;
+        case 40: /*down*/
+        case 83:
+          /*S*/_this.keys.back = 0;break;
+        case 39: /*right*/
+        case 68:
+          /*D*/_this.keys.right = 0;break;
+        case 17:
+          /*control*/_this.aim(false);break;
+      }
+    };
+
+    _this.app = app;
+    _this.tmpVec3 = new Vector3();
+    _this.frameMotion = new Vector3();
+    _this.frameAngle = new Vector2();
+    _this.orientation = new Vector2(0, Math.PI / 2);
+    _this.target = new Vector3();
+    _this.sensitivity = 2.5;
+    _this.smoothLocalFrameAngle = new Vector2();
+    _this.smoothLocalFrameMotion = new Vector3();
+    _this.smoothRun = 0;
+    _this.smoothMove = 0;
+    _this.smoothAim = 0;
+    _this.smoothCooldown = 0;
+    _this.keys = {
+      forward: 0,
+      back: 0,
+      left: 0,
+      right: 0,
+      run: 0,
+      aim: 0
+    };
+    _this.aimTiming = 0;
+    _this.fireTiming = 0;
+    _this.walkSpeed = 10 * KMPH_TO_MPS;
+    _this.runSpeed = 20 * KMPH_TO_MPS;
+    _this.pixelRatio = new Vector2();
+    _this.onWindowResize();
+    _this.head = new Object3D();
+    _this.headRotation = new Euler(0, 0, 0);
+    _this.headPosition = new Vector3(0, 1.7, 0);
+    _this.head.position.copy(_this.headPosition);
+    _this.add(_this.head);
+    _this.gunRotation = new Euler(-Math.PI / 2, 0, Math.PI);
+
+    _this.impulse = new Vector3();
+    _this.aimRay = {
+      from: new Vector3(),
+      to: new Vector3(),
+      dir: new Vector3()
+    };
+    _this.aimRayNeedsUpdate = true;
+    _this.raycastResult = new PhysicsRaycastResult();
+
+    _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
+    _this.camera.position.set(0, 0, 0);
+    _this.head.add(_this.camera);
+    _this.addGun();
+
+    _this.initListeners();
+    return _this;
+  }
+
+  createClass(FirstPersonPlayer, [{
+    key: 'addGun',
+    value: function addGun() {
+      var geometry = this.app.loader.getAsset('/models/gun/gun.json').geometry;
+      var material = GrayBox.createPBRMaterial({
+        map: this.app.loader.getAsset('/models/gun/gun.albedo.jpg').texture,
+        aoMap: this.app.loader.getAsset('/models/gun/gun.ao.jpg').texture,
+        roughnessMap: this.app.loader.getAsset('/models/gun/gun.roughness.jpg').texture,
+        metalnessMap: this.app.loader.getAsset('/models/gun/gun.metalness.jpg').texture,
+        envMap: this.app.getCubeMap(),
+        roughness: 1,
+        metalness: 1
+      });
+      var x = GUN_POS.x;
+      var y = GUN_POS.y;
+      var z = GUN_POS.z;
+
+      this.gun = GrayBox.createMesh(geometry, material, x, y, z, 0.19, 0.19, 0.19);
+      this.gun.castShadow = false;
+      this.gun.receiveShadow = false;
+      this.gun.rotation.copy(this.gunRotation);
+      this.head.add(this.gun);
+      var centerTex = this.app.loader.getAsset('/textures/reticle.default.center.png').texture;
+      var sidesTex = this.app.loader.getAsset('/textures/reticle.default.sides.png').texture;
+      var s = RETICLE_SCALE;
+      var centerReticle = GrayBox.createSprite(centerTex, 0, 0, -1, s, s, s);
+      var sidesReticle = GrayBox.createSprite(sidesTex, 0, 0, -1, s, s, s);
+      this.reticles = [centerReticle, sidesReticle];
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.reticles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var ret = _step.value;
+
+          ret.material.depthTest = false;
+          ret.material.depthWrite = false;
+          ret.material.blending = AdditiveBlending;
+          this.camera.add(ret);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'tick',
+    value: function tick(dt) {
+      this.frameMotion.set(0, 0, 0);
+
+      this.frameMotion.z -= this.keys.forward;
+      this.frameMotion.z += this.keys.back;
+      this.frameMotion.x -= this.keys.left;
+      this.frameMotion.x += this.keys.right;
+      this.frameMotion.normalize();
+
+      if (this.frameMotion.z == 0 && this.frameMotion.x == 0) {
+        // Cancel Run if no motion.
+        this.run(false);
+        this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
+      } else {
+        this.smoothMove = lerp(this.smoothMove, 1, dt / MOVE_SMOOTH_TIME);
+      }
+      var speed = this.walkSpeed;
+      if (this.keys.run) {
+        speed = this.runSpeed;
+      }
+      speed *= dt;
+
+      // Save and smooth local motion and orientation for later
+      var localFrameMotion = this.tmpVec3;
+      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+      this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
+      this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
+      this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
+
+      // Apply motion
+      // Transform motion to world space
+      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
+      this.position.add(this.frameMotion);
+
+      this.head.position.copy(this.headPosition);
+      this.head.rotation.copy(this.headRotation);
+
+      // Apply orientation
+      // Vertical angle on the head
+      this.head.rotation.x = this.orientation.x;
+      // Horizontal angle on the body
+      this.rotation.y = this.orientation.y;
+
+      // Reset gun rotation and position
+      this.gun.rotation.copy(this.gunRotation);
+      this.gun.position.copy(GUN_POS);
+
+      this.aimRayNeedsUpdate = true;
+
+      this.tickAim(dt);
+      this.tickWobble(dt);
+      this.tickFire(dt);
+      this.tickReticles(dt);
+
+      this.camera.updateProjectionMatrix();
+    }
+  }, {
+    key: 'tickAim',
+    value: function tickAim(dt) {
+      if (this.aimTiming < 1 && this.keys.aim) {
+        this.aimTiming += dt / ADS_TIME;
+      } else if (this.aimTiming > 0 && !this.keys.aim) {
+        this.aimTiming -= dt / ADS_TIME;
+      }
+      this.smoothAim = smootherstep(this.aimTiming, 0, 1);
+      this.gun.position.lerpVectors(GUN_POS, GUN_POS_ADS, this.smoothAim);
+      this.gun.position.lerp(GUN_POS_RUN, this.smoothRun);
+      this.camera.fov = lerp(this.app.fov, this.app.fov * FOV_ADS_MUL, this.smoothAim);
+    }
+  }, {
+    key: 'tickWobble',
+    value: function tickWobble(dt) {
+      // Motion wobble
+      var walkWobbleX = Math.cos(this.app.time * 6.0) * 0.005;
+      var runWobbleX = Math.cos(this.app.time * 10.0) * 0.008;
+      var breathWobbleX = 0;
+      var walkWobbleY = Math.cos(this.app.time * 12.0) * 0.003;
+      var runWobbleY = Math.cos(this.app.time * 20.0) * 0.006;
+      var breathWobbleY = Math.sin(this.app.time * 2.0) * 0.002;
+
+      var aimWobbleAttenuation = 1.0 - this.smoothAim * 0.8;
+      var wobbleX = aimWobbleAttenuation * lerp(breathWobbleX, lerp(walkWobbleX, runWobbleX, this.smoothRun), this.smoothMove);
+      var wobbleY = aimWobbleAttenuation * lerp(breathWobbleY, lerp(walkWobbleY, runWobbleY, this.smoothRun), this.smoothMove);
+
+      this.camera.position.y = wobbleY;
+      this.camera.position.x = wobbleX;
+      this.head.position.x += wobbleX * 2;
+      this.head.position.y += wobbleY * 2;
+
+      // Aim wobble+lag
+      this.gun.position.x += this.smoothLocalFrameAngle.y * 0.1;
+      this.gun.rotation.x += this.smoothLocalFrameAngle.x * 0.5 // Vertical
+      + wobbleY * 1 + this.smoothRun * 0.7; // Run rotation
+      this.gun.rotation.z += this.smoothLocalFrameAngle.y * 0.5 // Horizontal
+      - wobbleX * 3 + this.smoothRun * 0.15; // Run rotation
+      // Roll when strafing
+      this.gun.rotation.y += this.smoothLocalFrameMotion.x * 1; // Roll
+    }
+  }, {
+    key: 'tickFire',
+    value: function tickFire(dt) {
+      if (this.fireTiming > 0.0) {
+        this.fireTiming -= dt;
+        this.fireTiming = Math.max(this.fireTiming, 0);
+      } else if (this.keys.fire && !this.smoothRun) {
+        this.fireTiming = FIRE_COOLDOWN;
+        this.orientation.x += FIRE_KICK_FORCE * 0.03;
+        this.orientation.y -= FIRE_KICK_FORCE * 0.01;
+        this.doFireAction();
+      }
+      // TODO: VFX
+      // TODO: Really need custom curves for these...
+      var kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
+      if (this.fireTiming > kickTime) {
+        this.smoothCooldown = 1 - smootherstep(this.fireTiming, kickTime, FIRE_COOLDOWN);
+      } else {
+        this.smoothCooldown = smootherstep(this.fireTiming, 0, kickTime);
+      }
+      var kick = this.smoothCooldown * FIRE_KICK_FORCE;
+      this.gun.position.x += 0.04 * kick;
+      this.gun.position.y += 0.08 * kick;
+      this.gun.position.z += 0.12 * kick;
+      this.gun.rotation.x += 0.6 * kick;
+      this.gun.rotation.y += 0.3 * kick;
+      this.head.rotation.x += 0.15 * kick;
+      this.camera.fov += 5 * kick;
+    }
+  }, {
+    key: 'tickReticles',
+    value: function tickReticles(dt) {
+      var baseOpacity = 1.0 - Math.max(this.smoothAim, this.smoothRun);
+      var fireOpacity = 1.0 - Math.min(this.fireTiming / 0.1, 1);
+      this.reticles[0].material.opacity = baseOpacity * fireOpacity;
+      this.reticles[1].material.opacity = baseOpacity * RETICLE_SIDES_OPACITY * (1 - this.smoothCooldown);
+      this.reticles[1].scale.setScalar(RETICLE_SCALE * (1 + this.smoothCooldown));
+    }
+  }, {
+    key: 'toggleRun',
+    value: function toggleRun() {
+      this.run(!this.keys.run);
+    }
+  }, {
+    key: 'run',
+    value: function run(enable) {
+      if (!enable) {
+        this.keys.run = 0;
+      } else if (!this.keys.aim) {
+        this.fire(false);
+        this.keys.run = 1;
+      }
+    }
+  }, {
+    key: 'aim',
+    value: function aim(enable) {
+      this.keys.aim = enable ? 1 : 0;
+      if (enable) {
+        this.run(false);
+      }
+    }
+  }, {
+    key: 'fire',
+    value: function fire(enable) {
+      this.keys.fire = enable ? 1 : 0;
+      if (enable) {
+        this.run(false);
+      }
+    }
+  }, {
+    key: 'getAimRay',
+    value: function getAimRay() {
+      if (this.aimRayNeedsUpdate) {
+        this.camera.getWorldPosition(this.aimRay.from);
+        this.camera.getWorldDirection(this.aimRay.dir);
+        this.aimRay.to.copy(this.aimRay.dir).multiplyScalar(FIRE_RAYCAST_RANGE).add(this.aimRay.from);
+      }
+      return this.aimRay;
+    }
+  }, {
+    key: 'doFireAction',
+    value: function doFireAction() {
+      var ray = this.getAimRay();
+      var hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
+      if (hit) {
+        console.log('HIT', this.raycastResult);
+        var _raycastResult = this.raycastResult;
+        var object = _raycastResult.object;
+        var position = _raycastResult.position;
+
+        this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);
+        this.app.physics.applyImpulse(object, position, this.impulse);
+      } else {
+        console.log('NO HIT');
+      }
+    }
+  }, {
+    key: 'initListeners',
+    value: function initListeners() {
+      window.addEventListener('keydown', this.onKeyDown, false);
+      window.addEventListener('keyup', this.onKeyUp, false);
+      window.addEventListener('mousemove', this.onMouseMove, false);
+      window.addEventListener('mousedown', this.onMouseDown, false);
+      window.addEventListener('mouseup', this.onMouseUp, false);
+    }
+  }, {
+    key: 'onWindowResize',
+    value: function onWindowResize() {
+      this.pixelRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
+    }
+  }]);
+  return FirstPersonPlayer;
+}(Object3D);
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+var Cache = {
+
+	enabled: false,
+
+	files: {},
+
+	add: function ( key, file ) {
+
+		if ( this.enabled === false ) return;
+
+		// console.log( 'THREE.Cache', 'Adding key:', key );
+
+		this.files[ key ] = file;
+
+	},
+
+	get: function ( key ) {
+
+		if ( this.enabled === false ) return;
+
+		// console.log( 'THREE.Cache', 'Checking key:', key );
+
+		return this.files[ key ];
+
+	},
+
+	remove: function ( key ) {
+
+		delete this.files[ key ];
+
+	},
+
+	clear: function () {
+
+		this.files = {};
+
+	}
+
+};
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function LoadingManager( onLoad, onProgress, onError ) {
+
+	var scope = this;
+
+	var isLoading = false, itemsLoaded = 0, itemsTotal = 0;
+
+	this.onStart = undefined;
+	this.onLoad = onLoad;
+	this.onProgress = onProgress;
+	this.onError = onError;
+
+	this.itemStart = function ( url ) {
+
+		itemsTotal ++;
+
+		if ( isLoading === false ) {
+
+			if ( scope.onStart !== undefined ) {
+
+				scope.onStart( url, itemsLoaded, itemsTotal );
+
+			}
+
+		}
+
+		isLoading = true;
+
+	};
+
+	this.itemEnd = function ( url ) {
+
+		itemsLoaded ++;
+
+		if ( scope.onProgress !== undefined ) {
+
+			scope.onProgress( url, itemsLoaded, itemsTotal );
+
+		}
+
+		if ( itemsLoaded === itemsTotal ) {
+
+			isLoading = false;
+
+			if ( scope.onLoad !== undefined ) {
+
+				scope.onLoad();
+
+			}
+
+		}
+
+	};
+
+	this.itemError = function ( url ) {
+
+		if ( scope.onError !== undefined ) {
+
+			scope.onError( url );
+
+		}
+
+	};
+
+}
+
+var DefaultLoadingManager = new LoadingManager();
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function XHRLoader( manager ) {
+
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+
+}
+
+Object.assign( XHRLoader.prototype, {
+
+	load: function ( url, onLoad, onProgress, onError ) {
+
+		if ( url === undefined ) url = '';
+
+		if ( this.path !== undefined ) url = this.path + url;
+
+		var scope = this;
+
+		var cached = Cache.get( url );
+
+		if ( cached !== undefined ) {
+
+			scope.manager.itemStart( url );
+
+			setTimeout( function () {
+
+				if ( onLoad ) onLoad( cached );
+
+				scope.manager.itemEnd( url );
+
+			}, 0 );
+
+			return cached;
+
+		}
+
+		// Check for data: URI
+		var dataUriRegex = /^data:(.*?)(;base64)?,(.*)$/;
+		var dataUriRegexResult = url.match( dataUriRegex );
+
+		// Safari can not handle Data URIs through XMLHttpRequest so process manually
+		if ( dataUriRegexResult ) {
+
+			var mimeType = dataUriRegexResult[1];
+			var isBase64 = !!dataUriRegexResult[2];
+			var data = dataUriRegexResult[3];
+
+			data = window.decodeURIComponent(data);
+
+			if( isBase64 ) {
+				data = window.atob(data);
+			}
+
+			try {
+
+				var response;
+				var responseType = ( this.responseType || '' ).toLowerCase();
+
+				switch ( responseType ) {
+
+					case 'arraybuffer':
+					case 'blob':
+
+					 	response = new ArrayBuffer( data.length );
+						var view = new Uint8Array( response );
+						for ( var i = 0; i < data.length; i ++ ) {
+
+								view[ i ] = data.charCodeAt( i );
+
+						}
+
+						if ( responseType === 'blob' ) {
+
+							response = new Blob( [ response ], { "type" : mimeType } );
+
+						}
+
+						break;
+
+					case 'document':
+
+						var parser = new DOMParser();
+						response = parser.parseFromString( data, mimeType );
+
+						break;
+
+					case 'json':
+
+						response = JSON.parse( data );
+
+						break;
+
+					default: // 'text' or other
+
+						response = data;
+
+						break;
+
+				}
+
+				// Wait for next browser tick
+				window.setTimeout( function() {
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				}, 0);
+
+			} catch ( error ) {
+
+				// Wait for next browser tick
+				window.setTimeout( function() {
+
+					if ( onError ) onError( error );
+
+					scope.manager.itemError( url );
+
+				}, 0);
+
+			}
+
+		} else {
+
+			var request = new XMLHttpRequest();
+			request.open( 'GET', url, true );
+
+			request.addEventListener( 'load', function ( event ) {
+
+				var response = event.target.response;
+
+				Cache.add( url, response );
+
+				if ( this.status === 200 ) {
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				} else if ( this.status === 0 ) {
+
+					// Some browsers return HTTP Status 0 when using non-http protocol
+					// e.g. 'file://' or 'data://'. Handle as success.
+
+					console.warn( 'THREE.XHRLoader: HTTP Status 0 received.' );
+
+					if ( onLoad ) onLoad( response );
+
+					scope.manager.itemEnd( url );
+
+				} else {
+
+					if ( onError ) onError( event );
+
+					scope.manager.itemError( url );
+
+				}
+
+			}, false );
+
+			if ( onProgress !== undefined ) {
+
+				request.addEventListener( 'progress', function ( event ) {
+
+					onProgress( event );
+
+				}, false );
+
+			}
+
+			request.addEventListener( 'error', function ( event ) {
+
+				if ( onError ) onError( event );
+
+				scope.manager.itemError( url );
+
+			}, false );
+
+			if ( this.responseType !== undefined ) request.responseType = this.responseType;
+			if ( this.withCredentials !== undefined ) request.withCredentials = this.withCredentials;
+
+			if ( request.overrideMimeType ) request.overrideMimeType( 'text/plain' );
+
+			request.send( null );
+
+		}
+
+		scope.manager.itemStart( url );
+
+		return request;
+
+	},
+
+	setPath: function ( value ) {
+
+		this.path = value;
+		return this;
+
+	},
+
+	setResponseType: function ( value ) {
+
+		this.responseType = value;
+		return this;
+
+	},
+
+	setWithCredentials: function ( value ) {
+
+		this.withCredentials = value;
+		return this;
+
+	}
+
+} );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function ImageLoader( manager ) {
+
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+
+}
+
+Object.assign( ImageLoader.prototype, {
+
+	load: function ( url, onLoad, onProgress, onError ) {
+
+		var scope = this;
+
+		var image = document.createElementNS( 'http://www.w3.org/1999/xhtml', 'img' );
+		image.onload = function () {
+
+			image.onload = null;
+
+			URL.revokeObjectURL( image.src );
+
+			if ( onLoad ) onLoad( image );
+
+			scope.manager.itemEnd( url );
+
+		};
+		image.onerror = onError;
+
+		if ( url.indexOf( 'data:' ) === 0 ) {
+
+			image.src = url;
+
+		} else {
+
+			var loader = new XHRLoader();
+			loader.setPath( this.path );
+			loader.setResponseType( 'blob' );
+			loader.setWithCredentials( this.withCredentials );
+			loader.load( url, function ( blob ) {
+
+				image.src = URL.createObjectURL( blob );
+
+			}, onProgress, onError );
+
+		}
+
+		scope.manager.itemStart( url );
+
+		return image;
+
+	},
+
+	setCrossOrigin: function ( value ) {
+
+		this.crossOrigin = value;
+		return this;
+
+	},
+
+	setWithCredentials: function ( value ) {
+
+		this.withCredentials = value;
+		return this;
+
+	},
+
+	setPath: function ( value ) {
+
+		this.path = value;
+		return this;
+
+	}
+
+} );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function TextureLoader( manager ) {
+
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+
+}
+
+Object.assign( TextureLoader.prototype, {
+
+	load: function ( url, onLoad, onProgress, onError ) {
+
+		var texture = new Texture();
+
+		var loader = new ImageLoader( this.manager );
+		loader.setCrossOrigin( this.crossOrigin );
+		loader.setWithCredentials( this.withCredentials );
+		loader.setPath( this.path );
+		loader.load( url, function ( image ) {
+
+			// JPEGs can't have an alpha channel, so memory can be saved by storing them as RGB.
+			var isJPEG = url.search( /\.(jpg|jpeg)$/ ) > 0 || url.search( /^data\:image\/jpeg/ ) === 0;
+
+			texture.format = isJPEG ? RGBFormat : RGBAFormat;
+			texture.image = image;
+			texture.needsUpdate = true;
+
+			if ( onLoad !== undefined ) {
+
+				onLoad( texture );
+
+			}
+
+		}, onProgress, onError );
+
+		return texture;
+
+	},
+
+	setCrossOrigin: function ( value ) {
+
+		this.crossOrigin = value;
+		return this;
+
+	},
+
+	setWithCredentials: function ( value ) {
+
+		this.withCredentials = value;
+		return this;
+
+	},
+
+	setPath: function ( value ) {
+
+		this.path = value;
+		return this;
+
+	}
+
+
+
+} );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function ShadowMaterial() {
+
+	ShaderMaterial.call( this, {
+		uniforms: UniformsUtils.merge( [
+			UniformsLib[ "lights" ],
+			{
+				opacity: { value: 1.0 }
+			}
+		] ),
+		vertexShader: ShaderChunk[ 'shadow_vert' ],
+		fragmentShader: ShaderChunk[ 'shadow_frag' ]
+	} );
+
+	this.lights = true;
+	this.transparent = true;
+
+	Object.defineProperties( this, {
+		opacity: {
+			enumerable: true,
+			get: function () {
+				return this.uniforms.opacity.value;
+			},
+			set: function ( value ) {
+				this.uniforms.opacity.value = value;
+			}
+		}
+	} );
+
+}
+
+ShadowMaterial.prototype = Object.create( ShaderMaterial.prototype );
+ShadowMaterial.prototype.constructor = ShadowMaterial;
+
+ShadowMaterial.prototype.isShadowMaterial = true;
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function MultiMaterial( materials ) {
+
+	this.uuid = _Math.generateUUID();
+
+	this.type = 'MultiMaterial';
+
+	this.materials = materials instanceof Array ? materials : [];
+
+	this.visible = true;
+
+}
+
+MultiMaterial.prototype = {
+
+	constructor: MultiMaterial,
+
+	isMultiMaterial: true,
+
+	toJSON: function ( meta ) {
+
+		var output = {
+			metadata: {
+				version: 4.2,
+				type: 'material',
+				generator: 'MaterialExporter'
+			},
+			uuid: this.uuid,
+			type: this.type,
+			materials: []
+		};
+
+		var materials = this.materials;
+
+		for ( var i = 0, l = materials.length; i < l; i ++ ) {
+
+			var material = materials[ i ].toJSON( meta );
+			delete material.metadata;
+
+			output.materials.push( material );
+
+		}
+
+		output.visible = this.visible;
+
+		return output;
+
+	},
+
+	clone: function () {
+
+		var material = new this.constructor();
+
+		for ( var i = 0; i < this.materials.length; i ++ ) {
+
+			material.materials.push( this.materials[ i ].clone() );
+
+		}
+
+		material.visible = this.visible;
+
+		return material;
+
+	}
+
+};
+
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  reflectivity: <float>
+ * }
+ */
+
+function MeshPhysicalMaterial( parameters ) {
+
+	MeshStandardMaterial.call( this );
+
+	this.defines = { 'PHYSICAL': '' };
+
+	this.type = 'MeshPhysicalMaterial';
+
+	this.reflectivity = 0.5; // maps to F0 = 0.04
+
+	this.clearCoat = 0.0;
+	this.clearCoatRoughness = 0.0;
+
+	this.setValues( parameters );
+
+}
+
+MeshPhysicalMaterial.prototype = Object.create( MeshStandardMaterial.prototype );
+MeshPhysicalMaterial.prototype.constructor = MeshPhysicalMaterial;
+
+MeshPhysicalMaterial.prototype.isMeshPhysicalMaterial = true;
+
+MeshPhysicalMaterial.prototype.copy = function ( source ) {
+
+	MeshStandardMaterial.prototype.copy.call( this, source );
+
+	this.defines = { 'PHYSICAL': '' };
+
+	this.reflectivity = source.reflectivity;
+
+	this.clearCoat = source.clearCoat;
+	this.clearCoatRoughness = source.clearCoatRoughness;
+
+	return this;
+
+};
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  specular: <hex>,
+ *  shininess: <float>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  bumpMap: new THREE.Texture( <Image> ),
+ *  bumpScale: <float>,
+ *
+ *  normalMap: new THREE.Texture( <Image> ),
+ *  normalScale: <Vector2>,
+ *
+ *  displacementMap: new THREE.Texture( <Image> ),
+ *  displacementScale: <float>,
+ *  displacementBias: <float>,
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
+
+function MeshPhongMaterial( parameters ) {
+
+	Material.call( this );
+
+	this.type = 'MeshPhongMaterial';
+
+	this.color = new Color( 0xffffff ); // diffuse
+	this.specular = new Color( 0x111111 );
+	this.shininess = 30;
+
+	this.map = null;
+
+	this.lightMap = null;
+	this.lightMapIntensity = 1.0;
+
+	this.aoMap = null;
+	this.aoMapIntensity = 1.0;
+
+	this.emissive = new Color( 0x000000 );
+	this.emissiveIntensity = 1.0;
+	this.emissiveMap = null;
+
+	this.bumpMap = null;
+	this.bumpScale = 1;
+
+	this.normalMap = null;
+	this.normalScale = new Vector2( 1, 1 );
+
+	this.displacementMap = null;
+	this.displacementScale = 1;
+	this.displacementBias = 0;
+
+	this.specularMap = null;
+
+	this.alphaMap = null;
+
+	this.envMap = null;
+	this.combine = MultiplyOperation;
+	this.reflectivity = 1;
+	this.refractionRatio = 0.98;
+
+	this.wireframe = false;
+	this.wireframeLinewidth = 1;
+	this.wireframeLinecap = 'round';
+	this.wireframeLinejoin = 'round';
+
+	this.skinning = false;
+	this.morphTargets = false;
+	this.morphNormals = false;
+
+	this.setValues( parameters );
+
+}
+
+MeshPhongMaterial.prototype = Object.create( Material.prototype );
+MeshPhongMaterial.prototype.constructor = MeshPhongMaterial;
+
+MeshPhongMaterial.prototype.isMeshPhongMaterial = true;
+
+MeshPhongMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
+
+	this.color.copy( source.color );
+	this.specular.copy( source.specular );
+	this.shininess = source.shininess;
+
+	this.map = source.map;
+
+	this.lightMap = source.lightMap;
+	this.lightMapIntensity = source.lightMapIntensity;
+
+	this.aoMap = source.aoMap;
+	this.aoMapIntensity = source.aoMapIntensity;
+
+	this.emissive.copy( source.emissive );
+	this.emissiveMap = source.emissiveMap;
+	this.emissiveIntensity = source.emissiveIntensity;
+
+	this.bumpMap = source.bumpMap;
+	this.bumpScale = source.bumpScale;
+
+	this.normalMap = source.normalMap;
+	this.normalScale.copy( source.normalScale );
+
+	this.displacementMap = source.displacementMap;
+	this.displacementScale = source.displacementScale;
+	this.displacementBias = source.displacementBias;
+
+	this.specularMap = source.specularMap;
+
+	this.alphaMap = source.alphaMap;
+
+	this.envMap = source.envMap;
+	this.combine = source.combine;
+	this.reflectivity = source.reflectivity;
+	this.refractionRatio = source.refractionRatio;
+
+	this.wireframe = source.wireframe;
+	this.wireframeLinewidth = source.wireframeLinewidth;
+	this.wireframeLinecap = source.wireframeLinecap;
+	this.wireframeLinejoin = source.wireframeLinejoin;
+
+	this.skinning = source.skinning;
+	this.morphTargets = source.morphTargets;
+	this.morphNormals = source.morphNormals;
+
+	return this;
+
+};
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ *
+ * parameters = {
+ *  opacity: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>
+ * }
+ */
+
+function MeshNormalMaterial( parameters ) {
+
+	Material.call( this, parameters );
+
+	this.type = 'MeshNormalMaterial';
+
+	this.wireframe = false;
+	this.wireframeLinewidth = 1;
+
+	this.fog = false;
+	this.lights = false;
+	this.morphTargets = false;
+
+	this.setValues( parameters );
+
+}
+
+MeshNormalMaterial.prototype = Object.create( Material.prototype );
+MeshNormalMaterial.prototype.constructor = MeshNormalMaterial;
+
+MeshNormalMaterial.prototype.isMeshNormalMaterial = true;
+
+MeshNormalMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
+
+	this.wireframe = source.wireframe;
+	this.wireframeLinewidth = source.wireframeLinewidth;
+
+	return this;
+
+};
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  map: new THREE.Texture( <Image> ),
+ *
+ *  lightMap: new THREE.Texture( <Image> ),
+ *  lightMapIntensity: <float>
+ *
+ *  aoMap: new THREE.Texture( <Image> ),
+ *  aoMapIntensity: <float>
+ *
+ *  emissive: <hex>,
+ *  emissiveIntensity: <float>
+ *  emissiveMap: new THREE.Texture( <Image> ),
+ *
+ *  specularMap: new THREE.Texture( <Image> ),
+ *
+ *  alphaMap: new THREE.Texture( <Image> ),
+ *
+ *  envMap: new THREE.TextureCube( [posx, negx, posy, negy, posz, negz] ),
+ *  combine: THREE.Multiply,
+ *  reflectivity: <float>,
+ *  refractionRatio: <float>,
+ *
+ *  wireframe: <boolean>,
+ *  wireframeLinewidth: <float>,
+ *
+ *  skinning: <bool>,
+ *  morphTargets: <bool>,
+ *  morphNormals: <bool>
+ * }
+ */
+
+function MeshLambertMaterial( parameters ) {
+
+	Material.call( this );
+
+	this.type = 'MeshLambertMaterial';
+
+	this.color = new Color( 0xffffff ); // diffuse
+
+	this.map = null;
+
+	this.lightMap = null;
+	this.lightMapIntensity = 1.0;
+
+	this.aoMap = null;
+	this.aoMapIntensity = 1.0;
+
+	this.emissive = new Color( 0x000000 );
+	this.emissiveIntensity = 1.0;
+	this.emissiveMap = null;
+
+	this.specularMap = null;
+
+	this.alphaMap = null;
+
+	this.envMap = null;
+	this.combine = MultiplyOperation;
+	this.reflectivity = 1;
+	this.refractionRatio = 0.98;
+
+	this.wireframe = false;
+	this.wireframeLinewidth = 1;
+	this.wireframeLinecap = 'round';
+	this.wireframeLinejoin = 'round';
+
+	this.skinning = false;
+	this.morphTargets = false;
+	this.morphNormals = false;
+
+	this.setValues( parameters );
+
+}
+
+MeshLambertMaterial.prototype = Object.create( Material.prototype );
+MeshLambertMaterial.prototype.constructor = MeshLambertMaterial;
+
+MeshLambertMaterial.prototype.isMeshLambertMaterial = true;
+
+MeshLambertMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
+
+	this.color.copy( source.color );
+
+	this.map = source.map;
+
+	this.lightMap = source.lightMap;
+	this.lightMapIntensity = source.lightMapIntensity;
+
+	this.aoMap = source.aoMap;
+	this.aoMapIntensity = source.aoMapIntensity;
+
+	this.emissive.copy( source.emissive );
+	this.emissiveMap = source.emissiveMap;
+	this.emissiveIntensity = source.emissiveIntensity;
+
+	this.specularMap = source.specularMap;
+
+	this.alphaMap = source.alphaMap;
+
+	this.envMap = source.envMap;
+	this.combine = source.combine;
+	this.reflectivity = source.reflectivity;
+	this.refractionRatio = source.refractionRatio;
+
+	this.wireframe = source.wireframe;
+	this.wireframeLinewidth = source.wireframeLinewidth;
+	this.wireframeLinecap = source.wireframeLinecap;
+	this.wireframeLinejoin = source.wireframeLinejoin;
+
+	this.skinning = source.skinning;
+	this.morphTargets = source.morphTargets;
+	this.morphNormals = source.morphNormals;
+
+	return this;
+
+};
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  opacity: <float>,
+ *
+ *  linewidth: <float>,
+ *
+ *  scale: <float>,
+ *  dashSize: <float>,
+ *  gapSize: <float>
+ * }
+ */
+
+function LineDashedMaterial( parameters ) {
+
+	Material.call( this );
+
+	this.type = 'LineDashedMaterial';
+
+	this.color = new Color( 0xffffff );
+
+	this.linewidth = 1;
+
+	this.scale = 1;
+	this.dashSize = 3;
+	this.gapSize = 1;
+
+	this.lights = false;
+
+	this.setValues( parameters );
+
+}
+
+LineDashedMaterial.prototype = Object.create( Material.prototype );
+LineDashedMaterial.prototype.constructor = LineDashedMaterial;
+
+LineDashedMaterial.prototype.isLineDashedMaterial = true;
+
+LineDashedMaterial.prototype.copy = function ( source ) {
+
+	Material.prototype.copy.call( this, source );
+
+	this.color.copy( source.color );
+
+	this.linewidth = source.linewidth;
+
+	this.scale = source.scale;
+	this.dashSize = source.dashSize;
+	this.gapSize = source.gapSize;
+
+	return this;
+
+};
+
+
+
+var Materials = Object.freeze({
+	ShadowMaterial: ShadowMaterial,
+	SpriteMaterial: SpriteMaterial,
+	RawShaderMaterial: RawShaderMaterial,
+	ShaderMaterial: ShaderMaterial,
+	PointsMaterial: PointsMaterial,
+	MultiMaterial: MultiMaterial,
+	MeshPhysicalMaterial: MeshPhysicalMaterial,
+	MeshStandardMaterial: MeshStandardMaterial,
+	MeshPhongMaterial: MeshPhongMaterial,
+	MeshNormalMaterial: MeshNormalMaterial,
+	MeshLambertMaterial: MeshLambertMaterial,
+	MeshDepthMaterial: MeshDepthMaterial,
+	MeshBasicMaterial: MeshBasicMaterial,
+	LineDashedMaterial: LineDashedMaterial,
+	LineBasicMaterial: LineBasicMaterial,
+	Material: Material
+});
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+function MaterialLoader( manager ) {
+
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+	this.textures = {};
+
+}
+
+Object.assign( MaterialLoader.prototype, {
+
+	load: function ( url, onLoad, onProgress, onError ) {
+
+		var scope = this;
+
+		var loader = new XHRLoader( scope.manager );
+		loader.load( url, function ( text ) {
+
+			onLoad( scope.parse( JSON.parse( text ) ) );
+
+		}, onProgress, onError );
+
+	},
+
+	setTextures: function ( value ) {
+
+		this.textures = value;
+
+	},
+
+	parse: function ( json ) {
+
+		var textures = this.textures;
+
+		function getTexture( name ) {
+
+			if ( textures[ name ] === undefined ) {
+
+				console.warn( 'THREE.MaterialLoader: Undefined texture', name );
+
+			}
+
+			return textures[ name ];
+
+		}
+
+		var material = new Materials[ json.type ]();
+
+		if ( json.uuid !== undefined ) material.uuid = json.uuid;
+		if ( json.name !== undefined ) material.name = json.name;
+		if ( json.color !== undefined ) material.color.setHex( json.color );
+		if ( json.roughness !== undefined ) material.roughness = json.roughness;
+		if ( json.metalness !== undefined ) material.metalness = json.metalness;
+		if ( json.emissive !== undefined ) material.emissive.setHex( json.emissive );
+		if ( json.specular !== undefined ) material.specular.setHex( json.specular );
+		if ( json.shininess !== undefined ) material.shininess = json.shininess;
+		if ( json.uniforms !== undefined ) material.uniforms = json.uniforms;
+		if ( json.vertexShader !== undefined ) material.vertexShader = json.vertexShader;
+		if ( json.fragmentShader !== undefined ) material.fragmentShader = json.fragmentShader;
+		if ( json.vertexColors !== undefined ) material.vertexColors = json.vertexColors;
+		if ( json.fog !== undefined ) material.fog = json.fog;
+		if ( json.shading !== undefined ) material.shading = json.shading;
+		if ( json.blending !== undefined ) material.blending = json.blending;
+		if ( json.side !== undefined ) material.side = json.side;
+		if ( json.opacity !== undefined ) material.opacity = json.opacity;
+		if ( json.transparent !== undefined ) material.transparent = json.transparent;
+		if ( json.alphaTest !== undefined ) material.alphaTest = json.alphaTest;
+		if ( json.depthTest !== undefined ) material.depthTest = json.depthTest;
+		if ( json.depthWrite !== undefined ) material.depthWrite = json.depthWrite;
+		if ( json.colorWrite !== undefined ) material.colorWrite = json.colorWrite;
+		if ( json.wireframe !== undefined ) material.wireframe = json.wireframe;
+		if ( json.wireframeLinewidth !== undefined ) material.wireframeLinewidth = json.wireframeLinewidth;
+		if ( json.wireframeLinecap !== undefined ) material.wireframeLinecap = json.wireframeLinecap;
+		if ( json.wireframeLinejoin !== undefined ) material.wireframeLinejoin = json.wireframeLinejoin;
+		if ( json.skinning !== undefined ) material.skinning = json.skinning;
+		if ( json.morphTargets !== undefined ) material.morphTargets = json.morphTargets;
+
+		// for PointsMaterial
+
+		if ( json.size !== undefined ) material.size = json.size;
+		if ( json.sizeAttenuation !== undefined ) material.sizeAttenuation = json.sizeAttenuation;
+
+		// maps
+
+		if ( json.map !== undefined ) material.map = getTexture( json.map );
+
+		if ( json.alphaMap !== undefined ) {
+
+			material.alphaMap = getTexture( json.alphaMap );
+			material.transparent = true;
+
+		}
+
+		if ( json.bumpMap !== undefined ) material.bumpMap = getTexture( json.bumpMap );
+		if ( json.bumpScale !== undefined ) material.bumpScale = json.bumpScale;
+
+		if ( json.normalMap !== undefined ) material.normalMap = getTexture( json.normalMap );
+		if ( json.normalScale !== undefined ) {
+
+			var normalScale = json.normalScale;
+
+			if ( Array.isArray( normalScale ) === false ) {
+
+				// Blender exporter used to export a scalar. See #7459
+
+				normalScale = [ normalScale, normalScale ];
+
+			}
+
+			material.normalScale = new Vector2().fromArray( normalScale );
+
+		}
+
+		if ( json.displacementMap !== undefined ) material.displacementMap = getTexture( json.displacementMap );
+		if ( json.displacementScale !== undefined ) material.displacementScale = json.displacementScale;
+		if ( json.displacementBias !== undefined ) material.displacementBias = json.displacementBias;
+
+		if ( json.roughnessMap !== undefined ) material.roughnessMap = getTexture( json.roughnessMap );
+		if ( json.metalnessMap !== undefined ) material.metalnessMap = getTexture( json.metalnessMap );
+
+		if ( json.emissiveMap !== undefined ) material.emissiveMap = getTexture( json.emissiveMap );
+		if ( json.emissiveIntensity !== undefined ) material.emissiveIntensity = json.emissiveIntensity;
+
+		if ( json.specularMap !== undefined ) material.specularMap = getTexture( json.specularMap );
+
+		if ( json.envMap !== undefined ) material.envMap = getTexture( json.envMap );
+
+		if ( json.reflectivity !== undefined ) material.reflectivity = json.reflectivity;
+
+		if ( json.lightMap !== undefined ) material.lightMap = getTexture( json.lightMap );
+		if ( json.lightMapIntensity !== undefined ) material.lightMapIntensity = json.lightMapIntensity;
+
+		if ( json.aoMap !== undefined ) material.aoMap = getTexture( json.aoMap );
+		if ( json.aoMapIntensity !== undefined ) material.aoMapIntensity = json.aoMapIntensity;
+
+		// MultiMaterial
+
+		if ( json.materials !== undefined ) {
+
+			for ( var i = 0, l = json.materials.length; i < l; i ++ ) {
+
+				material.materials.push( this.parse( json.materials[ i ] ) );
+
+			}
+
+		}
+
+		return material;
+
+	}
+
+} );
+
+/**
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+function Loader$1() {
+
+	this.onLoadStart = function () {};
+	this.onLoadProgress = function () {};
+	this.onLoadComplete = function () {};
+
+}
+
+Loader$1.prototype = {
+
+	constructor: Loader$1,
+
+	crossOrigin: undefined,
+
+	extractUrlBase: function ( url ) {
+
+		var parts = url.split( '/' );
+
+		if ( parts.length === 1 ) return './';
+
+		parts.pop();
+
+		return parts.join( '/' ) + '/';
+
+	},
+
+	initMaterials: function ( materials, texturePath, crossOrigin ) {
+
+		var array = [];
+
+		for ( var i = 0; i < materials.length; ++ i ) {
+
+			array[ i ] = this.createMaterial( materials[ i ], texturePath, crossOrigin );
+
+		}
+
+		return array;
+
+	},
+
+	createMaterial: ( function () {
+
+		var color, textureLoader, materialLoader;
+
+		return function createMaterial( m, texturePath, crossOrigin ) {
+
+			if ( color === undefined ) color = new Color();
+			if ( textureLoader === undefined ) textureLoader = new TextureLoader();
+			if ( materialLoader === undefined ) materialLoader = new MaterialLoader();
+
+			// convert from old material format
+
+			var textures = {};
+
+			function loadTexture( path, repeat, offset, wrap, anisotropy ) {
+
+				var fullPath = texturePath + path;
+				var loader = Loader$1.Handlers.get( fullPath );
+
+				var texture;
+
+				if ( loader !== null ) {
+
+					texture = loader.load( fullPath );
+
+				} else {
+
+					textureLoader.setCrossOrigin( crossOrigin );
+					texture = textureLoader.load( fullPath );
+
+				}
+
+				if ( repeat !== undefined ) {
+
+					texture.repeat.fromArray( repeat );
+
+					if ( repeat[ 0 ] !== 1 ) texture.wrapS = RepeatWrapping;
+					if ( repeat[ 1 ] !== 1 ) texture.wrapT = RepeatWrapping;
+
+				}
+
+				if ( offset !== undefined ) {
+
+					texture.offset.fromArray( offset );
+
+				}
+
+				if ( wrap !== undefined ) {
+
+					if ( wrap[ 0 ] === 'repeat' ) texture.wrapS = RepeatWrapping;
+					if ( wrap[ 0 ] === 'mirror' ) texture.wrapS = MirroredRepeatWrapping;
+
+					if ( wrap[ 1 ] === 'repeat' ) texture.wrapT = RepeatWrapping;
+					if ( wrap[ 1 ] === 'mirror' ) texture.wrapT = MirroredRepeatWrapping;
+
+				}
+
+				if ( anisotropy !== undefined ) {
+
+					texture.anisotropy = anisotropy;
+
+				}
+
+				var uuid = _Math.generateUUID();
+
+				textures[ uuid ] = texture;
+
+				return uuid;
+
+			}
+
+			//
+
+			var json = {
+				uuid: _Math.generateUUID(),
+				type: 'MeshLambertMaterial'
+			};
+
+			for ( var name in m ) {
+
+				var value = m[ name ];
+
+				switch ( name ) {
+					case 'DbgColor':
+					case 'DbgIndex':
+					case 'opticalDensity':
+					case 'illumination':
+						break;
+					case 'DbgName':
+						json.name = value;
+						break;
+					case 'blending':
+						json.blending = BlendingMode[ value ];
+						break;
+					case 'colorAmbient':
+					case 'mapAmbient':
+						console.warn( 'THREE.Loader.createMaterial:', name, 'is no longer supported.' );
+						break;
+					case 'colorDiffuse':
+						json.color = color.fromArray( value ).getHex();
+						break;
+					case 'colorSpecular':
+						json.specular = color.fromArray( value ).getHex();
+						break;
+					case 'colorEmissive':
+						json.emissive = color.fromArray( value ).getHex();
+						break;
+					case 'specularCoef':
+						json.shininess = value;
+						break;
+					case 'shading':
+						if ( value.toLowerCase() === 'basic' ) json.type = 'MeshBasicMaterial';
+						if ( value.toLowerCase() === 'phong' ) json.type = 'MeshPhongMaterial';
+						if ( value.toLowerCase() === 'standard' ) json.type = 'MeshStandardMaterial';
+						break;
+					case 'mapDiffuse':
+						json.map = loadTexture( value, m.mapDiffuseRepeat, m.mapDiffuseOffset, m.mapDiffuseWrap, m.mapDiffuseAnisotropy );
+						break;
+					case 'mapDiffuseRepeat':
+					case 'mapDiffuseOffset':
+					case 'mapDiffuseWrap':
+					case 'mapDiffuseAnisotropy':
+						break;
+					case 'mapEmissive':
+						json.emissiveMap = loadTexture( value, m.mapEmissiveRepeat, m.mapEmissiveOffset, m.mapEmissiveWrap, m.mapEmissiveAnisotropy );
+						break;
+					case 'mapEmissiveRepeat':
+					case 'mapEmissiveOffset':
+					case 'mapEmissiveWrap':
+					case 'mapEmissiveAnisotropy':
+						break;
+					case 'mapLight':
+						json.lightMap = loadTexture( value, m.mapLightRepeat, m.mapLightOffset, m.mapLightWrap, m.mapLightAnisotropy );
+						break;
+					case 'mapLightRepeat':
+					case 'mapLightOffset':
+					case 'mapLightWrap':
+					case 'mapLightAnisotropy':
+						break;
+					case 'mapAO':
+						json.aoMap = loadTexture( value, m.mapAORepeat, m.mapAOOffset, m.mapAOWrap, m.mapAOAnisotropy );
+						break;
+					case 'mapAORepeat':
+					case 'mapAOOffset':
+					case 'mapAOWrap':
+					case 'mapAOAnisotropy':
+						break;
+					case 'mapBump':
+						json.bumpMap = loadTexture( value, m.mapBumpRepeat, m.mapBumpOffset, m.mapBumpWrap, m.mapBumpAnisotropy );
+						break;
+					case 'mapBumpScale':
+						json.bumpScale = value;
+						break;
+					case 'mapBumpRepeat':
+					case 'mapBumpOffset':
+					case 'mapBumpWrap':
+					case 'mapBumpAnisotropy':
+						break;
+					case 'mapNormal':
+						json.normalMap = loadTexture( value, m.mapNormalRepeat, m.mapNormalOffset, m.mapNormalWrap, m.mapNormalAnisotropy );
+						break;
+					case 'mapNormalFactor':
+						json.normalScale = [ value, value ];
+						break;
+					case 'mapNormalRepeat':
+					case 'mapNormalOffset':
+					case 'mapNormalWrap':
+					case 'mapNormalAnisotropy':
+						break;
+					case 'mapSpecular':
+						json.specularMap = loadTexture( value, m.mapSpecularRepeat, m.mapSpecularOffset, m.mapSpecularWrap, m.mapSpecularAnisotropy );
+						break;
+					case 'mapSpecularRepeat':
+					case 'mapSpecularOffset':
+					case 'mapSpecularWrap':
+					case 'mapSpecularAnisotropy':
+						break;
+					case 'mapMetalness':
+						json.metalnessMap = loadTexture( value, m.mapMetalnessRepeat, m.mapMetalnessOffset, m.mapMetalnessWrap, m.mapMetalnessAnisotropy );
+						break;
+					case 'mapMetalnessRepeat':
+					case 'mapMetalnessOffset':
+					case 'mapMetalnessWrap':
+					case 'mapMetalnessAnisotropy':
+						break;
+					case 'mapRoughness':
+						json.roughnessMap = loadTexture( value, m.mapRoughnessRepeat, m.mapRoughnessOffset, m.mapRoughnessWrap, m.mapRoughnessAnisotropy );
+						break;
+					case 'mapRoughnessRepeat':
+					case 'mapRoughnessOffset':
+					case 'mapRoughnessWrap':
+					case 'mapRoughnessAnisotropy':
+						break;
+					case 'mapAlpha':
+						json.alphaMap = loadTexture( value, m.mapAlphaRepeat, m.mapAlphaOffset, m.mapAlphaWrap, m.mapAlphaAnisotropy );
+						break;
+					case 'mapAlphaRepeat':
+					case 'mapAlphaOffset':
+					case 'mapAlphaWrap':
+					case 'mapAlphaAnisotropy':
+						break;
+					case 'flipSided':
+						json.side = BackSide;
+						break;
+					case 'doubleSided':
+						json.side = DoubleSide;
+						break;
+					case 'transparency':
+						console.warn( 'THREE.Loader.createMaterial: transparency has been renamed to opacity' );
+						json.opacity = value;
+						break;
+					case 'depthTest':
+					case 'depthWrite':
+					case 'colorWrite':
+					case 'opacity':
+					case 'reflectivity':
+					case 'transparent':
+					case 'visible':
+					case 'wireframe':
+						json[ name ] = value;
+						break;
+					case 'vertexColors':
+						if ( value === true ) json.vertexColors = VertexColors;
+						if ( value === 'face' ) json.vertexColors = FaceColors;
+						break;
+					default:
+						console.error( 'THREE.Loader.createMaterial: Unsupported', name, value );
+						break;
+				}
+
+			}
+
+			if ( json.type === 'MeshBasicMaterial' ) delete json.emissive;
+			if ( json.type !== 'MeshPhongMaterial' ) delete json.specular;
+
+			if ( json.opacity < 1 ) json.transparent = true;
+
+			materialLoader.setTextures( textures );
+
+			return materialLoader.parse( json );
+
+		};
+
+	} )()
+
+};
+
+Loader$1.Handlers = {
+
+	handlers: [],
+
+	add: function ( regex, loader ) {
+
+		this.handlers.push( regex, loader );
+
+	},
+
+	get: function ( file ) {
+
+		var handlers = this.handlers;
+
+		for ( var i = 0, l = handlers.length; i < l; i += 2 ) {
+
+			var regex = handlers[ i ];
+			var loader  = handlers[ i + 1 ];
+
+			if ( regex.test( file ) ) {
+
+				return loader;
+
+			}
+
+		}
+
+		return null;
+
+	}
+
+};
+
+/**
+ * @author tschw
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ */
+
+var AnimationUtils = {
+
+	// same as Array.prototype.slice, but also works on typed arrays
+	arraySlice: function( array, from, to ) {
+
+		if ( AnimationUtils.isTypedArray( array ) ) {
+
+			return new array.constructor( array.subarray( from, to ) );
+
+		}
+
+		return array.slice( from, to );
+
+	},
+
+	// converts an array to a specific type
+	convertArray: function( array, type, forceClone ) {
+
+		if ( ! array || // let 'undefined' and 'null' pass
+				! forceClone && array.constructor === type ) return array;
+
+		if ( typeof type.BYTES_PER_ELEMENT === 'number' ) {
+
+			return new type( array ); // create typed array
+
+		}
+
+		return Array.prototype.slice.call( array ); // create Array
+
+	},
+
+	isTypedArray: function( object ) {
+
+		return ArrayBuffer.isView( object ) &&
+				! ( object instanceof DataView );
+
+	},
+
+	// returns an array by which times and values can be sorted
+	getKeyframeOrder: function( times ) {
+
+		function compareTime( i, j ) {
+
+			return times[ i ] - times[ j ];
+
+		}
+
+		var n = times.length;
+		var result = new Array( n );
+		for ( var i = 0; i !== n; ++ i ) result[ i ] = i;
+
+		result.sort( compareTime );
+
+		return result;
+
+	},
+
+	// uses the array previously returned by 'getKeyframeOrder' to sort data
+	sortedArray: function( values, stride, order ) {
+
+		var nValues = values.length;
+		var result = new values.constructor( nValues );
+
+		for ( var i = 0, dstOffset = 0; dstOffset !== nValues; ++ i ) {
+
+			var srcOffset = order[ i ] * stride;
+
+			for ( var j = 0; j !== stride; ++ j ) {
+
+				result[ dstOffset ++ ] = values[ srcOffset + j ];
+
+			}
+
+		}
+
+		return result;
+
+	},
+
+	// function for parsing AOS keyframe formats
+	flattenJSON: function( jsonKeys, times, values, valuePropertyName ) {
+
+		var i = 1, key = jsonKeys[ 0 ];
+
+		while ( key !== undefined && key[ valuePropertyName ] === undefined ) {
+
+			key = jsonKeys[ i ++ ];
+
+		}
+
+		if ( key === undefined ) return; // no data
+
+		var value = key[ valuePropertyName ];
+		if ( value === undefined ) return; // no data
+
+		if ( Array.isArray( value ) ) {
+
+			do {
+
+				value = key[ valuePropertyName ];
+
+				if ( value !== undefined ) {
+
+					times.push( key.time );
+					values.push.apply( values, value ); // push all elements
+
+				}
+
+				key = jsonKeys[ i ++ ];
+
+			} while ( key !== undefined );
+
+		} else if ( value.toArray !== undefined ) {
+			// ...assume THREE.Math-ish
+
+			do {
+
+				value = key[ valuePropertyName ];
+
+				if ( value !== undefined ) {
+
+					times.push( key.time );
+					value.toArray( values, values.length );
+
+				}
+
+				key = jsonKeys[ i ++ ];
+
+			} while ( key !== undefined );
+
+		} else {
+			// otherwise push as-is
+
+			do {
+
+				value = key[ valuePropertyName ];
+
+				if ( value !== undefined ) {
+
+					times.push( key.time );
+					values.push( value );
+
+				}
+
+				key = jsonKeys[ i ++ ];
+
+			} while ( key !== undefined );
+
+		}
+
+	}
+
+};
+
+/**
+ * Abstract base class of interpolants over parametric samples.
+ *
+ * The parameter domain is one dimensional, typically the time or a path
+ * along a curve defined by the data.
+ *
+ * The sample values can have any dimensionality and derived classes may
+ * apply special interpretations to the data.
+ *
+ * This class provides the interval seek in a Template Method, deferring
+ * the actual interpolation to derived classes.
+ *
+ * Time complexity is O(1) for linear access crossing at most two points
+ * and O(log N) for random access, where N is the number of positions.
+ *
+ * References:
+ *
+ * 		http://www.oodesign.com/template-method-pattern.html
+ *
+ * @author tschw
+ */
+
+function Interpolant(
+		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+	this.parameterPositions = parameterPositions;
+	this._cachedIndex = 0;
+
+	this.resultBuffer = resultBuffer !== undefined ?
+			resultBuffer : new sampleValues.constructor( sampleSize );
+	this.sampleValues = sampleValues;
+	this.valueSize = sampleSize;
+
+}
+
+Interpolant.prototype = {
+
+	constructor: Interpolant,
+
+	evaluate: function( t ) {
+
+		var pp = this.parameterPositions,
+			i1 = this._cachedIndex,
+
+			t1 = pp[   i1   ],
+			t0 = pp[ i1 - 1 ];
+
+		validate_interval: {
+
+			seek: {
+
+				var right;
+
+				linear_scan: {
+//- See http://jsperf.com/comparison-to-undefined/3
+//- slower code:
+//-
+//- 				if ( t >= t1 || t1 === undefined ) {
+					forward_scan: if ( ! ( t < t1 ) ) {
+
+						for ( var giveUpAt = i1 + 2; ;) {
+
+							if ( t1 === undefined ) {
+
+								if ( t < t0 ) break forward_scan;
+
+								// after end
+
+								i1 = pp.length;
+								this._cachedIndex = i1;
+								return this.afterEnd_( i1 - 1, t, t0 );
+
+							}
+
+							if ( i1 === giveUpAt ) break; // this loop
+
+							t0 = t1;
+							t1 = pp[ ++ i1 ];
+
+							if ( t < t1 ) {
+
+								// we have arrived at the sought interval
+								break seek;
+
+							}
+
+						}
+
+						// prepare binary search on the right side of the index
+						right = pp.length;
+						break linear_scan;
+
+					}
+
+//- slower code:
+//-					if ( t < t0 || t0 === undefined ) {
+					if ( ! ( t >= t0 ) ) {
+
+						// looping?
+
+						var t1global = pp[ 1 ];
+
+						if ( t < t1global ) {
+
+							i1 = 2; // + 1, using the scan for the details
+							t0 = t1global;
+
+						}
+
+						// linear reverse scan
+
+						for ( var giveUpAt = i1 - 2; ;) {
+
+							if ( t0 === undefined ) {
+
+								// before start
+
+								this._cachedIndex = 0;
+								return this.beforeStart_( 0, t, t1 );
+
+							}
+
+							if ( i1 === giveUpAt ) break; // this loop
+
+							t1 = t0;
+							t0 = pp[ -- i1 - 1 ];
+
+							if ( t >= t0 ) {
+
+								// we have arrived at the sought interval
+								break seek;
+
+							}
+
+						}
+
+						// prepare binary search on the left side of the index
+						right = i1;
+						i1 = 0;
+						break linear_scan;
+
+					}
+
+					// the interval is valid
+
+					break validate_interval;
+
+				} // linear scan
+
+				// binary search
+
+				while ( i1 < right ) {
+
+					var mid = ( i1 + right ) >>> 1;
+
+					if ( t < pp[ mid ] ) {
+
+						right = mid;
+
+					} else {
+
+						i1 = mid + 1;
+
+					}
+
+				}
+
+				t1 = pp[   i1   ];
+				t0 = pp[ i1 - 1 ];
+
+				// check boundary cases, again
+
+				if ( t0 === undefined ) {
+
+					this._cachedIndex = 0;
+					return this.beforeStart_( 0, t, t1 );
+
+				}
+
+				if ( t1 === undefined ) {
+
+					i1 = pp.length;
+					this._cachedIndex = i1;
+					return this.afterEnd_( i1 - 1, t0, t );
+
+				}
+
+			} // seek
+
+			this._cachedIndex = i1;
+
+			this.intervalChanged_( i1, t0, t1 );
+
+		} // validate_interval
+
+		return this.interpolate_( i1, t0, t, t1 );
+
+	},
+
+	settings: null, // optional, subclass-specific settings structure
+	// Note: The indirection allows central control of many interpolants.
+
+	// --- Protected interface
+
+	DefaultSettings_: {},
+
+	getSettings_: function() {
+
+		return this.settings || this.DefaultSettings_;
+
+	},
+
+	copySampleValue_: function( index ) {
+
+		// copies a sample value to the result buffer
+
+		var result = this.resultBuffer,
+			values = this.sampleValues,
+			stride = this.valueSize,
+			offset = index * stride;
+
+		for ( var i = 0; i !== stride; ++ i ) {
+
+			result[ i ] = values[ offset + i ];
+
+		}
+
+		return result;
+
+	},
+
+	// Template methods for derived classes:
+
+	interpolate_: function( i1, t0, t, t1 ) {
+
+		throw new Error( "call to abstract method" );
+		// implementations shall return this.resultBuffer
+
+	},
+
+	intervalChanged_: function( i1, t0, t1 ) {
+
+		// empty
+
+	}
+
+};
+
+Object.assign( Interpolant.prototype, {
+
+	beforeStart_: //( 0, t, t0 ), returns this.resultBuffer
+		Interpolant.prototype.copySampleValue_,
+
+	afterEnd_: //( N-1, tN-1, t ), returns this.resultBuffer
+		Interpolant.prototype.copySampleValue_
+
+} );
+
+/**
+ * Fast and simple cubic spline interpolant.
+ *
+ * It was derived from a Hermitian construction setting the first derivative
+ * at each sample position to the linear slope between neighboring positions
+ * over their parameter interval.
+ *
+ * @author tschw
+ */
+
+function CubicInterpolant(
+		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+	Interpolant.call(
+			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+
+	this._weightPrev = -0;
+	this._offsetPrev = -0;
+	this._weightNext = -0;
+	this._offsetNext = -0;
+
+}
+
+CubicInterpolant.prototype =
+		Object.assign( Object.create( Interpolant.prototype ), {
+
+	constructor: CubicInterpolant,
+
+	DefaultSettings_: {
+
+		endingStart: 	ZeroCurvatureEnding,
+		endingEnd:		ZeroCurvatureEnding
+
+	},
+
+	intervalChanged_: function( i1, t0, t1 ) {
+
+		var pp = this.parameterPositions,
+			iPrev = i1 - 2,
+			iNext = i1 + 1,
+
+			tPrev = pp[ iPrev ],
+			tNext = pp[ iNext ];
+
+		if ( tPrev === undefined ) {
+
+			switch ( this.getSettings_().endingStart ) {
+
+				case ZeroSlopeEnding:
+
+					// f'(t0) = 0
+					iPrev = i1;
+					tPrev = 2 * t0 - t1;
+
+					break;
+
+				case WrapAroundEnding:
+
+					// use the other end of the curve
+					iPrev = pp.length - 2;
+					tPrev = t0 + pp[ iPrev ] - pp[ iPrev + 1 ];
+
+					break;
+
+				default: // ZeroCurvatureEnding
+
+					// f''(t0) = 0 a.k.a. Natural Spline
+					iPrev = i1;
+					tPrev = t1;
+
+			}
+
+		}
+
+		if ( tNext === undefined ) {
+
+			switch ( this.getSettings_().endingEnd ) {
+
+				case ZeroSlopeEnding:
+
+					// f'(tN) = 0
+					iNext = i1;
+					tNext = 2 * t1 - t0;
+
+					break;
+
+				case WrapAroundEnding:
+
+					// use the other end of the curve
+					iNext = 1;
+					tNext = t1 + pp[ 1 ] - pp[ 0 ];
+
+					break;
+
+				default: // ZeroCurvatureEnding
+
+					// f''(tN) = 0, a.k.a. Natural Spline
+					iNext = i1 - 1;
+					tNext = t0;
+
+			}
+
+		}
+
+		var halfDt = ( t1 - t0 ) * 0.5,
+			stride = this.valueSize;
+
+		this._weightPrev = halfDt / ( t0 - tPrev );
+		this._weightNext = halfDt / ( tNext - t1 );
+		this._offsetPrev = iPrev * stride;
+		this._offsetNext = iNext * stride;
+
+	},
+
+	interpolate_: function( i1, t0, t, t1 ) {
+
+		var result = this.resultBuffer,
+			values = this.sampleValues,
+			stride = this.valueSize,
+
+			o1 = i1 * stride,		o0 = o1 - stride,
+			oP = this._offsetPrev, 	oN = this._offsetNext,
+			wP = this._weightPrev,	wN = this._weightNext,
+
+			p = ( t - t0 ) / ( t1 - t0 ),
+			pp = p * p,
+			ppp = pp * p;
+
+		// evaluate polynomials
+
+		var sP =     - wP   * ppp   +         2 * wP    * pp    -          wP   * p;
+		var s0 = ( 1 + wP ) * ppp   + (-1.5 - 2 * wP )  * pp    + ( -0.5 + wP ) * p     + 1;
+		var s1 = (-1 - wN ) * ppp   + ( 1.5 +   wN   )  * pp    +    0.5        * p;
+		var sN =       wN   * ppp   -           wN      * pp;
+
+		// combine data linearly
+
+		for ( var i = 0; i !== stride; ++ i ) {
+
+			result[ i ] =
+					sP * values[ oP + i ] +
+					s0 * values[ o0 + i ] +
+					s1 * values[ o1 + i ] +
+					sN * values[ oN + i ];
+
+		}
+
+		return result;
+
+	}
+
+} );
+
+/**
+ * @author tschw
+ */
+
+function LinearInterpolant(
+		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+	Interpolant.call(
+			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+
+}
+
+LinearInterpolant.prototype =
+		Object.assign( Object.create( Interpolant.prototype ), {
+
+	constructor: LinearInterpolant,
+
+	interpolate_: function( i1, t0, t, t1 ) {
+
+		var result = this.resultBuffer,
+			values = this.sampleValues,
+			stride = this.valueSize,
+
+			offset1 = i1 * stride,
+			offset0 = offset1 - stride,
+
+			weight1 = ( t - t0 ) / ( t1 - t0 ),
+			weight0 = 1 - weight1;
+
+		for ( var i = 0; i !== stride; ++ i ) {
+
+			result[ i ] =
+					values[ offset0 + i ] * weight0 +
+					values[ offset1 + i ] * weight1;
+
+		}
+
+		return result;
+
+	}
+
+} );
+
+/**
+ *
+ * Interpolant that evaluates to the sample value at the position preceeding
+ * the parameter.
+ *
+ * @author tschw
+ */
+
+function DiscreteInterpolant(
+		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+	Interpolant.call(
+			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+
+}
+
+DiscreteInterpolant.prototype =
+		Object.assign( Object.create( Interpolant.prototype ), {
+
+	constructor: DiscreteInterpolant,
+
+	interpolate_: function( i1, t0, t, t1 ) {
+
+		return this.copySampleValue_( i1 - 1 );
+
+	}
+
+} );
+
+var KeyframeTrackPrototype;
+
+KeyframeTrackPrototype = {
+
+	TimeBufferType: Float32Array,
+	ValueBufferType: Float32Array,
+
+	DefaultInterpolation: InterpolateLinear,
+
+	InterpolantFactoryMethodDiscrete: function( result ) {
+
+		return new DiscreteInterpolant(
+				this.times, this.values, this.getValueSize(), result );
+
+	},
+
+	InterpolantFactoryMethodLinear: function( result ) {
+
+		return new LinearInterpolant(
+				this.times, this.values, this.getValueSize(), result );
+
+	},
+
+	InterpolantFactoryMethodSmooth: function( result ) {
+
+		return new CubicInterpolant(
+				this.times, this.values, this.getValueSize(), result );
+
+	},
+
+	setInterpolation: function( interpolation ) {
+
+		var factoryMethod;
+
+		switch ( interpolation ) {
+
+			case InterpolateDiscrete:
+
+				factoryMethod = this.InterpolantFactoryMethodDiscrete;
+
+				break;
+
+			case InterpolateLinear:
+
+				factoryMethod = this.InterpolantFactoryMethodLinear;
+
+				break;
+
+			case InterpolateSmooth:
+
+				factoryMethod = this.InterpolantFactoryMethodSmooth;
+
+				break;
+
+		}
+
+		if ( factoryMethod === undefined ) {
+
+			var message = "unsupported interpolation for " +
+					this.ValueTypeName + " keyframe track named " + this.name;
+
+			if ( this.createInterpolant === undefined ) {
+
+				// fall back to default, unless the default itself is messed up
+				if ( interpolation !== this.DefaultInterpolation ) {
+
+					this.setInterpolation( this.DefaultInterpolation );
+
+				} else {
+
+					throw new Error( message ); // fatal, in this case
+
+				}
+
+			}
+
+			console.warn( message );
+			return;
+
+		}
+
+		this.createInterpolant = factoryMethod;
+
+	},
+
+	getInterpolation: function() {
+
+		switch ( this.createInterpolant ) {
+
+			case this.InterpolantFactoryMethodDiscrete:
+
+				return InterpolateDiscrete;
+
+			case this.InterpolantFactoryMethodLinear:
+
+				return InterpolateLinear;
+
+			case this.InterpolantFactoryMethodSmooth:
+
+				return InterpolateSmooth;
+
+		}
+
+	},
+
+	getValueSize: function() {
+
+		return this.values.length / this.times.length;
+
+	},
+
+	// move all keyframes either forwards or backwards in time
+	shift: function( timeOffset ) {
+
+		if( timeOffset !== 0.0 ) {
+
+			var times = this.times;
+
+			for( var i = 0, n = times.length; i !== n; ++ i ) {
+
+				times[ i ] += timeOffset;
+
+			}
+
+		}
+
+		return this;
+
+	},
+
+	// scale all keyframe times by a factor (useful for frame <-> seconds conversions)
+	scale: function( timeScale ) {
+
+		if( timeScale !== 1.0 ) {
+
+			var times = this.times;
+
+			for( var i = 0, n = times.length; i !== n; ++ i ) {
+
+				times[ i ] *= timeScale;
+
+			}
+
+		}
+
+		return this;
+
+	},
+
+	// removes keyframes before and after animation without changing any values within the range [startTime, endTime].
+	// IMPORTANT: We do not shift around keys to the start of the track time, because for interpolated keys this will change their values
+	trim: function( startTime, endTime ) {
+
+		var times = this.times,
+			nKeys = times.length,
+			from = 0,
+			to = nKeys - 1;
+
+		while ( from !== nKeys && times[ from ] < startTime ) ++ from;
+		while ( to !== -1 && times[ to ] > endTime ) -- to;
+
+		++ to; // inclusive -> exclusive bound
+
+		if( from !== 0 || to !== nKeys ) {
+
+			// empty tracks are forbidden, so keep at least one keyframe
+			if ( from >= to ) to = Math.max( to , 1 ), from = to - 1;
+
+			var stride = this.getValueSize();
+			this.times = AnimationUtils.arraySlice( times, from, to );
+			this.values = AnimationUtils.
+					arraySlice( this.values, from * stride, to * stride );
+
+		}
+
+		return this;
+
+	},
+
+	// ensure we do not get a GarbageInGarbageOut situation, make sure tracks are at least minimally viable
+	validate: function() {
+
+		var valid = true;
+
+		var valueSize = this.getValueSize();
+		if ( valueSize - Math.floor( valueSize ) !== 0 ) {
+
+			console.error( "invalid value size in track", this );
+			valid = false;
+
+		}
+
+		var times = this.times,
+			values = this.values,
+
+			nKeys = times.length;
+
+		if( nKeys === 0 ) {
+
+			console.error( "track is empty", this );
+			valid = false;
+
+		}
+
+		var prevTime = null;
+
+		for( var i = 0; i !== nKeys; i ++ ) {
+
+			var currTime = times[ i ];
+
+			if ( typeof currTime === 'number' && isNaN( currTime ) ) {
+
+				console.error( "time is not a valid number", this, i, currTime );
+				valid = false;
+				break;
+
+			}
+
+			if( prevTime !== null && prevTime > currTime ) {
+
+				console.error( "out of order keys", this, i, currTime, prevTime );
+				valid = false;
+				break;
+
+			}
+
+			prevTime = currTime;
+
+		}
+
+		if ( values !== undefined ) {
+
+			if ( AnimationUtils.isTypedArray( values ) ) {
+
+				for ( var i = 0, n = values.length; i !== n; ++ i ) {
+
+					var value = values[ i ];
+
+					if ( isNaN( value ) ) {
+
+						console.error( "value is not a valid number", this, i, value );
+						valid = false;
+						break;
+
+					}
+
+				}
+
+			}
+
+		}
+
+		return valid;
+
+	},
+
+	// removes equivalent sequential keys as common in morph target sequences
+	// (0,0,0,0,1,1,1,0,0,0,0,0,0,0) --> (0,0,1,1,0,0)
+	optimize: function() {
+
+		var times = this.times,
+			values = this.values,
+			stride = this.getValueSize(),
+
+			smoothInterpolation = this.getInterpolation() === InterpolateSmooth,
+
+			writeIndex = 1,
+			lastIndex = times.length - 1;
+
+		for( var i = 1; i < lastIndex; ++ i ) {
+
+			var keep = false;
+
+			var time = times[ i ];
+			var timeNext = times[ i + 1 ];
+
+			// remove adjacent keyframes scheduled at the same time
+
+			if ( time !== timeNext && ( i !== 1 || time !== time[ 0 ] ) ) {
+
+				if ( ! smoothInterpolation ) {
+
+					// remove unnecessary keyframes same as their neighbors
+
+					var offset = i * stride,
+						offsetP = offset - stride,
+						offsetN = offset + stride;
+
+					for ( var j = 0; j !== stride; ++ j ) {
+
+						var value = values[ offset + j ];
+
+						if ( value !== values[ offsetP + j ] ||
+								value !== values[ offsetN + j ] ) {
+
+							keep = true;
+							break;
+
+						}
+
+					}
+
+				} else keep = true;
+
+			}
+
+			// in-place compaction
+
+			if ( keep ) {
+
+				if ( i !== writeIndex ) {
+
+					times[ writeIndex ] = times[ i ];
+
+					var readOffset = i * stride,
+						writeOffset = writeIndex * stride;
+
+					for ( var j = 0; j !== stride; ++ j )
+
+						values[ writeOffset + j ] = values[ readOffset + j ];
+
+				}
+
+				++ writeIndex;
+
+			}
+
+		}
+
+		// flush last keyframe (compaction looks ahead)
+
+		if ( lastIndex > 0 ) {
+
+			times[ writeIndex ] = times[ lastIndex ];
+
+			for ( var readOffset = lastIndex * stride, writeOffset = writeIndex * stride, j = 0; j !== stride; ++ j )
+
+				values[ writeOffset + j ] = values[ readOffset + j ];
+
+			++ writeIndex;
+
+		}
+
+		if ( writeIndex !== times.length ) {
+
+			this.times = AnimationUtils.arraySlice( times, 0, writeIndex );
+			this.values = AnimationUtils.arraySlice( values, 0, writeIndex * stride );
+
+		}
+
+		return this;
+
+	}
+
+};
+
+function KeyframeTrackConstructor( name, times, values, interpolation ) {
+
+	if( name === undefined ) throw new Error( "track name is undefined" );
+
+	if( times === undefined || times.length === 0 ) {
+
+		throw new Error( "no keyframes in track named " + name );
+
+	}
+
+	this.name = name;
+
+	this.times = AnimationUtils.convertArray( times, this.TimeBufferType );
+	this.values = AnimationUtils.convertArray( values, this.ValueBufferType );
+
+	this.setInterpolation( interpolation || this.DefaultInterpolation );
+
+	this.validate();
+	this.optimize();
+
+}
+
+/**
+ *
+ * A Track of vectored keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function VectorKeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
+
+}
+
+VectorKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: VectorKeyframeTrack,
+
+	ValueTypeName: 'vector'
+
+	// ValueBufferType is inherited
+
+	// DefaultInterpolation is inherited
+
+} );
+
+/**
+ * Spherical linear unit quaternion interpolant.
+ *
+ * @author tschw
+ */
+
+function QuaternionLinearInterpolant(
+		parameterPositions, sampleValues, sampleSize, resultBuffer ) {
+
+	Interpolant.call(
+			this, parameterPositions, sampleValues, sampleSize, resultBuffer );
+
+}
+
+QuaternionLinearInterpolant.prototype =
+		Object.assign( Object.create( Interpolant.prototype ), {
+
+	constructor: QuaternionLinearInterpolant,
+
+	interpolate_: function( i1, t0, t, t1 ) {
+
+		var result = this.resultBuffer,
+			values = this.sampleValues,
+			stride = this.valueSize,
+
+			offset = i1 * stride,
+
+			alpha = ( t - t0 ) / ( t1 - t0 );
+
+		for ( var end = offset + stride; offset !== end; offset += 4 ) {
+
+			Quaternion.slerpFlat( result, 0,
+					values, offset - stride, values, offset, alpha );
+
+		}
+
+		return result;
+
+	}
+
+} );
+
+/**
+ *
+ * A Track of quaternion keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function QuaternionKeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
+
+}
+
+QuaternionKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: QuaternionKeyframeTrack,
+
+	ValueTypeName: 'quaternion',
+
+	// ValueBufferType is inherited
+
+	DefaultInterpolation: InterpolateLinear,
+
+	InterpolantFactoryMethodLinear: function( result ) {
+
+		return new QuaternionLinearInterpolant(
+				this.times, this.values, this.getValueSize(), result );
+
+	},
+
+	InterpolantFactoryMethodSmooth: undefined // not yet implemented
+
+} );
+
+/**
+ *
+ * A Track of numeric keyframe values.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function NumberKeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
+
+}
+
+NumberKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: NumberKeyframeTrack,
+
+	ValueTypeName: 'number',
+
+	// ValueBufferType is inherited
+
+	// DefaultInterpolation is inherited
+
+} );
+
+/**
+ *
+ * A Track that interpolates Strings
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function StringKeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
+
+}
+
+StringKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: StringKeyframeTrack,
+
+	ValueTypeName: 'string',
+	ValueBufferType: Array,
+
+	DefaultInterpolation: InterpolateDiscrete,
+
+	InterpolantFactoryMethodLinear: undefined,
+
+	InterpolantFactoryMethodSmooth: undefined
+
+} );
+
+/**
+ *
+ * A Track of Boolean keyframe values.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function BooleanKeyframeTrack( name, times, values ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values );
+
+}
+
+BooleanKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: BooleanKeyframeTrack,
+
+	ValueTypeName: 'bool',
+	ValueBufferType: Array,
+
+	DefaultInterpolation: InterpolateDiscrete,
+
+	InterpolantFactoryMethodLinear: undefined,
+	InterpolantFactoryMethodSmooth: undefined
+
+	// Note: Actually this track could have a optimized / compressed
+	// representation of a single value and a custom interpolant that
+	// computes "firstValue ^ isOdd( index )".
+
+} );
+
+/**
+ *
+ * A Track of keyframe values that represent color.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function ColorKeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.call( this, name, times, values, interpolation );
+
+}
+
+ColorKeyframeTrack.prototype =
+		Object.assign( Object.create( KeyframeTrackPrototype ), {
+
+	constructor: ColorKeyframeTrack,
+
+	ValueTypeName: 'color'
+
+	// ValueBufferType is inherited
+
+	// DefaultInterpolation is inherited
+
+
+	// Note: Very basic implementation and nothing special yet.
+	// However, this is the place for color space parameterization.
+
+} );
+
+/**
+ *
+ * A timed sequence of keyframes for a specific property.
+ *
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ * @author tschw
+ */
+
+function KeyframeTrack( name, times, values, interpolation ) {
+
+	KeyframeTrackConstructor.apply( this, arguments );
+
+}
+
+KeyframeTrack.prototype = KeyframeTrackPrototype;
+KeyframeTrackPrototype.constructor = KeyframeTrack;
+
+// Static methods:
+
+Object.assign( KeyframeTrack, {
+
+	// Serialization (in static context, because of constructor invocation
+	// and automatic invocation of .toJSON):
+
+	parse: function( json ) {
+
+		if( json.type === undefined ) {
+
+			throw new Error( "track type undefined, can not parse" );
+
+		}
+
+		var trackType = KeyframeTrack._getTrackTypeForValueTypeName( json.type );
+
+		if ( json.times === undefined ) {
+
+			var times = [], values = [];
+
+			AnimationUtils.flattenJSON( json.keys, times, values, 'value' );
+
+			json.times = times;
+			json.values = values;
+
+		}
+
+		// derived classes can define a static parse method
+		if ( trackType.parse !== undefined ) {
+
+			return trackType.parse( json );
+
+		} else {
+
+			// by default, we asssume a constructor compatible with the base
+			return new trackType(
+					json.name, json.times, json.values, json.interpolation );
+
+		}
+
+	},
+
+	toJSON: function( track ) {
+
+		var trackType = track.constructor;
+
+		var json;
+
+		// derived classes can define a static toJSON method
+		if ( trackType.toJSON !== undefined ) {
+
+			json = trackType.toJSON( track );
+
+		} else {
+
+			// by default, we assume the data can be serialized as-is
+			json = {
+
+				'name': track.name,
+				'times': AnimationUtils.convertArray( track.times, Array ),
+				'values': AnimationUtils.convertArray( track.values, Array )
+
+			};
+
+			var interpolation = track.getInterpolation();
+
+			if ( interpolation !== track.DefaultInterpolation ) {
+
+				json.interpolation = interpolation;
+
+			}
+
+		}
+
+		json.type = track.ValueTypeName; // mandatory
+
+		return json;
+
+	},
+
+	_getTrackTypeForValueTypeName: function( typeName ) {
+
+		switch( typeName.toLowerCase() ) {
+
+			case "scalar":
+			case "double":
+			case "float":
+			case "number":
+			case "integer":
+
+				return NumberKeyframeTrack;
+
+			case "vector":
+			case "vector2":
+			case "vector3":
+			case "vector4":
+
+				return VectorKeyframeTrack;
+
+			case "color":
+
+				return ColorKeyframeTrack;
+
+			case "quaternion":
+
+				return QuaternionKeyframeTrack;
+
+			case "bool":
+			case "boolean":
+
+				return BooleanKeyframeTrack;
+
+			case "string":
+
+				return StringKeyframeTrack;
+
+		}
+
+		throw new Error( "Unsupported typeName: " + typeName );
+
+	}
+
+} );
+
+/**
+ *
+ * Reusable set of Tracks that represent an animation.
+ *
+ * @author Ben Houston / http://clara.io/
+ * @author David Sarno / http://lighthaus.us/
+ */
+
+function AnimationClip( name, duration, tracks ) {
+
+	this.name = name;
+	this.tracks = tracks;
+	this.duration = ( duration !== undefined ) ? duration : -1;
+
+	this.uuid = _Math.generateUUID();
+
+	// this means it should figure out its duration by scanning the tracks
+	if ( this.duration < 0 ) {
+
+		this.resetDuration();
+
+	}
+
+	this.optimize();
+
+}
+
+AnimationClip.prototype = {
+
+	constructor: AnimationClip,
+
+	resetDuration: function() {
+
+		var tracks = this.tracks,
+			duration = 0;
+
+		for ( var i = 0, n = tracks.length; i !== n; ++ i ) {
+
+			var track = this.tracks[ i ];
+
+			duration = Math.max(
+					duration, track.times[ track.times.length - 1 ] );
+
+		}
+
+		this.duration = duration;
+
+	},
+
+	trim: function() {
+
+		for ( var i = 0; i < this.tracks.length; i ++ ) {
+
+			this.tracks[ i ].trim( 0, this.duration );
+
+		}
+
+		return this;
+
+	},
+
+	optimize: function() {
+
+		for ( var i = 0; i < this.tracks.length; i ++ ) {
+
+			this.tracks[ i ].optimize();
+
+		}
+
+		return this;
+
+	}
+
+};
+
+// Static methods:
+
+Object.assign( AnimationClip, {
+
+	parse: function( json ) {
+
+		var tracks = [],
+			jsonTracks = json.tracks,
+			frameTime = 1.0 / ( json.fps || 1.0 );
+
+		for ( var i = 0, n = jsonTracks.length; i !== n; ++ i ) {
+
+			tracks.push( KeyframeTrack.parse( jsonTracks[ i ] ).scale( frameTime ) );
+
+		}
+
+		return new AnimationClip( json.name, json.duration, tracks );
+
+	},
+
+
+	toJSON: function( clip ) {
+
+		var tracks = [],
+			clipTracks = clip.tracks;
+
+		var json = {
+
+			'name': clip.name,
+			'duration': clip.duration,
+			'tracks': tracks
+
+		};
+
+		for ( var i = 0, n = clipTracks.length; i !== n; ++ i ) {
+
+			tracks.push( KeyframeTrack.toJSON( clipTracks[ i ] ) );
+
+		}
+
+		return json;
+
+	},
+
+
+	CreateFromMorphTargetSequence: function( name, morphTargetSequence, fps, noLoop ) {
+
+		var numMorphTargets = morphTargetSequence.length;
+		var tracks = [];
+
+		for ( var i = 0; i < numMorphTargets; i ++ ) {
+
+			var times = [];
+			var values = [];
+
+			times.push(
+					( i + numMorphTargets - 1 ) % numMorphTargets,
+					i,
+					( i + 1 ) % numMorphTargets );
+
+			values.push( 0, 1, 0 );
+
+			var order = AnimationUtils.getKeyframeOrder( times );
+			times = AnimationUtils.sortedArray( times, 1, order );
+			values = AnimationUtils.sortedArray( values, 1, order );
+
+			// if there is a key at the first frame, duplicate it as the
+			// last frame as well for perfect loop.
+			if ( ! noLoop && times[ 0 ] === 0 ) {
+
+				times.push( numMorphTargets );
+				values.push( values[ 0 ] );
+
+			}
+
+			tracks.push(
+					new NumberKeyframeTrack(
+						'.morphTargetInfluences[' + morphTargetSequence[ i ].name + ']',
+						times, values
+					).scale( 1.0 / fps ) );
+		}
+
+		return new AnimationClip( name, -1, tracks );
+
+	},
+
+	findByName: function( objectOrClipArray, name ) {
+
+		var clipArray = objectOrClipArray;
+
+		if ( ! Array.isArray( objectOrClipArray ) ) {
+
+			var o = objectOrClipArray;
+			clipArray = o.geometry && o.geometry.animations || o.animations;
+
+		}
+
+		for ( var i = 0; i < clipArray.length; i ++ ) {
+
+			if ( clipArray[ i ].name === name ) {
+
+				return clipArray[ i ];
+
+			}
+		}
+
+		return null;
+
+	},
+
+	CreateClipsFromMorphTargetSequences: function( morphTargets, fps, noLoop ) {
+
+		var animationToMorphTargets = {};
+
+		// tested with https://regex101.com/ on trick sequences
+		// such flamingo_flyA_003, flamingo_run1_003, crdeath0059
+		var pattern = /^([\w-]*?)([\d]+)$/;
+
+		// sort morph target names into animation groups based
+		// patterns like Walk_001, Walk_002, Run_001, Run_002
+		for ( var i = 0, il = morphTargets.length; i < il; i ++ ) {
+
+			var morphTarget = morphTargets[ i ];
+			var parts = morphTarget.name.match( pattern );
+
+			if ( parts && parts.length > 1 ) {
+
+				var name = parts[ 1 ];
+
+				var animationMorphTargets = animationToMorphTargets[ name ];
+				if ( ! animationMorphTargets ) {
+
+					animationToMorphTargets[ name ] = animationMorphTargets = [];
+
+				}
+
+				animationMorphTargets.push( morphTarget );
+
+			}
+
+		}
+
+		var clips = [];
+
+		for ( var name in animationToMorphTargets ) {
+
+			clips.push( AnimationClip.CreateFromMorphTargetSequence( name, animationToMorphTargets[ name ], fps, noLoop ) );
+
+		}
+
+		return clips;
+
+	},
+
+	// parse the animation.hierarchy format
+	parseAnimation: function( animation, bones ) {
+
+		if ( ! animation ) {
+
+			console.error( "  no animation in JSONLoader data" );
+			return null;
+
+		}
+
+		var addNonemptyTrack = function(
+				trackType, trackName, animationKeys, propertyName, destTracks ) {
+
+			// only return track if there are actually keys.
+			if ( animationKeys.length !== 0 ) {
+
+				var times = [];
+				var values = [];
+
+				AnimationUtils.flattenJSON(
+						animationKeys, times, values, propertyName );
+
+				// empty keys are filtered out, so check again
+				if ( times.length !== 0 ) {
+
+					destTracks.push( new trackType( trackName, times, values ) );
+
+				}
+
+			}
+
+		};
+
+		var tracks = [];
+
+		var clipName = animation.name || 'default';
+		// automatic length determination in AnimationClip.
+		var duration = animation.length || -1;
+		var fps = animation.fps || 30;
+
+		var hierarchyTracks = animation.hierarchy || [];
+
+		for ( var h = 0; h < hierarchyTracks.length; h ++ ) {
+
+			var animationKeys = hierarchyTracks[ h ].keys;
+
+			// skip empty tracks
+			if ( ! animationKeys || animationKeys.length === 0 ) continue;
+
+			// process morph targets in a way exactly compatible
+			// with AnimationHandler.init( animation )
+			if ( animationKeys[0].morphTargets ) {
+
+				// figure out all morph targets used in this track
+				var morphTargetNames = {};
+				for ( var k = 0; k < animationKeys.length; k ++ ) {
+
+					if ( animationKeys[k].morphTargets ) {
+
+						for ( var m = 0; m < animationKeys[k].morphTargets.length; m ++ ) {
+
+							morphTargetNames[ animationKeys[k].morphTargets[m] ] = -1;
+						}
+
+					}
+
+				}
+
+				// create a track for each morph target with all zero
+				// morphTargetInfluences except for the keys in which
+				// the morphTarget is named.
+				for ( var morphTargetName in morphTargetNames ) {
+
+					var times = [];
+					var values = [];
+
+					for ( var m = 0;
+							m !== animationKeys[k].morphTargets.length; ++ m ) {
+
+						var animationKey = animationKeys[k];
+
+						times.push( animationKey.time );
+						values.push( ( animationKey.morphTarget === morphTargetName ) ? 1 : 0 );
+
+					}
+
+					tracks.push( new NumberKeyframeTrack(
+							'.morphTargetInfluence[' + morphTargetName + ']', times, values ) );
+
+				}
+
+				duration = morphTargetNames.length * ( fps || 1.0 );
+
+			} else {
+				// ...assume skeletal animation
+
+				var boneName = '.bones[' + bones[ h ].name + ']';
+
+				addNonemptyTrack(
+						VectorKeyframeTrack, boneName + '.position',
+						animationKeys, 'pos', tracks );
+
+				addNonemptyTrack(
+						QuaternionKeyframeTrack, boneName + '.quaternion',
+						animationKeys, 'rot', tracks );
+
+				addNonemptyTrack(
+						VectorKeyframeTrack, boneName + '.scale',
+						animationKeys, 'scl', tracks );
+
+			}
+
+		}
+
+		if ( tracks.length === 0 ) {
+
+			return null;
+
+		}
+
+		var clip = new AnimationClip( clipName, duration, tracks );
+
+		return clip;
+
+	}
+
+} );
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ * @author alteredq / http://alteredqualia.com/
+ */
+
+function JSONLoader( manager ) {
+
+	if ( typeof manager === 'boolean' ) {
+
+		console.warn( 'THREE.JSONLoader: showStatus parameter has been removed from constructor.' );
+		manager = undefined;
+
+	}
+
+	this.manager = ( manager !== undefined ) ? manager : DefaultLoadingManager;
+
+	this.withCredentials = false;
+
+}
+
+Object.assign( JSONLoader.prototype, {
+
+	load: function( url, onLoad, onProgress, onError ) {
+
+		var scope = this;
+
+		var texturePath = this.texturePath && ( typeof this.texturePath === "string" ) ? this.texturePath : Loader$1.prototype.extractUrlBase( url );
+
+		var loader = new XHRLoader( this.manager );
+		loader.setWithCredentials( this.withCredentials );
+		loader.load( url, function ( text ) {
+
+			var json = JSON.parse( text );
+			var metadata = json.metadata;
+
+			if ( metadata !== undefined ) {
+
+				var type = metadata.type;
+
+				if ( type !== undefined ) {
+
+					if ( type.toLowerCase() === 'object' ) {
+
+						console.error( 'THREE.JSONLoader: ' + url + ' should be loaded with THREE.ObjectLoader instead.' );
+						return;
+
+					}
+
+					if ( type.toLowerCase() === 'scene' ) {
+
+						console.error( 'THREE.JSONLoader: ' + url + ' should be loaded with THREE.SceneLoader instead.' );
+						return;
+
+					}
+
+				}
+
+			}
+
+			var object = scope.parse( json, texturePath );
+			onLoad( object.geometry, object.materials );
+
+		}, onProgress, onError );
+
+	},
+
+	setTexturePath: function ( value ) {
+
+		this.texturePath = value;
+
+	},
+
+	parse: function ( json, texturePath ) {
+
+		var geometry = new Geometry(),
+		scale = ( json.scale !== undefined ) ? 1.0 / json.scale : 1.0;
+
+		parseModel( scale );
+
+		parseSkin();
+		parseMorphing( scale );
+		parseAnimations();
+
+		geometry.computeFaceNormals();
+		geometry.computeBoundingSphere();
+
+		function parseModel( scale ) {
+
+			function isBitSet( value, position ) {
+
+				return value & ( 1 << position );
+
+			}
+
+			var i, j, fi,
+
+			offset, zLength,
+
+		colorIndex, normalIndex, uvIndex, materialIndex,
+
+			type,
+			isQuad,
+			hasMaterial,
+			hasFaceVertexUv,
+			hasFaceNormal, hasFaceVertexNormal,
+			hasFaceColor, hasFaceVertexColor,
+
+		vertex, face, faceA, faceB, hex, normal,
+
+			uvLayer, uv, u, v,
+
+			faces = json.faces,
+			vertices = json.vertices,
+			normals = json.normals,
+			colors = json.colors,
+
+			nUvLayers = 0;
+
+			if ( json.uvs !== undefined ) {
+
+				// disregard empty arrays
+
+				for ( i = 0; i < json.uvs.length; i ++ ) {
+
+					if ( json.uvs[ i ].length ) nUvLayers ++;
+
+				}
+
+				for ( i = 0; i < nUvLayers; i ++ ) {
+
+					geometry.faceVertexUvs[ i ] = [];
+
+				}
+
+			}
+
+			offset = 0;
+			zLength = vertices.length;
+
+			while ( offset < zLength ) {
+
+				vertex = new Vector3();
+
+				vertex.x = vertices[ offset ++ ] * scale;
+				vertex.y = vertices[ offset ++ ] * scale;
+				vertex.z = vertices[ offset ++ ] * scale;
+
+				geometry.vertices.push( vertex );
+
+			}
+
+			offset = 0;
+			zLength = faces.length;
+
+			while ( offset < zLength ) {
+
+				type = faces[ offset ++ ];
+
+
+				isQuad              = isBitSet( type, 0 );
+				hasMaterial         = isBitSet( type, 1 );
+				hasFaceVertexUv     = isBitSet( type, 3 );
+				hasFaceNormal       = isBitSet( type, 4 );
+				hasFaceVertexNormal = isBitSet( type, 5 );
+				hasFaceColor	     = isBitSet( type, 6 );
+				hasFaceVertexColor  = isBitSet( type, 7 );
+
+				// console.log("type", type, "bits", isQuad, hasMaterial, hasFaceVertexUv, hasFaceNormal, hasFaceVertexNormal, hasFaceColor, hasFaceVertexColor);
+
+				if ( isQuad ) {
+
+					faceA = new Face3();
+					faceA.a = faces[ offset ];
+					faceA.b = faces[ offset + 1 ];
+					faceA.c = faces[ offset + 3 ];
+
+					faceB = new Face3();
+					faceB.a = faces[ offset + 1 ];
+					faceB.b = faces[ offset + 2 ];
+					faceB.c = faces[ offset + 3 ];
+
+					offset += 4;
+
+					if ( hasMaterial ) {
+
+						materialIndex = faces[ offset ++ ];
+						faceA.materialIndex = materialIndex;
+						faceB.materialIndex = materialIndex;
+
+					}
+
+					// to get face <=> uv index correspondence
+
+					fi = geometry.faces.length;
+
+					if ( hasFaceVertexUv ) {
+
+						for ( i = 0; i < nUvLayers; i ++ ) {
+
+							uvLayer = json.uvs[ i ];
+
+							geometry.faceVertexUvs[ i ][ fi ] = [];
+							geometry.faceVertexUvs[ i ][ fi + 1 ] = [];
+
+							for ( j = 0; j < 4; j ++ ) {
+
+								uvIndex = faces[ offset ++ ];
+
+								u = uvLayer[ uvIndex * 2 ];
+								v = uvLayer[ uvIndex * 2 + 1 ];
+
+								uv = new Vector2( u, v );
+
+								if ( j !== 2 ) geometry.faceVertexUvs[ i ][ fi ].push( uv );
+								if ( j !== 0 ) geometry.faceVertexUvs[ i ][ fi + 1 ].push( uv );
+
+							}
+
+						}
+
+					}
+
+					if ( hasFaceNormal ) {
+
+						normalIndex = faces[ offset ++ ] * 3;
+
+						faceA.normal.set(
+							normals[ normalIndex ++ ],
+							normals[ normalIndex ++ ],
+							normals[ normalIndex ]
+						);
+
+						faceB.normal.copy( faceA.normal );
+
+					}
+
+					if ( hasFaceVertexNormal ) {
+
+						for ( i = 0; i < 4; i ++ ) {
+
+							normalIndex = faces[ offset ++ ] * 3;
+
+							normal = new Vector3(
+								normals[ normalIndex ++ ],
+								normals[ normalIndex ++ ],
+								normals[ normalIndex ]
+							);
+
+
+							if ( i !== 2 ) faceA.vertexNormals.push( normal );
+							if ( i !== 0 ) faceB.vertexNormals.push( normal );
+
+						}
+
+					}
+
+
+					if ( hasFaceColor ) {
+
+						colorIndex = faces[ offset ++ ];
+						hex = colors[ colorIndex ];
+
+						faceA.color.setHex( hex );
+						faceB.color.setHex( hex );
+
+					}
+
+
+					if ( hasFaceVertexColor ) {
+
+						for ( i = 0; i < 4; i ++ ) {
+
+							colorIndex = faces[ offset ++ ];
+							hex = colors[ colorIndex ];
+
+							if ( i !== 2 ) faceA.vertexColors.push( new Color( hex ) );
+							if ( i !== 0 ) faceB.vertexColors.push( new Color( hex ) );
+
+						}
+
+					}
+
+					geometry.faces.push( faceA );
+					geometry.faces.push( faceB );
+
+				} else {
+
+					face = new Face3();
+					face.a = faces[ offset ++ ];
+					face.b = faces[ offset ++ ];
+					face.c = faces[ offset ++ ];
+
+					if ( hasMaterial ) {
+
+						materialIndex = faces[ offset ++ ];
+						face.materialIndex = materialIndex;
+
+					}
+
+					// to get face <=> uv index correspondence
+
+					fi = geometry.faces.length;
+
+					if ( hasFaceVertexUv ) {
+
+						for ( i = 0; i < nUvLayers; i ++ ) {
+
+							uvLayer = json.uvs[ i ];
+
+							geometry.faceVertexUvs[ i ][ fi ] = [];
+
+							for ( j = 0; j < 3; j ++ ) {
+
+								uvIndex = faces[ offset ++ ];
+
+								u = uvLayer[ uvIndex * 2 ];
+								v = uvLayer[ uvIndex * 2 + 1 ];
+
+								uv = new Vector2( u, v );
+
+								geometry.faceVertexUvs[ i ][ fi ].push( uv );
+
+							}
+
+						}
+
+					}
+
+					if ( hasFaceNormal ) {
+
+						normalIndex = faces[ offset ++ ] * 3;
+
+						face.normal.set(
+							normals[ normalIndex ++ ],
+							normals[ normalIndex ++ ],
+							normals[ normalIndex ]
+						);
+
+					}
+
+					if ( hasFaceVertexNormal ) {
+
+						for ( i = 0; i < 3; i ++ ) {
+
+							normalIndex = faces[ offset ++ ] * 3;
+
+							normal = new Vector3(
+								normals[ normalIndex ++ ],
+								normals[ normalIndex ++ ],
+								normals[ normalIndex ]
+							);
+
+							face.vertexNormals.push( normal );
+
+						}
+
+					}
+
+
+					if ( hasFaceColor ) {
+
+						colorIndex = faces[ offset ++ ];
+						face.color.setHex( colors[ colorIndex ] );
+
+					}
+
+
+					if ( hasFaceVertexColor ) {
+
+						for ( i = 0; i < 3; i ++ ) {
+
+							colorIndex = faces[ offset ++ ];
+							face.vertexColors.push( new Color( colors[ colorIndex ] ) );
+
+						}
+
+					}
+
+					geometry.faces.push( face );
+
+				}
+
+			}
+
+		}
+
+		function parseSkin() {
+
+			var influencesPerVertex = ( json.influencesPerVertex !== undefined ) ? json.influencesPerVertex : 2;
+
+			if ( json.skinWeights ) {
+
+				for ( var i = 0, l = json.skinWeights.length; i < l; i += influencesPerVertex ) {
+
+					var x =                               json.skinWeights[ i ];
+					var y = ( influencesPerVertex > 1 ) ? json.skinWeights[ i + 1 ] : 0;
+					var z = ( influencesPerVertex > 2 ) ? json.skinWeights[ i + 2 ] : 0;
+					var w = ( influencesPerVertex > 3 ) ? json.skinWeights[ i + 3 ] : 0;
+
+					geometry.skinWeights.push( new Vector4( x, y, z, w ) );
+
+				}
+
+			}
+
+			if ( json.skinIndices ) {
+
+				for ( var i = 0, l = json.skinIndices.length; i < l; i += influencesPerVertex ) {
+
+					var a =                               json.skinIndices[ i ];
+					var b = ( influencesPerVertex > 1 ) ? json.skinIndices[ i + 1 ] : 0;
+					var c = ( influencesPerVertex > 2 ) ? json.skinIndices[ i + 2 ] : 0;
+					var d = ( influencesPerVertex > 3 ) ? json.skinIndices[ i + 3 ] : 0;
+
+					geometry.skinIndices.push( new Vector4( a, b, c, d ) );
+
+				}
+
+			}
+
+			geometry.bones = json.bones;
+
+			if ( geometry.bones && geometry.bones.length > 0 && ( geometry.skinWeights.length !== geometry.skinIndices.length || geometry.skinIndices.length !== geometry.vertices.length ) ) {
+
+				console.warn( 'When skinning, number of vertices (' + geometry.vertices.length + '), skinIndices (' +
+					geometry.skinIndices.length + '), and skinWeights (' + geometry.skinWeights.length + ') should match.' );
+
+			}
+
+		}
+
+		function parseMorphing( scale ) {
+
+			if ( json.morphTargets !== undefined ) {
+
+				for ( var i = 0, l = json.morphTargets.length; i < l; i ++ ) {
+
+					geometry.morphTargets[ i ] = {};
+					geometry.morphTargets[ i ].name = json.morphTargets[ i ].name;
+					geometry.morphTargets[ i ].vertices = [];
+
+					var dstVertices = geometry.morphTargets[ i ].vertices;
+					var srcVertices = json.morphTargets[ i ].vertices;
+
+					for ( var v = 0, vl = srcVertices.length; v < vl; v += 3 ) {
+
+						var vertex = new Vector3();
+						vertex.x = srcVertices[ v ] * scale;
+						vertex.y = srcVertices[ v + 1 ] * scale;
+						vertex.z = srcVertices[ v + 2 ] * scale;
+
+						dstVertices.push( vertex );
+
+					}
+
+				}
+
+			}
+
+			if ( json.morphColors !== undefined && json.morphColors.length > 0 ) {
+
+				console.warn( 'THREE.JSONLoader: "morphColors" no longer supported. Using them as face colors.' );
+
+				var faces = geometry.faces;
+				var morphColors = json.morphColors[ 0 ].colors;
+
+				for ( var i = 0, l = faces.length; i < l; i ++ ) {
+
+					faces[ i ].color.fromArray( morphColors, i * 3 );
+
+				}
+
+			}
+
+		}
+
+		function parseAnimations() {
+
+			var outputAnimations = [];
+
+			// parse old style Bone/Hierarchy animations
+			var animations = [];
+
+			if ( json.animation !== undefined ) {
+
+				animations.push( json.animation );
+
+			}
+
+			if ( json.animations !== undefined ) {
+
+				if ( json.animations.length ) {
+
+					animations = animations.concat( json.animations );
+
+				} else {
+
+					animations.push( json.animations );
+
+				}
+
+			}
+
+			for ( var i = 0; i < animations.length; i ++ ) {
+
+				var clip = AnimationClip.parseAnimation( animations[ i ], geometry.bones );
+				if ( clip ) outputAnimations.push( clip );
+
+			}
+
+			// parse implicit morph animations
+			if ( geometry.morphTargets ) {
+
+				// TODO: Figure out what an appropraite FPS is for morph target animations -- defaulting to 10, but really it is completely arbitrary.
+				var morphAnimationClips = AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10 );
+				outputAnimations = outputAnimations.concat( morphAnimationClips );
+
+			}
+
+			if ( outputAnimations.length > 0 ) geometry.animations = outputAnimations;
+
+		}
+
+		if ( json.materials === undefined || json.materials.length === 0 ) {
+
+			return { geometry: geometry };
+
+		} else {
+
+			var materials = Loader$1.prototype.initMaterials( json.materials, texturePath, this.crossOrigin );
+
+			return { geometry: geometry, materials: materials };
+
+		}
+
+	}
+
+} );
+
+var AssetError = function () {
+  function AssetError(error, path) {
+    classCallCheck(this, AssetError);
+
+    this.error = error;
+    this.path = path;
+    this.stack = new Error().stack;
+  }
+
+  createClass(AssetError, [{
+    key: 'toString',
+    value: function toString() {
+      return 'Error loading \'' + this.path + '\': ' + this.error + '.';
+    }
+  }]);
+  return AssetError;
+}();
+
+var Asset = function Asset(path) {
+  classCallCheck(this, Asset);
+
+  this.path = path;
+};
+
+var ModelAsset = function (_Asset) {
+  inherits(ModelAsset, _Asset);
+
+  function ModelAsset(path, geometry, material) {
+    classCallCheck(this, ModelAsset);
+
+    var _this = possibleConstructorReturn(this, (ModelAsset.__proto__ || Object.getPrototypeOf(ModelAsset)).call(this, path));
+
+    _this.geometry = geometry;
+    _this.material = material;
+    return _this;
+  }
+
+  return ModelAsset;
+}(Asset);
+
+var TextureAsset = function (_Asset2) {
+  inherits(TextureAsset, _Asset2);
+
+  function TextureAsset(path, texture) {
+    classCallCheck(this, TextureAsset);
+
+    var _this2 = possibleConstructorReturn(this, (TextureAsset.__proto__ || Object.getPrototypeOf(TextureAsset)).call(this, path));
+
+    _this2.texture = texture;
+    _this2.texture.anisotropy = 4;
+    return _this2;
+  }
+
+  return TextureAsset;
+}(Asset);
+
+var Loader = function () {
+  function Loader(root) {
+    classCallCheck(this, Loader);
+
+    this.root = root || '';
+    this.textureLoader = new TextureLoader();
+    this.jsonLoader = new JSONLoader();
+    this.cache = {};
+    this.typeToMethod = {
+      'texture': this.loadTexture,
+      'json/model': this.loadModelJSON
+    };
+  }
+
+  createClass(Loader, [{
+    key: 'getAsset',
+    value: function getAsset(path) {
+      return this.cache[path];
+    }
+  }, {
+    key: 'loadAssets',
+    value: function loadAssets(assetList, onComplete, onProgress, onError) {
+      var loaded = 0;
+      var failed = 0;
+      var errors = [];
+      var total = assetList.length;
+
+      var checkProgress = function checkProgress(path, asset, error) {
+        if (onProgress != null) {
+          onProgress(loaded, failed, total, path, asset, error);
+        }
+        if (loaded + failed == total && onComplete != null) {
+          onComplete(errors, total, loaded, failed);
+        }
+      };
+
+      var loadCb = function loadCb(asset) {
+        loaded++;
+        checkProgress(asset.path, asset, null);
+      };
+
+      var errorCb = function errorCb(error, path) {
+        failed++;
+        var err = new AssetError(error, path);
+        errors.push(err);
+        onError(err);
+        checkProgress(path, null, error);
+      };
+
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = assetList[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var item = _step.value;
+          var path = item.path;
+          var type = item.type;
+
+          var method = this.typeToMethod[type];
+          if (method == null) {
+            errorCb('Unsupported type \'' + type + '\'', path);
+          } else {
+            method.call(this, path, loadCb, errorCb);
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'loadModelJSON',
+    value: function loadModelJSON(path, loadCb, errorCb) {
+      var _this3 = this;
+
+      if (this.cache[path] != null) {
+        return this.cache[path];
+      }
+      this.jsonLoader.load(this.resolvePath(path), function (geometry, material) {
+        var asset = _this3.cache[path] = new ModelAsset(path, geometry, material);
+        loadCb(asset);
+      }, undefined, function (error) {
+        errorCb(error, path);
+      });
+    }
+  }, {
+    key: 'loadTexture',
+    value: function loadTexture(path, loadCb, errorCb) {
+      var _this4 = this;
+
+      if (this.cache[path] != null) {
+        return this.cache[path];
+      }
+      this.textureLoader.load(this.resolvePath(path), function (texture) {
+        var asset = _this4.cache[path] = new TextureAsset(path, texture);
+        loadCb(asset);
+      }, undefined, function (error) {
+        errorCb(error, path);
+      });
+    }
+  }, {
+    key: 'resolvePath',
+    value: function resolvePath(path) {
+      if (path[0] === '/') {
+        path = this.root + path;
+      }
+      return path;
+    }
+  }]);
+  return Loader;
 }();
 
 var ASSETS = [{ path: '/textures/default.png', type: 'texture' }, { path: '/models/gun/gun.json', type: 'json/model' }, { path: '/models/gun/gun.albedo.jpg', type: 'texture' }, { path: '/models/gun/gun.ao.jpg', type: 'texture' }, { path: '/models/gun/gun.normal.jpg', type: 'texture' }, { path: '/models/gun/gun.roughness.jpg', type: 'texture' }, { path: '/models/gun/gun.metalness.jpg', type: 'texture' }, { path: '/textures/reticle.default.png', type: 'texture' }, { path: '/textures/reticle.default.center.png', type: 'texture' }, { path: '/textures/reticle.default.sides.png', type: 'texture' }];
@@ -44968,11 +45044,13 @@ var App = function () {
       var rotationRange = [[0, 0, 0], [pi2, pi2, pi2]];
       var p = [0, 0, 0];
       var r = [0, 0, 0];
-      for (var i = 0; i < 40; ++i) {
+      for (var i = 0; i < 20; ++i) {
         randomInRange(p, positionRange[0], positionRange[1]);
         randomInRange(r, rotationRange[0], rotationRange[1]);
-        var s = 0.75 + Math.random() * 0.5 - 0.25;
-        var box = GrayBox.createBox(p[0], p[1], p[2], s, s, s);
+        var s = 0.5 + Math.random() * 0.5 - 0.25;
+        var box = GrayBox.createBox(p[0], p[1], p[2], s, s, s, 0xff0000);
+        box.material.metalness = 0.9;
+        box.material.roughness = 0.3;
         box.rotation.fromArray(r);
         this.scene.add(box);
         this.physics.createBoxBody(box, s, s, s, 1);

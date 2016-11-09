@@ -254,7 +254,9 @@ class App {
       randomInRange(p, positionRange[0], positionRange[1]);
       randomInRange(r, rotationRange[0], rotationRange[1]);
       let s = 0.5 + Math.random() * 0.5 - 0.25;
-      let box = GrayBox.createBox(p[0], p[1], p[2], s, s, s);
+      let box = GrayBox.createBox(p[0], p[1], p[2], s, s, s, 0xff0000);
+      box.material.metalness = 0.9;
+      box.material.roughness = 0.3;
       box.rotation.fromArray(r);
       this.scene.add(box);
       this.physics.createBoxBody(box, s, s, s, 1);

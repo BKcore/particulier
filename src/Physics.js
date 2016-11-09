@@ -3,6 +3,9 @@ import Plane from 'cannon/src/shapes/Plane';
 import Box from 'cannon/src/shapes/Box';
 import Body from 'cannon/src/objects/Body';
 import Vec3 from 'cannon/src/math/Vec3';
+import RaycastResult from 'cannon/src/collision/RaycastResult';
+
+import { Vector3 } from 'three/src/math/Vector3';
 
 import { IterableDict } from './Utils.js';
 
@@ -17,24 +20,39 @@ export class Physics {
     this.objectToBody = {};
     this.staticBodies = new IterableDict();
     this.dynamicBodies = new IterableDict();
+    this.cRaycastOptions = {};
+    this.cRaycastResult = new RaycastResult();
+    this.cPosition = new Vec3();
+    this.cNormal = new Vec3();
   }
 
   getBodyOfObject(object) {
-    return this.objectToBody[object.uuid];
+    if(object != null) {
+      return this.objectToBody[object.uuid];
+    }
+    return null;
   }
 
   getObjectOfBody(body) {
-    return this.bodyToObject[body.id];
+    if(body != null) {
+      return this.bodyToObject[body.id];
+    }
+    return null;
   }
 
-  createGroundBody(object) {
-    let plane = new Plane();
-    let body = new Body({mass: 0});
-    body.addShape(plane);
-    this.registerAndBind(body, object, false);
-    body.quaternion.setFromAxisAngle(new Vec3(1, 0, 0), -Math.PI / 2);
-    console.log("XXX GROUND", body);
-    this.ground = body;
+  raycastClosest(from, to, result = new PhysicsRaycastResult()) {
+    let hit = this.world.raycastClosest(from, to, this.cRaycastOptions, this.cRaycastResult);
+    this.normalizeRaycastResult(this.cRaycastResult, result);
+    return hit;
+  }
+
+  applyImpulse(object, position, normal) {
+    let body = this.getBodyOfObject(object);
+    if(body != null) {
+      this.cPosition.copy(position);
+      this.cNormal.copy(normal);
+      body.applyImpulse(this.cNormal, this.cPosition);
+    }
   }
 
   createBoxBody(object, sx, sy, sz, mass = 1) {
@@ -55,6 +73,14 @@ export class Physics {
     container.set(body.id, body);
   }
 
+  normalizeRaycastResult(cannonResult, physicsResult) {
+    physicsResult.hit = cannonResult.hasHit;
+    physicsResult.object = this.getObjectOfBody(cannonResult.body);
+    physicsResult.normal.copy(cannonResult.hitNormalWorld);
+    physicsResult.position.copy(cannonResult.hitPointWorld);
+    physicsResult.distance = cannonResult.distance;
+  }
+
   tick(dt) {
     this.world.step(dt);
     for(let body of this.dynamicBodies.values) {
@@ -64,4 +90,12 @@ export class Physics {
       object.quaternion.copy(body.quaternion);
     }
   }
+}
+
+export class PhysicsRaycastResult {
+  hit = false
+  object = null
+  position = new Vector3()
+  normal = new Vector3()
+  distance = -1
 }

@@ -10,6 +10,8 @@ import { fInterpTo } from './Utils.js';
 import { _Math } from 'three/src/math/Math';
 let { smootherstep, lerp } = _Math;
 
+import { PhysicsRaycastResult } from './Physics.js';
+
 const KMPH_TO_MPS = 1000 / 3600;
 const VANGLE_MIN = -Math.PI/2 + Math.PI/12;
 const VANGLE_MAX = +Math.PI/2 - Math.PI/12;
@@ -26,6 +28,8 @@ const STOP_SMOOTH_TIME = 0.2;
 const FIRE_COOLDOWN = 0.5;
 const FIRE_KICK_FORCE = 0.6;
 const FIRE_KICK_TIME = 0.05;
+const FIRE_RAYCAST_RANGE = 1000;
+const FIRE_INPULSE_FORCE = 12;
 
 const RETICLE_SIDES_OPACITY = 0.6;
 const RETICLE_SCALE = 0.1;
@@ -33,6 +37,7 @@ const RETICLE_SCALE = 0.1;
 let GUN_POS = new Vector3(0.12, -0.11, -0.28);
 let GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
 let GUN_POS_RUN = new Vector3(0.1, -0.07, -0.30);
+let FIRE_IMPULSE_OFFSET = new Vector3(0, 0.5, 0);
 
 export class FirstPersonPlayer extends Object3D {
   constructor(app) {
@@ -70,6 +75,15 @@ export class FirstPersonPlayer extends Object3D {
     this.head.position.copy(this.headPosition);
     this.add(this.head);
     this.gunRotation = new Euler(-Math.PI/2, 0, Math.PI);
+
+    this.impulse = new Vector3();
+    this.aimRay = {
+      from: new Vector3(),
+      to: new Vector3(),
+      dir: new Vector3()
+    }
+    this.aimRayNeedsUpdate = true;
+    this.raycastResult = new PhysicsRaycastResult();
 
     this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     this.camera.position.set(0, 0, 0);
@@ -158,6 +172,8 @@ export class FirstPersonPlayer extends Object3D {
     this.gun.rotation.copy(this.gunRotation);
     this.gun.position.copy(GUN_POS);
 
+    this.aimRayNeedsUpdate = true;
+
     this.tickAim(dt);
     this.tickWobble(dt);
     this.tickFire(dt);
@@ -219,6 +235,7 @@ export class FirstPersonPlayer extends Object3D {
       this.fireTiming = FIRE_COOLDOWN;
       this.orientation.x += FIRE_KICK_FORCE * 0.03;
       this.orientation.y -= FIRE_KICK_FORCE * 0.01;
+      this.doFireAction();
     }
     // TODO: VFX
     // TODO: Really need custom curves for these...
@@ -270,6 +287,25 @@ export class FirstPersonPlayer extends Object3D {
     this.keys.fire = enable ? 1 : 0;
     if(enable) {
       this.run(false);
+    }
+  }
+
+  getAimRay() {
+    if(this.aimRayNeedsUpdate) {
+      this.camera.getWorldPosition(this.aimRay.from);
+      this.camera.getWorldDirection(this.aimRay.dir);
+      this.aimRay.to.copy(this.aimRay.dir).multiplyScalar(FIRE_RAYCAST_RANGE).add(this.aimRay.from);
+    }
+    return this.aimRay;
+  }
+
+  doFireAction() {
+    let ray = this.getAimRay();
+    let hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
+    if(hit) {
+      let {object, position} = this.raycastResult;
+      this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);
+      this.app.physics.applyImpulse(object, position, this.impulse);
     }
   }
 
