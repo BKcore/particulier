@@ -40257,6 +40257,142 @@ World.prototype.clearForces = function(){
     }
 };
 
+var Shape$9 = Shape_1;
+var Vec3$22 = Vec3_1;
+
+/**
+ * Spherical shape
+ * @class Sphere
+ * @constructor
+ * @extends Shape
+ * @param {Number} radius The radius of the sphere, a non-negative number.
+ * @author schteppe / http://github.com/schteppe
+ */
+function Sphere$1(radius){
+    Shape$9.call(this);
+
+    /**
+     * @property {Number} radius
+     */
+    this.radius = radius!==undefined ? Number(radius) : 1.0;
+    this.type = Shape$9.types.SPHERE;
+
+    if(this.radius < 0){
+        throw new Error('The sphere radius cannot be negative.');
+    }
+
+    this.updateBoundingSphereRadius();
+}
+Sphere$1.prototype = new Shape$9();
+Sphere$1.prototype.constructor = Sphere$1;
+
+Sphere$1.prototype.calculateLocalInertia = function(mass,target){
+    target = target || new Vec3$22();
+    var I = 2.0*mass*this.radius*this.radius/5.0;
+    target.x = I;
+    target.y = I;
+    target.z = I;
+    return target;
+};
+
+Sphere$1.prototype.volume = function(){
+    return 4.0 * Math.PI * this.radius / 3.0;
+};
+
+Sphere$1.prototype.updateBoundingSphereRadius = function(){
+    this.boundingSphereRadius = this.radius;
+};
+
+Sphere$1.prototype.calculateWorldAABB = function(pos,quat,min,max){
+    var r = this.radius;
+    var axes = ['x','y','z'];
+    for(var i=0; i<axes.length; i++){
+        var ax = axes[i];
+        min[ax] = pos[ax] - r;
+        max[ax] = pos[ax] + r;
+    }
+};
+
+var Cylinder_1 = Cylinder;
+
+var Shape$10 = Shape_1;
+var Vec3$23 = Vec3_1;
+var ConvexPolyhedron$4 = ConvexPolyhedron_1;
+
+/**
+ * @class Cylinder
+ * @constructor
+ * @extends ConvexPolyhedron
+ * @author schteppe / https://github.com/schteppe
+ * @param {Number} radiusTop
+ * @param {Number} radiusBottom
+ * @param {Number} height
+ * @param {Number} numSegments The number of segments to build the cylinder out of
+ */
+function Cylinder( radiusTop, radiusBottom, height , numSegments ) {
+    var N = numSegments,
+        verts = [],
+        axes = [],
+        faces = [],
+        bottomface = [],
+        topface = [],
+        cos = Math.cos,
+        sin = Math.sin;
+
+    // First bottom point
+    verts.push(new Vec3$23(radiusBottom*cos(0),
+                               radiusBottom*sin(0),
+                               -height*0.5));
+    bottomface.push(0);
+
+    // First top point
+    verts.push(new Vec3$23(radiusTop*cos(0),
+                               radiusTop*sin(0),
+                               height*0.5));
+    topface.push(1);
+
+    for(var i=0; i<N; i++){
+        var theta = 2*Math.PI/N * (i+1);
+        var thetaN = 2*Math.PI/N * (i+0.5);
+        if(i<N-1){
+            // Bottom
+            verts.push(new Vec3$23(radiusBottom*cos(theta),
+                                       radiusBottom*sin(theta),
+                                       -height*0.5));
+            bottomface.push(2*i+2);
+            // Top
+            verts.push(new Vec3$23(radiusTop*cos(theta),
+                                       radiusTop*sin(theta),
+                                       height*0.5));
+            topface.push(2*i+3);
+
+            // Face
+            faces.push([2*i+2, 2*i+3, 2*i+1,2*i]);
+        } else {
+            faces.push([0,1, 2*i+1, 2*i]); // Connect
+        }
+
+        // Axis: we can cut off half of them if we have even number of segments
+        if(N % 2 === 1 || i < N / 2){
+            axes.push(new Vec3$23(cos(thetaN), sin(thetaN), 0));
+        }
+    }
+    faces.push(topface);
+    axes.push(new Vec3$23(0,0,1));
+
+    // Reorder bottom face
+    var temp = [];
+    for(var i=0; i<bottomface.length; i++){
+        temp.push(bottomface[bottomface.length - i - 1]);
+    }
+    faces.push(temp);
+
+    this.type = Shape$10.types.CONVEXPOLYHEDRON;
+    ConvexPolyhedron$4.call( this, verts, faces, axes );
+}
+
+Cylinder.prototype = new ConvexPolyhedron$4();
+
 var Physics = function () {
   function Physics() {
     classCallCheck(this, Physics);
@@ -40272,7 +40408,14 @@ var Physics = function () {
     this.cRaycastOptions = {};
     this.cRaycastResult = new RaycastResult_1();
     this.cPosition = new Vec3_1();
-    this.cNormal = new Vec3_1();
+    this.cDirection = new Vec3_1();
+    this.materials = {
+      static: new Material_1('static'),
+      player: new Material_1('player'),
+      dynamic: new Material_1('dynamic')
+    };
+    this.world.addContactMaterial(new ContactMaterial_1(this.materials.static, this.materials.player, { friction: 0.0, restitution: 0.0 }));
+    this.world.addContactMaterial(new ContactMaterial_1(this.materials.dynamic, this.materials.player, { friction: 0.0, restitution: 0.0 }));
   }
 
   createClass(Physics, [{
@@ -40302,13 +40445,43 @@ var Physics = function () {
     }
   }, {
     key: 'applyImpulse',
-    value: function applyImpulse(object, position, normal) {
+    value: function applyImpulse(object, position, direction) {
       var body = this.getBodyOfObject(object);
       if (body != null) {
         this.cPosition.copy(position);
-        this.cNormal.copy(normal);
-        body.applyImpulse(this.cNormal, this.cPosition);
+        this.cDirection.copy(direction);
+        body.applyImpulse(this.cDirection, this.cPosition);
       }
+    }
+  }, {
+    key: 'applyForce',
+    value: function applyForce(object, position, direction) {
+      var body = this.getBodyOfObject(object);
+      if (body != null) {
+        this.cPosition.copy(position);
+        this.cDirection.copy(normal);
+        body.applyForce(this.cDirection, this.cPosition);
+      }
+    }
+  }, {
+    key: 'setGroundVelocity',
+    value: function setGroundVelocity(object, velocity) {
+      var body = this.getBodyOfObject(object);
+      if (body != null) {
+        body.velocity.x = velocity.x;
+        body.velocity.z = velocity.z;
+      }
+    }
+  }, {
+    key: 'createPlayerBody',
+    value: function createPlayerBody(object, height, radius, mass) {
+      var shape = new Cylinder_1(radius, radius, height, 8);
+      var body = new Body_1({ mass: mass, material: this.materials.player, fixedRotation: true });
+      body.addShape(shape);
+      this.registerAndBind(body, object, true);
+      body.quaternion.setFromAxisAngle(new Vec3_1(1, 0, 0), -Math.PI / 2);
+      body.linearDamping = 0;
+      return body;
     }
   }, {
     key: 'createBoxBody',
@@ -40316,9 +40489,18 @@ var Physics = function () {
       var mass = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 1;
 
       var shape = new Box_1(new Vec3_1(sx / 2, sy / 2, sz / 2));
-      var body = new Body_1({ mass: mass });
+      return this.createBody(object, shape, mass);
+    }
+  }, {
+    key: 'createBody',
+    value: function createBody(object, shape) {
+      var mass = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+
+      var dynamic = mass > 0;
+      var material = dynamic ? this.materials.dynamic : this.materials.static;
+      var body = new Body_1({ mass: mass, material: material });
       body.addShape(shape);
-      this.registerAndBind(body, object, mass > 0);
+      this.registerAndBind(body, object, dynamic);
       return body;
     }
   }, {
@@ -40358,7 +40540,9 @@ var Physics = function () {
             continue;
           }
           object.position.copy(body.position);
-          object.quaternion.copy(body.quaternion);
+          if (object.physicsUpdateRotation !== false) {
+            object.quaternion.copy(body.quaternion);
+          }
         }
       } catch (err) {
         _didIteratorError = true;
@@ -40408,6 +40592,10 @@ var FIRE_KICK_FORCE = 0.6;
 var FIRE_KICK_TIME = 0.05;
 var FIRE_RAYCAST_RANGE = 1000;
 var FIRE_INPULSE_FORCE = 12;
+
+var JUMP_COOLDOWN = 0.2;
+var JUMP_FORCE = 8;
+var JUMP_IMPULSE = new Vector3(0, 1, -0.1).normalize();
 
 var RETICLE_SIDES_OPACITY = 0.6;
 var RETICLE_SCALE = 0.1;
@@ -40473,6 +40661,8 @@ var FirstPersonPlayer = function (_Object3D) {
           /*]*/_this.app.toggleCamera();break;
         case 17:
           /*control*/_this.aim(true);break;
+        case 32:
+          /*space*/_this.jump(true);break;
       }
     };
 
@@ -40492,9 +40682,12 @@ var FirstPersonPlayer = function (_Object3D) {
           /*D*/_this.keys.right = 0;break;
         case 17:
           /*control*/_this.aim(false);break;
+        case 32:
+          /*space*/_this.jump(false);break;
       }
     };
 
+    _this.physicsUpdateRotation = false;
     _this.app = app;
     _this.tmpVec3 = new Vector3();
     _this.frameMotion = new Vector3();
@@ -40514,17 +40707,20 @@ var FirstPersonPlayer = function (_Object3D) {
       left: 0,
       right: 0,
       run: 0,
-      aim: 0
+      aim: 0,
+      jump: 0
     };
     _this.aimTiming = 0;
+    _this.jumpTiming = 0;
     _this.fireTiming = 0;
-    _this.walkSpeed = 10 * KMPH_TO_MPS;
-    _this.runSpeed = 20 * KMPH_TO_MPS;
+    _this.walkSpeed = 7.5 * KMPH_TO_MPS;
+    _this.runSpeed = 15 * KMPH_TO_MPS;
+    _this.dampenSpeed = 80 * KMPH_TO_MPS;
     _this.pixelRatio = new Vector2();
     _this.onWindowResize();
     _this.head = new Object3D();
     _this.headRotation = new Euler(0, 0, 0);
-    _this.headPosition = new Vector3(0, 1.7, 0);
+    _this.headPosition = new Vector3(0, 0.8, 0);
     _this.head.position.copy(_this.headPosition);
     _this.add(_this.head);
     _this.gunRotation = new Euler(-Math.PI / 2, 0, Math.PI);
@@ -40538,10 +40734,14 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.aimRayNeedsUpdate = true;
     _this.raycastResult = new PhysicsRaycastResult();
 
+    _this.position.set(0, 2, 0);
+
     _this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     _this.camera.position.set(0, 0, 0);
     _this.head.add(_this.camera);
     _this.addGun();
+
+    _this.app.physics.createPlayerBody(_this, 2, 0.6, 80);
 
     _this.initListeners();
     return _this;
@@ -40614,7 +40814,9 @@ var FirstPersonPlayer = function (_Object3D) {
       this.frameMotion.x += this.keys.right;
       this.frameMotion.normalize();
 
-      if (this.frameMotion.z == 0 && this.frameMotion.x == 0) {
+      var hasMotion = this.frameMotion.z != 0 || this.frameMotion.x != 0;
+
+      if (!hasMotion) {
         // Cancel Run if no motion.
         this.run(false);
         this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
@@ -40637,8 +40839,18 @@ var FirstPersonPlayer = function (_Object3D) {
 
       // Apply motion
       // Transform motion to world space
-      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
-      this.position.add(this.frameMotion);
+      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed * 100);
+      // this.position.add(this.frameMotion);
+      // this.app.physics.setGroundVelocity(this, this.frameMotion);
+      // this.app.physics.addVelocity(this, this.frameMotion);
+      var body = this.app.physics.getBodyOfObject(this);
+      if (hasMotion) {
+        body.velocity.x = this.frameMotion.x;
+        body.velocity.z = this.frameMotion.z;
+      } else {
+        body.velocity.x = fInterpTo(body.velocity.x, 0, this.dampenSpeed, dt);
+        body.velocity.z = fInterpTo(body.velocity.z, 0, this.dampenSpeed, dt);
+      }
 
       this.head.position.copy(this.headPosition);
       this.head.rotation.copy(this.headRotation);
@@ -40655,12 +40867,25 @@ var FirstPersonPlayer = function (_Object3D) {
 
       this.aimRayNeedsUpdate = true;
 
+      this.tickJump(dt);
       this.tickAim(dt);
       this.tickWobble(dt);
       this.tickFire(dt);
       this.tickReticles(dt);
 
       this.camera.updateProjectionMatrix();
+    }
+  }, {
+    key: 'tickJump',
+    value: function tickJump(dt) {
+      if (this.jumpTiming > 0.0) {
+        this.jumpTiming -= dt;
+        this.jumpTiming = Math.max(this.jumpTiming, 0);
+      } else if (this.keys.jump) {
+        this.jumpTiming = JUMP_COOLDOWN;
+        this.impulse.copy(JUMP_IMPULSE).transformDirection(this.matrix).multiplyScalar(JUMP_FORCE);
+        // this.app.physics.addVelocity(this, this.impulse);
+      }
     }
   }, {
     key: 'tickAim',
@@ -40716,7 +40941,6 @@ var FirstPersonPlayer = function (_Object3D) {
         this.orientation.y -= FIRE_KICK_FORCE * 0.01;
         this.doFireAction();
       }
-      // TODO: VFX
       // TODO: Really need custom curves for these...
       var kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
       if (this.fireTiming > kickTime) {
@@ -40766,6 +40990,14 @@ var FirstPersonPlayer = function (_Object3D) {
       }
     }
   }, {
+    key: 'jump',
+    value: function jump(enable) {
+      this.keys.jump = enable ? 1 : 0;
+      if (enable) {
+        this.aim(false);
+      }
+    }
+  }, {
     key: 'fire',
     value: function fire(enable) {
       this.keys.fire = enable ? 1 : 0;
@@ -40786,18 +41018,16 @@ var FirstPersonPlayer = function (_Object3D) {
   }, {
     key: 'doFireAction',
     value: function doFireAction() {
+      // TODO: VFX
       var ray = this.getAimRay();
       var hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
       if (hit) {
-        console.log('HIT', this.raycastResult);
         var _raycastResult = this.raycastResult;
         var object = _raycastResult.object;
         var position = _raycastResult.position;
 
         this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);
         this.app.physics.applyImpulse(object, position, this.impulse);
-      } else {
-        console.log('NO HIT');
       }
     }
   }, {
@@ -45059,7 +45289,7 @@ var App = function () {
   }, {
     key: 'addBoxes',
     value: function addBoxes() {
-      var boxes = [[-2, 0.5, 6, 1, 1, 1], [0, 1, 6, 2, 2, 2], [4, 1.5, 6, 3, 3, 3], [-2, 0.5, -6, 1, 1, 1, 0xffffff], [0, 1, -6, 2, 2, 2, 0x6c6c6c], [4, 1.5, -6, 3, 3, 3, 0x000000]];
+      var boxes = [[0, 0.6, 6, 6, 1.2, 0.6, 0xeeeeee], [0, 0.6, -12, 6, 1.2, 0.6, 0xeeeeee], [-5, 1.5, -6, 8, 3, 0.4], [5, 1.5, -6, 8, 3, 0.4]];
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
@@ -45071,6 +45301,7 @@ var App = function () {
           var box = GrayBox.createBox.apply(null, args);
           this.scene.add(box);
           this.boxes.push(box);
+          this.physics.createBoxBody(box, args[3], args[4], args[5], 0);
         }
       } catch (err) {
         _didIteratorError = true;

@@ -1,7 +1,11 @@
 import World from 'cannon/src/world/World';
 import Plane from 'cannon/src/shapes/Plane';
 import Box from 'cannon/src/shapes/Box';
+import Sphere from 'cannon/src/shapes/Sphere';
+import Cylinder from 'cannon/src/shapes/Cylinder';
 import Body from 'cannon/src/objects/Body';
+import Material from 'cannon/src/material/Material';
+import ContactMaterial from 'cannon/src/material/ContactMaterial';
 import Vec3 from 'cannon/src/math/Vec3';
 import RaycastResult from 'cannon/src/collision/RaycastResult';
 
@@ -23,7 +27,18 @@ export class Physics {
     this.cRaycastOptions = {};
     this.cRaycastResult = new RaycastResult();
     this.cPosition = new Vec3();
-    this.cNormal = new Vec3();
+    this.cDirection = new Vec3();
+    this.materials = {
+      static: new Material('static'),
+      player: new Material('player'),
+      dynamic: new Material('dynamic')
+    }
+    this.world.addContactMaterial(new ContactMaterial(
+      this.materials.static, this.materials.player, {friction: 0.0, restitution: 0.0}
+    ));
+    this.world.addContactMaterial(new ContactMaterial(
+      this.materials.dynamic, this.materials.player, {friction: 0.0, restitution: 0.0}
+    ));
   }
 
   getBodyOfObject(object) {
@@ -46,20 +61,53 @@ export class Physics {
     return hit;
   }
 
-  applyImpulse(object, position, normal) {
+  applyImpulse(object, position, direction) {
     let body = this.getBodyOfObject(object);
     if(body != null) {
       this.cPosition.copy(position);
-      this.cNormal.copy(normal);
-      body.applyImpulse(this.cNormal, this.cPosition);
+      this.cDirection.copy(direction);
+      body.applyImpulse(this.cDirection, this.cPosition);
     }
+  }
+
+  applyForce(object, position, direction) {
+    let body = this.getBodyOfObject(object);
+    if(body != null) {
+      this.cPosition.copy(position);
+      this.cDirection.copy(normal);
+      body.applyForce(this.cDirection, this.cPosition);
+    }
+  }
+
+  setGroundVelocity(object, velocity) {
+    let body = this.getBodyOfObject(object);
+    if(body != null) {
+      body.velocity.x = velocity.x;
+      body.velocity.z = velocity.z;
+    }
+  }
+
+  createPlayerBody(object, height, radius, mass) {
+    let shape = new Cylinder(radius, radius, height, 8);
+    let body = new Body({mass: mass, material: this.materials.player, fixedRotation: true});
+    body.addShape(shape);
+    this.registerAndBind(body, object, true);
+    body.quaternion.setFromAxisAngle(new Vec3(1, 0, 0), -Math.PI/2);
+    body.linearDamping = 0;
+    return body;
   }
 
   createBoxBody(object, sx, sy, sz, mass = 1) {
     let shape = new Box(new Vec3(sx / 2, sy / 2, sz / 2));
-    let body = new Body({mass: mass});
+    return this.createBody(object, shape, mass);
+  }
+
+  createBody(object, shape, mass = 1) {
+    let dynamic = mass > 0;
+    let material = dynamic ? this.materials.dynamic : this.materials.static;
+    let body = new Body({mass: mass, material: material});
     body.addShape(shape);
-    this.registerAndBind(body, object, mass > 0);
+    this.registerAndBind(body, object, dynamic);
     return body;
   }
 
@@ -87,7 +135,9 @@ export class Physics {
       let object = this.getObjectOfBody(body);
       if(object == null) { continue; }
       object.position.copy(body.position);
-      object.quaternion.copy(body.quaternion);
+      if(object.physicsUpdateRotation !== false) {
+        object.quaternion.copy(body.quaternion);
+      }
     }
   }
 }

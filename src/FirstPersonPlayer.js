@@ -31,6 +31,10 @@ const FIRE_KICK_TIME = 0.05;
 const FIRE_RAYCAST_RANGE = 1000;
 const FIRE_INPULSE_FORCE = 12;
 
+const JUMP_COOLDOWN = 0.2;
+const JUMP_FORCE = 8;
+let JUMP_IMPULSE = new Vector3(0, 1, -0.1).normalize();
+
 const RETICLE_SIDES_OPACITY = 0.6;
 const RETICLE_SCALE = 0.1;
 
@@ -42,6 +46,7 @@ let FIRE_IMPULSE_OFFSET = new Vector3(0, 0.5, 0);
 export class FirstPersonPlayer extends Object3D {
   constructor(app) {
     super();
+    this.physicsUpdateRotation = false;
     this.app = app;
     this.tmpVec3 = new Vector3();
     this.frameMotion = new Vector3();
@@ -61,17 +66,20 @@ export class FirstPersonPlayer extends Object3D {
       left: 0,
       right: 0,
       run: 0,
-      aim: 0
+      aim: 0,
+      jump: 0
     };
     this.aimTiming = 0;
+    this.jumpTiming = 0;
     this.fireTiming = 0;
-    this.walkSpeed = 10 * KMPH_TO_MPS;
-    this.runSpeed = 20 * KMPH_TO_MPS;
+    this.walkSpeed = 7.5 * KMPH_TO_MPS;
+    this.runSpeed = 15 * KMPH_TO_MPS;
+    this.dampenSpeed = 80 * KMPH_TO_MPS;
     this.pixelRatio = new Vector2();
     this.onWindowResize();
     this.head = new Object3D();
     this.headRotation = new Euler(0, 0, 0);
-    this.headPosition = new Vector3(0, 1.7, 0);
+    this.headPosition = new Vector3(0, 0.8, 0);
     this.head.position.copy(this.headPosition);
     this.add(this.head);
     this.gunRotation = new Euler(-Math.PI/2, 0, Math.PI);
@@ -85,10 +93,14 @@ export class FirstPersonPlayer extends Object3D {
     this.aimRayNeedsUpdate = true;
     this.raycastResult = new PhysicsRaycastResult();
 
+    this.position.set(0, 2, 0);
+
     this.camera = new PerspectiveCamera(app.fov, app.aspectRatio, app.near, app.far);
     this.camera.position.set(0, 0, 0);
     this.head.add(this.camera);
     this.addGun();
+
+    this.app.physics.createPlayerBody(this, 2, 0.6, 80);
 
     this.initListeners();
   }
@@ -131,9 +143,11 @@ export class FirstPersonPlayer extends Object3D {
     this.frameMotion.z += this.keys.back;
     this.frameMotion.x -= this.keys.left;
     this.frameMotion.x += this.keys.right;
-    this.frameMotion.normalize()
+    this.frameMotion.normalize();
 
-    if(this.frameMotion.z == 0 && this.frameMotion.x == 0) {
+    let hasMotion = (this.frameMotion.z != 0 || this.frameMotion.x != 0);
+
+    if(!hasMotion) {
       // Cancel Run if no motion.
       this.run(false);
       this.smoothMove = lerp(this.smoothMove, 0, dt / STOP_SMOOTH_TIME);
@@ -156,8 +170,18 @@ export class FirstPersonPlayer extends Object3D {
 
     // Apply motion
     // Transform motion to world space
-    this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
-    this.position.add(this.frameMotion);
+    this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed * 100);
+    // this.position.add(this.frameMotion);
+    // this.app.physics.setGroundVelocity(this, this.frameMotion);
+    // this.app.physics.addVelocity(this, this.frameMotion);
+    let body = this.app.physics.getBodyOfObject(this);
+    if(hasMotion) {
+      body.velocity.x = this.frameMotion.x;
+      body.velocity.z = this.frameMotion.z;
+    } else {
+      body.velocity.x = fInterpTo(body.velocity.x, 0, this.dampenSpeed, dt);
+      body.velocity.z = fInterpTo(body.velocity.z, 0, this.dampenSpeed, dt);
+    }
 
     this.head.position.copy(this.headPosition);
     this.head.rotation.copy(this.headRotation);
@@ -174,12 +198,25 @@ export class FirstPersonPlayer extends Object3D {
 
     this.aimRayNeedsUpdate = true;
 
+    this.tickJump(dt);
     this.tickAim(dt);
     this.tickWobble(dt);
     this.tickFire(dt);
     this.tickReticles(dt);
 
     this.camera.updateProjectionMatrix();
+  }
+
+  tickJump(dt) {
+    if(this.jumpTiming > 0.0) {
+      this.jumpTiming -= dt;
+      this.jumpTiming = Math.max(this.jumpTiming, 0);
+    }
+    else if(this.keys.jump) {
+      this.jumpTiming = JUMP_COOLDOWN;
+      this.impulse.copy(JUMP_IMPULSE).transformDirection(this.matrix).multiplyScalar(JUMP_FORCE);
+      // this.app.physics.addVelocity(this, this.impulse);
+    }
   }
 
   tickAim(dt) {
@@ -237,7 +274,6 @@ export class FirstPersonPlayer extends Object3D {
       this.orientation.y -= FIRE_KICK_FORCE * 0.01;
       this.doFireAction();
     }
-    // TODO: VFX
     // TODO: Really need custom curves for these...
     let kickTime = FIRE_COOLDOWN - FIRE_KICK_TIME;
     if(this.fireTiming > kickTime) {
@@ -283,6 +319,13 @@ export class FirstPersonPlayer extends Object3D {
     }
   }
 
+  jump(enable) {
+    this.keys.jump = enable ? 1 : 0;
+    if(enable) {
+      this.aim(false);
+    }
+  }
+
   fire(enable) {
     this.keys.fire = enable ? 1 : 0;
     if(enable) {
@@ -300,6 +343,7 @@ export class FirstPersonPlayer extends Object3D {
   }
 
   doFireAction() {
+    // TODO: VFX
     let ray = this.getAimRay();
     let hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
     if(hit) {
@@ -356,6 +400,7 @@ export class FirstPersonPlayer extends Object3D {
       case 16: /*run*/ this.toggleRun(); break;
       case 221: /*]*/ this.app.toggleCamera(); break;
       case 17: /*control*/ this.aim(true); break;
+      case 32: /*space*/ this.jump(true); break;
     }
   }
 
@@ -370,6 +415,7 @@ export class FirstPersonPlayer extends Object3D {
       case 39: /*right*/
       case 68: /*D*/ this.keys.right = 0; break;
       case 17: /*control*/ this.aim(false); break;
+      case 32: /*space*/ this.jump(false); break;
     }
   }
 }

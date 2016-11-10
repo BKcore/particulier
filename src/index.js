@@ -265,17 +265,16 @@ class App {
 
   addBoxes() {
     let boxes = [
-      [-2, 0.5, 6, 1, 1, 1],
-      [0, 1, 6, 2, 2, 2],
-      [4, 1.5, 6, 3, 3, 3],
-      [-2, 0.5, -6, 1, 1, 1, 0xffffff],
-      [0, 1, -6, 2, 2, 2, 0x6c6c6c],
-      [4, 1.5, -6, 3, 3, 3, 0x000000]
+      [0, 0.6, 6, 6, 1.2, 0.6, 0xeeeeee],
+      [0, 0.6, -12, 6, 1.2, 0.6, 0xeeeeee],
+      [-5, 1.5, -6, 8, 3, 0.4],
+      [5, 1.5, -6, 8, 3, 0.4],
     ];
     for(let args of boxes) {
       let box = GrayBox.createBox.apply(null, args);
       this.scene.add(box);
       this.boxes.push(box);
+      this.physics.createBoxBody(box, args[3], args[4], args[5], 0);
     }
   }
 
