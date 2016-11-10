@@ -10,7 +10,7 @@ import { fInterpTo } from './Utils.js';
 import { _Math } from 'three/src/math/Math';
 let { smootherstep, lerp } = _Math;
 
-import { PhysicsRaycastResult } from './Physics.js';
+import { PhysicsRaycastResult, G_STATIC, G_DYNAMIC } from './Physics.js';
 
 const KMPH_TO_MPS = 1000 / 3600;
 const VANGLE_MIN = -Math.PI/2 + Math.PI/12;
@@ -37,6 +37,9 @@ let JUMP_IMPULSE = new Vector3(0, 1, -0.1).normalize();
 
 const RETICLE_SIDES_OPACITY = 0.6;
 const RETICLE_SCALE = 0.1;
+
+const PLAYER_HEIGHT = 2.0;
+const PLAYER_RADIUS = 0.6;
 
 let GUN_POS = new Vector3(0.12, -0.11, -0.28);
 let GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
@@ -100,7 +103,7 @@ export class FirstPersonPlayer extends Object3D {
     this.head.add(this.camera);
     this.addGun();
 
-    this.app.physics.createPlayerBody(this, 2, 0.6, 80);
+    this.app.physics.createPlayerBody(this, PLAYER_HEIGHT, PLAYER_RADIUS, 80);
 
     this.initListeners();
   }
@@ -345,7 +348,7 @@ export class FirstPersonPlayer extends Object3D {
   doFireAction() {
     // TODO: VFX
     let ray = this.getAimRay();
-    let hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
+    let hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult, G_DYNAMIC | G_STATIC);
     if(hit) {
       let {object, position} = this.raycastResult;
       this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);

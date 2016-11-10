@@ -13,6 +13,11 @@ import { Vector3 } from 'three/src/math/Vector3';
 
 import { IterableDict } from './Utils.js';
 
+export const G_STATIC = 1 << 0;
+export const G_DYNAMIC = 1 << 1;
+export const G_PLAYER = 1 << 2;
+export const G_ANY = G_STATIC | G_DYNAMIC | G_PLAYER;
+
 export class Physics {
 
   constructor() {
@@ -55,7 +60,8 @@ export class Physics {
     return null;
   }
 
-  raycastClosest(from, to, result = new PhysicsRaycastResult()) {
+  raycastClosest(from, to, result = new PhysicsRaycastResult(), mask = null) {
+    this.cRaycastOptions.collisionFilterMask = mask;
     let hit = this.world.raycastClosest(from, to, this.cRaycastOptions, this.cRaycastResult);
     this.normalizeRaycastResult(this.cRaycastResult, result);
     return hit;
@@ -89,7 +95,13 @@ export class Physics {
 
   createPlayerBody(object, height, radius, mass) {
     let shape = new Cylinder(radius, radius, height, 8);
-    let body = new Body({mass: mass, material: this.materials.player, fixedRotation: true});
+    let body = new Body({
+      mass: mass,
+      material: this.materials.player,
+      fixedRotation: true,
+      collisionFilterGroup: G_PLAYER,
+      collisionFilterMask: G_ANY
+    });
     body.addShape(shape);
     this.registerAndBind(body, object, true);
     body.quaternion.setFromAxisAngle(new Vec3(1, 0, 0), -Math.PI/2);
@@ -104,8 +116,14 @@ export class Physics {
 
   createBody(object, shape, mass = 1) {
     let dynamic = mass > 0;
+    let group = dynamic ? G_DYNAMIC : G_STATIC;
     let material = dynamic ? this.materials.dynamic : this.materials.static;
-    let body = new Body({mass: mass, material: material});
+    let body = new Body({
+      mass: mass,
+      material: material,
+      collisionFilterGroup: group,
+      collisionFilterMask: G_ANY
+    });
     body.addShape(shape);
     this.registerAndBind(body, object, dynamic);
     return body;

@@ -40393,6 +40393,11 @@ function Cylinder( radiusTop, radiusBottom, height , numSegments ) {
 
 Cylinder.prototype = new ConvexPolyhedron$4();
 
+var G_STATIC = 1 << 0;
+var G_DYNAMIC = 1 << 1;
+var G_PLAYER = 1 << 2;
+var G_ANY = G_STATIC | G_DYNAMIC | G_PLAYER;
+
 var Physics = function () {
   function Physics() {
     classCallCheck(this, Physics);
@@ -40438,7 +40443,9 @@ var Physics = function () {
     key: 'raycastClosest',
     value: function raycastClosest(from, to) {
       var result = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new PhysicsRaycastResult();
+      var mask = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 
+      this.cRaycastOptions.collisionFilterMask = mask;
       var hit = this.world.raycastClosest(from, to, this.cRaycastOptions, this.cRaycastResult);
       this.normalizeRaycastResult(this.cRaycastResult, result);
       return hit;
@@ -40476,7 +40483,13 @@ var Physics = function () {
     key: 'createPlayerBody',
     value: function createPlayerBody(object, height, radius, mass) {
       var shape = new Cylinder_1(radius, radius, height, 8);
-      var body = new Body_1({ mass: mass, material: this.materials.player, fixedRotation: true });
+      var body = new Body_1({
+        mass: mass,
+        material: this.materials.player,
+        fixedRotation: true,
+        collisionFilterGroup: G_PLAYER,
+        collisionFilterMask: G_ANY
+      });
       body.addShape(shape);
       this.registerAndBind(body, object, true);
       body.quaternion.setFromAxisAngle(new Vec3_1(1, 0, 0), -Math.PI / 2);
@@ -40497,8 +40510,14 @@ var Physics = function () {
       var mass = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
 
       var dynamic = mass > 0;
+      var group = dynamic ? G_DYNAMIC : G_STATIC;
       var material = dynamic ? this.materials.dynamic : this.materials.static;
-      var body = new Body_1({ mass: mass, material: material });
+      var body = new Body_1({
+        mass: mass,
+        material: material,
+        collisionFilterGroup: group,
+        collisionFilterMask: G_ANY
+      });
       body.addShape(shape);
       this.registerAndBind(body, object, dynamic);
       return body;
@@ -40599,6 +40618,9 @@ var JUMP_IMPULSE = new Vector3(0, 1, -0.1).normalize();
 
 var RETICLE_SIDES_OPACITY = 0.6;
 var RETICLE_SCALE = 0.1;
+
+var PLAYER_HEIGHT = 2.0;
+var PLAYER_RADIUS = 0.6;
 
 var GUN_POS = new Vector3(0.12, -0.11, -0.28);
 var GUN_POS_ADS = new Vector3(0.0, -0.092, -0.28);
@@ -40741,7 +40763,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.head.add(_this.camera);
     _this.addGun();
 
-    _this.app.physics.createPlayerBody(_this, 2, 0.6, 80);
+    _this.app.physics.createPlayerBody(_this, PLAYER_HEIGHT, PLAYER_RADIUS, 80);
 
     _this.initListeners();
     return _this;
@@ -41020,7 +41042,7 @@ var FirstPersonPlayer = function (_Object3D) {
     value: function doFireAction() {
       // TODO: VFX
       var ray = this.getAimRay();
-      var hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult);
+      var hit = this.app.physics.raycastClosest(ray.from, ray.to, this.raycastResult, G_DYNAMIC | G_STATIC);
       if (hit) {
         var _raycastResult = this.raycastResult;
         var object = _raycastResult.object;
