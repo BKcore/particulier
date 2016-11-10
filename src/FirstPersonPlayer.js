@@ -56,7 +56,8 @@ export class FirstPersonPlayer extends Object3D {
     this.frameAngle = new Vector2();
     this.orientation = new Vector2(0, Math.PI / 2);
     this.target = new Vector3();
-    this.sensitivity = 2.5;
+    this.sensitivity = 1.5;
+    this.sensitivityRatio = new Vector2();
     this.smoothLocalFrameAngle = new Vector2();
     this.smoothLocalFrameMotion = new Vector3();
     this.smoothRun = 0;
@@ -75,10 +76,9 @@ export class FirstPersonPlayer extends Object3D {
     this.aimTiming = 0;
     this.jumpTiming = 0;
     this.fireTiming = 0;
-    this.walkSpeed = 7.5 * KMPH_TO_MPS;
-    this.runSpeed = 15 * KMPH_TO_MPS;
+    this.walkSpeed = 10 * KMPH_TO_MPS;
+    this.runSpeed = 20 * KMPH_TO_MPS;
     this.dampenSpeed = 80 * KMPH_TO_MPS;
-    this.pixelRatio = new Vector2();
     this.onWindowResize();
     this.head = new Object3D();
     this.headRotation = new Euler(0, 0, 0);
@@ -161,19 +161,17 @@ export class FirstPersonPlayer extends Object3D {
     if(this.keys.run) {
       speed = this.runSpeed;
     }
-    speed *= dt;
 
     // Save and smooth local motion and orientation for later
     let localFrameMotion = this.tmpVec3;
-    localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
-    localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+    localFrameMotion.copy(this.frameMotion).multiplyScalar(speed * dt);
     this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
     this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
     this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
 
     // Apply motion
     // Transform motion to world space
-    this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed * 100);
+    this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
     // this.position.add(this.frameMotion);
     // this.app.physics.setGroundVelocity(this, this.frameMotion);
     // this.app.physics.addVelocity(this, this.frameMotion);
@@ -365,13 +363,13 @@ export class FirstPersonPlayer extends Object3D {
   }
 
   onWindowResize() {
-    this.pixelRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
+    this.sensitivityRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
   }
 
   onMouseMove = (event) => {
     let {movementX, movementY} = event;
-    this.frameAngle.x = movementY * this.pixelRatio.y;
-    this.frameAngle.y = movementX * this.pixelRatio.x;
+    this.frameAngle.x = movementY * this.sensitivityRatio.y;
+    this.frameAngle.y = movementX * this.sensitivityRatio.x;
     this.orientation.sub(this.frameAngle);
     this.orientation.x = Math.max(Math.min(this.orientation.x, VANGLE_MAX), VANGLE_MIN);
   }

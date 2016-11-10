@@ -47,7 +47,7 @@ class App {
     this.width = opts.width || 1280;
     this.height = opts.height || 720;
     this.pixelRatio = opts.pixelRatio || 1;
-    this.renderRatio = 0.75;
+    this.renderRatio = this.pixelRatio > 1 ? 0.75 : 1;
     this.aspectRatio = this.width / this.height;
     this.near = opts.near || 0.01;
     this.far = opts.far || 1000;

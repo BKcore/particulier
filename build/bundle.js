@@ -40639,8 +40639,8 @@ var FirstPersonPlayer = function (_Object3D) {
       var movementX = event.movementX;
       var movementY = event.movementY;
 
-      _this.frameAngle.x = movementY * _this.pixelRatio.y;
-      _this.frameAngle.y = movementX * _this.pixelRatio.x;
+      _this.frameAngle.x = movementY * _this.sensitivityRatio.y;
+      _this.frameAngle.y = movementX * _this.sensitivityRatio.x;
       _this.orientation.sub(_this.frameAngle);
       _this.orientation.x = Math.max(Math.min(_this.orientation.x, VANGLE_MAX), VANGLE_MIN);
     };
@@ -40716,7 +40716,8 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.frameAngle = new Vector2();
     _this.orientation = new Vector2(0, Math.PI / 2);
     _this.target = new Vector3();
-    _this.sensitivity = 2.5;
+    _this.sensitivity = 1.5;
+    _this.sensitivityRatio = new Vector2();
     _this.smoothLocalFrameAngle = new Vector2();
     _this.smoothLocalFrameMotion = new Vector3();
     _this.smoothRun = 0;
@@ -40735,10 +40736,9 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.aimTiming = 0;
     _this.jumpTiming = 0;
     _this.fireTiming = 0;
-    _this.walkSpeed = 7.5 * KMPH_TO_MPS;
-    _this.runSpeed = 15 * KMPH_TO_MPS;
+    _this.walkSpeed = 10 * KMPH_TO_MPS;
+    _this.runSpeed = 20 * KMPH_TO_MPS;
     _this.dampenSpeed = 80 * KMPH_TO_MPS;
-    _this.pixelRatio = new Vector2();
     _this.onWindowResize();
     _this.head = new Object3D();
     _this.headRotation = new Euler(0, 0, 0);
@@ -40849,19 +40849,17 @@ var FirstPersonPlayer = function (_Object3D) {
       if (this.keys.run) {
         speed = this.runSpeed;
       }
-      speed *= dt;
 
       // Save and smooth local motion and orientation for later
       var localFrameMotion = this.tmpVec3;
-      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
-      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed);
+      localFrameMotion.copy(this.frameMotion).multiplyScalar(speed * dt);
       this.smoothLocalFrameMotion.lerp(localFrameMotion, dt / STRAFE_ROLL_SMOOTH_TIME);
       this.smoothLocalFrameAngle.lerp(this.frameAngle, dt / ANGLE_LAG_SMOOTH_TIME);
       this.smoothRun = fInterpTo(this.smoothRun, this.keys.run, 1 / RUN_SMOOTH_TIME, dt);
 
       // Apply motion
       // Transform motion to world space
-      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed * 100);
+      this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
       // this.position.add(this.frameMotion);
       // this.app.physics.setGroundVelocity(this, this.frameMotion);
       // this.app.physics.addVelocity(this, this.frameMotion);
@@ -41064,7 +41062,7 @@ var FirstPersonPlayer = function (_Object3D) {
   }, {
     key: 'onWindowResize',
     value: function onWindowResize() {
-      this.pixelRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
+      this.sensitivityRatio.set(this.sensitivity / window.innerWidth, this.sensitivity / window.innerHeight);
     }
   }]);
   return FirstPersonPlayer;
@@ -45119,7 +45117,7 @@ var App = function () {
     this.width = opts.width || 1280;
     this.height = opts.height || 720;
     this.pixelRatio = opts.pixelRatio || 1;
-    this.renderRatio = 0.75;
+    this.renderRatio = this.pixelRatio > 1 ? 0.75 : 1;
     this.aspectRatio = this.width / this.height;
     this.near = opts.near || 0.01;
     this.far = opts.far || 1000;
