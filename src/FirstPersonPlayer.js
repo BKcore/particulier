@@ -11,6 +11,7 @@ import { _Math } from 'three/src/math/Math';
 let { smootherstep, lerp } = _Math;
 
 import { PhysicsRaycastResult, G_STATIC, G_DYNAMIC } from './Physics.js';
+import { ParticleSystem, ParticleEmitter } from './particulier.js';
 
 const KMPH_TO_MPS = 1000 / 3600;
 const VANGLE_MIN = -Math.PI/2 + Math.PI/12;
@@ -87,6 +88,7 @@ export class FirstPersonPlayer extends Object3D {
     this.add(this.head);
     this.gunRotation = new Euler(-Math.PI/2, 0, Math.PI);
 
+    this.delta = new Vector3();
     this.impulse = new Vector3();
     this.aimRay = {
       from: new Vector3(),
@@ -102,6 +104,14 @@ export class FirstPersonPlayer extends Object3D {
     this.camera.position.set(0, 0, 0);
     this.head.add(this.camera);
     this.addGun();
+
+    this.particleSystem = new ParticleSystem({maxCount: 20, debug: true});
+    this.particleSystem.setScreenSpaceCrossVector(1, 0, 0);
+    this.app.particleWorld.add(this.particleSystem);
+    this.particleEmitter = new ParticleEmitter(this.particleSystem);
+    this.particleEmitter.setScale(0.08, 5);
+    this.particleEmitter.setColorRange(0, 0.75, 1, 1, 0, 1, 1, 1);
+    this.particleEmitter.setLife(1);
 
     this.app.physics.createPlayerBody(this, PLAYER_HEIGHT, PLAYER_RADIUS, 80);
 
@@ -172,9 +182,6 @@ export class FirstPersonPlayer extends Object3D {
     // Apply motion
     // Transform motion to world space
     this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
-    // this.position.add(this.frameMotion);
-    // this.app.physics.setGroundVelocity(this, this.frameMotion);
-    // this.app.physics.addVelocity(this, this.frameMotion);
     let body = this.app.physics.getBodyOfObject(this);
     if(hasMotion) {
       body.velocity.x = this.frameMotion.x;
@@ -352,6 +359,12 @@ export class FirstPersonPlayer extends Object3D {
       this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);
       this.app.physics.applyImpulse(object, position, this.impulse);
     }
+
+    this.delta.set(0, -1, 0.46).applyMatrix4(this.gun.matrixWorld);
+    this.particleEmitter.setPosition(this.delta.x, this.delta.y, this.delta.z);
+    this.delta.subVectors(ray.to, this.delta).normalize().multiplyScalar(100);
+    this.particleEmitter.setVelocity(this.delta.x, this.delta.y, this.delta.z);
+    this.particleEmitter.spawnOne();
   }
 
   initListeners() {

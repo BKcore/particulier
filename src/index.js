@@ -19,7 +19,7 @@ import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer';
 import { OrbitControls } from '../libs/three/OrbitControls.js';
 import { Sky } from '../libs/three/SkyShader.js';
 
-import { ParticleSystem, ParticleEmitter } from './particulier.js';
+import { ParticleWorld, ParticleSystem, ParticleEmitter } from './particulier.js';
 import { GrayBox } from './GrayBox.js';
 import { FirstPersonPlayer } from './FirstPersonPlayer.js';
 import { Loader } from './Loader.js';
@@ -191,6 +191,7 @@ class App {
 
   initScene() {
     this.scene = new Scene();
+    this.particleWorld = new ParticleWorld((system) => this.scene.add(system.getContainer().getMesh()));
     this.scene.fog = new FogExp2(0x818f9c, 0.0022);
     this.initLighting();
     this.addGround();
@@ -199,9 +200,11 @@ class App {
     this.addBoxes();
     this.addSpheres();
     this.addPhysicsBoxes();
-    this.particleSystem = new ParticleSystem({maxCount: 100000});
-    this.scene.add(this.particleSystem.getContainer().getMesh());
+    this.particleSystem = new ParticleSystem({maxCount: 100000, force: [0, -10, 0]});
+    this.particleWorld.add(this.particleSystem);
     this.particleEmitter = new ParticleEmitter(this.particleSystem);
+    this.particleEmitter.setOffsetRange(-1, 0, -1, 1, 0, 1);
+    this.particleEmitter.setColorRange(0, 0.5, 1, 0.3, 0, 1, 1, 0.4);
   }
 
   initLighting() {
@@ -311,11 +314,9 @@ class App {
     if(this.camera === this.orbitCamera) {
       this.cameraControls.update();
     }
-    let position = this.particleEmitter.getContainer().getObject().position;
-    position.x = Math.cos(this.time) * 100;
-    position.z = Math.sin(this.time) * 100;
+    this.particleEmitter.setPosition(Math.cos(this.time) * 100, 0, Math.sin(this.time) * 100);
     this.particleEmitter.spawnMany(100);
-    this.particleSystem.tick(dt);
+    this.particleWorld.tick(dt);
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -25,6 +25,13 @@ export function randomInRange(out, start, end) {
   out[2] = Math.random() * (end[2] - start[2]) + start[2];
 }
 
+export function randomInRange4(out, start, end) {
+  out[0] = Math.random() * (end[0] - start[0]) + start[0];
+  out[1] = Math.random() * (end[1] - start[1]) + start[1];
+  out[2] = Math.random() * (end[2] - start[2]) + start[2];
+  out[3] = Math.random() * (end[3] - start[3]) + start[3];
+}
+
 export function setVec2At(buffer, i, x, y) {
   buffer[i + 0] = x;
   buffer[i + 1] = y;

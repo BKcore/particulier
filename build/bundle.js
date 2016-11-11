@@ -24464,6 +24464,44 @@ var set$1 = function set$1(object, property, value, receiver) {
   return value;
 };
 
+var slicedToArray = function () {
+  function sliceIterator(arr, i) {
+    var _arr = [];
+    var _n = true;
+    var _d = false;
+    var _e = undefined;
+
+    try {
+      for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+        _arr.push(_s.value);
+
+        if (i && _arr.length === i) break;
+      }
+    } catch (err) {
+      _d = true;
+      _e = err;
+    } finally {
+      try {
+        if (!_n && _i["return"]) _i["return"]();
+      } finally {
+        if (_d) throw _e;
+      }
+    }
+
+    return _arr;
+  }
+
+  return function (arr, i) {
+    if (Array.isArray(arr)) {
+      return arr;
+    } else if (Symbol.iterator in Object(arr)) {
+      return sliceIterator(arr, i);
+    } else {
+      throw new TypeError("Invalid attempt to destructure non-iterable instance");
+    }
+  };
+}();
+
 // ES6 Module from three/examples/js/SkyShader.js
 
 /**
@@ -30703,6 +30741,13 @@ function randomInRange(out, start, end) {
   out[2] = Math.random() * (end[2] - start[2]) + start[2];
 }
 
+function randomInRange4(out, start, end) {
+  out[0] = Math.random() * (end[0] - start[0]) + start[0];
+  out[1] = Math.random() * (end[1] - start[1]) + start[1];
+  out[2] = Math.random() * (end[2] - start[2]) + start[2];
+  out[3] = Math.random() * (end[3] - start[3]) + start[3];
+}
+
 function setVec2At(buffer, i, x, y) {
   buffer[i + 0] = x;
   buffer[i + 1] = y;
@@ -30792,7 +30837,7 @@ var IterableDict = function () {
   return IterableDict;
 }();
 
-var vertexShader = "precision highp float;\nuniform mat4 modelViewMatrix;\nuniform mat4 viewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec3 force;\nuniform float time;\nattribute vec4 position;\nattribute vec4 velocity;\nattribute vec4 color;\nattribute vec2 uv;\nattribute vec2 scale;\nattribute vec2 life;\nvarying vec2 vUv;\nvarying vec4 vColor;\nconst vec2 velocityStretchIntensity = vec2(0.0, 0.05);\nconst vec2 quadPivot = vec2(0.0, 0.0);\nvec4 expandQuad(vec4 pos, vec3 vel) {\n  vec2 size = scale;\n  size *= 1.0 + length(vel) * velocityStretchIntensity;\n  vec2 amount = (uv - quadPivot) * size;\n  vec3 ncross = normalize((viewMatrix * vec4(vel, 0.0)).xyz);\n  vec3 nright = normalize(cross(vec3(0.0, 0.0, 1.0), ncross));\n  return vec4(pos.xyz + amount.x * nright + amount.y * ncross, 1.0);\n}\nvoid main() {\n  vec4 pos = vec4(position.xyz, 1.0);\n  float age = (time - life.x);\n  pos.xyz -= 999999.0 * step(life.y, age);\n  pos.xyz += velocity.xyz * age + force * age * age;\n  pos = expandQuad(modelViewMatrix * pos, velocity.xyz + force * age * age);\n  vUv = uv;\n  vColor = color;\n  gl_Position = projectionMatrix * pos;\n}\n";
+var vertexShader = "precision highp float;\nuniform mat4 modelViewMatrix;\nuniform mat4 viewMatrix;\nuniform mat4 projectionMatrix;\nuniform vec3 force;\nuniform float time;\nuniform vec3 ssCrossVector;\nattribute vec4 position;\nattribute vec4 velocity;\nattribute vec4 color;\nattribute vec2 uv;\nattribute vec2 scale;\nattribute vec2 life;\nvarying vec2 vUv;\nvarying vec4 vColor;\nconst vec2 velocityStretchIntensity = vec2(0.0, 0.05);\nconst vec2 quadPivot = vec2(0.0, 0.0);\nvec4 expandQuad(vec4 pos, vec3 vel) {\n  vec2 size = scale;\n  size *= 1.0 + length(vel) * velocityStretchIntensity;\n  vec2 amount = (uv - quadPivot) * size;\n  vec3 ncross = normalize((viewMatrix * vec4(vel, 0.0)).xyz);\n  vec3 nright = cross(ssCrossVector, ncross);\n  return vec4(pos.xyz + amount.x * nright + amount.y * ncross, 1.0);\n}\nvoid main() {\n  vec4 pos = vec4(position.xyz, 1.0);\n  float age = (time - life.x);\n  pos.xyz -= 999999.0 * step(life.y, age);\n  pos.xyz += velocity.xyz * age + force * age * age;\n  pos = expandQuad(modelViewMatrix * pos, velocity.xyz + force * age * age);\n  vUv = uv;\n  vColor = color;\n  gl_Position = projectionMatrix * pos;\n}\n";
 
 var fragmentShader = "precision highp float;\nvarying vec2 vUv;\nvarying vec4 vColor;\nvoid main() {\n  vec4 color = vColor;\n  color.a *= 1.0 - length(vUv);\n  gl_FragColor = color;\n}\n";
 
@@ -30884,12 +30929,23 @@ var ThreeParticleSystemContainer = function () {
       return this.mesh;
     }
   }, {
+    key: 'setForce',
+    value: function setForce(x, y, z) {
+      this.material.uniforms.force.value.set(x, y, z);
+    }
+  }, {
+    key: 'setScreenSpaceCrossVector',
+    value: function setScreenSpaceCrossVector(x, y, z) {
+      this.material.uniforms.ssCrossVector.value.set(x, y, z);
+    }
+  }, {
     key: 'createMaterial',
     value: function createMaterial() {
       return new RawShaderMaterial({
         uniforms: {
-          force: { value: new Vector3(0, -10, 0) },
-          time: { value: 0 }
+          force: { value: new Vector3(0, 0, 0) },
+          time: { value: 0 },
+          ssCrossVector: { value: new Vector3(0, 0, 1) }
         },
         vertexShader: vertexShader,
         fragmentShader: fragmentShader,
@@ -30927,14 +30983,9 @@ var ThreeParticleEmitterContainer = function () {
       return this.object3D;
     }
   }, {
-    key: 'copyPosition',
-    value: function copyPosition(out) {
-      var _object3D$position = this.object3D.position;
-      var x = _object3D$position.x;
-      var y = _object3D$position.y;
-      var z = _object3D$position.z;
-
-      vec3.set(out, x, y, z);
+    key: 'setPosition',
+    value: function setPosition(position) {
+      this.object3D.position.fromArray(position);
     }
   }]);
   return ThreeParticleEmitterContainer;
@@ -30959,87 +31010,6 @@ var ThreeParticleBackend = function () {
   return ThreeParticleBackend;
 }();
 
-var Utils = function () {
-  function Utils() {
-    classCallCheck(this, Utils);
-  }
-
-  createClass(Utils, null, [{
-    key: 'addScalar2',
-    value: function addScalar2(out, vec, scalar) {
-      vec[0] += scalar;
-      vec[1] += scalar;
-    }
-  }, {
-    key: 'addScalar3',
-    value: function addScalar3(out, vec, scalar) {
-      vec[0] += scalar;
-      vec[1] += scalar;
-      vec[2] += scalar;
-    }
-  }, {
-    key: 'randomInRange',
-    value: function randomInRange(out, start, end) {
-      out[0] = Math.random() * (end[0] - start[0]) + start[0];
-      out[1] = Math.random() * (end[1] - start[1]) + start[1];
-      out[2] = Math.random() * (end[2] - start[2]) + start[2];
-    }
-  }, {
-    key: 'setVec2At',
-    value: function setVec2At(buffer, i, x, y) {
-      buffer[i + 0] = x;
-      buffer[i + 1] = y;
-    }
-  }, {
-    key: 'setVec3At',
-    value: function setVec3At(buffer, i, x, y, z) {
-      buffer[i + 0] = x;
-      buffer[i + 1] = y;
-      buffer[i + 2] = z;
-    }
-  }, {
-    key: 'setVec4At',
-    value: function setVec4At(buffer, i, x, y, z, w) {
-      buffer[i + 0] = x;
-      buffer[i + 1] = y;
-      buffer[i + 2] = z;
-      buffer[i + 3] = w;
-    }
-  }, {
-    key: 'setVec6At',
-    value: function setVec6At(buffer, i, x, y, z, w, u, v) {
-      buffer[i + 0] = x;
-      buffer[i + 1] = y;
-      buffer[i + 2] = z;
-      buffer[i + 3] = w;
-      buffer[i + 4] = u;
-      buffer[i + 5] = v;
-    }
-  }, {
-    key: 'copyVec2At',
-    value: function copyVec2At(buffer, i, v) {
-      buffer[i + 0] = v[0];
-      buffer[i + 1] = v[1];
-    }
-  }, {
-    key: 'copyVec3At',
-    value: function copyVec3At(buffer, i, v) {
-      buffer[i + 0] = v[0];
-      buffer[i + 1] = v[1];
-      buffer[i + 2] = v[2];
-    }
-  }, {
-    key: 'copyVec4At',
-    value: function copyVec4At(buffer, i, v) {
-      buffer[i + 0] = v[0];
-      buffer[i + 1] = v[1];
-      buffer[i + 2] = v[2];
-      buffer[i + 3] = v[3];
-    }
-  }]);
-  return Utils;
-}();
-
 var QuadParticle = function () {
   function QuadParticle() {
     classCallCheck(this, QuadParticle);
@@ -31049,15 +31019,15 @@ var QuadParticle = function () {
     key: 'getVertexBuffer',
     value: function getVertexBuffer() {
       var buffer = new Float32Array(QuadParticle.vertexCount * QuadParticle.vertexStride);
-      Utils.setVec4At(buffer, 0, -1, -1, -1, 1);
-      Utils.setVec4At(buffer, 4, 1, 1, 1, -1);
+      setVec4At(buffer, 0, -1, -1, -1, 1);
+      setVec4At(buffer, 4, 1, 1, 1, -1);
       return buffer;
     }
   }, {
     key: 'getIndexBuffer',
     value: function getIndexBuffer() {
       var buffer = new Uint16Array(6);
-      Utils.setVec6At(buffer, 0, 0, 2, 1, 0, 3, 2);
+      setVec6At(buffer, 0, 0, 2, 1, 0, 3, 2);
       return buffer;
     }
   }, {
@@ -31070,20 +31040,20 @@ var QuadParticle = function () {
       var life = _ref.life;
 
       var i = offset * QuadParticle.instanceStride;
-      Utils.copyVec3At(buffer, i, position);
-      Utils.copyVec3At(buffer, i + 4, velocity, 0);
-      Utils.copyVec4At(buffer, i + 8, color);
-      Utils.copyVec2At(buffer, i + 12, scale);
-      Utils.setVec2At(buffer, i + 14, time, life);
+      copyVec3At(buffer, i, position);
+      copyVec3At(buffer, i + 4, velocity, 0);
+      copyVec4At(buffer, i + 8, color);
+      copyVec2At(buffer, i + 12, scale);
+      setVec2At(buffer, i + 14, time, life);
     }
   }, {
     key: 'reset',
     value: function reset(buffer, offset) {
       var i = offset * QuadParticle.instanceStride;
-      Utils.setVec4At(buffer, i, -9e9, -9e9, -9e9, 0);
-      Utils.setVec4At(buffer, i + 4, 0, 0, 0, 0);
-      Utils.setVec4At(buffer, i + 8, 0, 0, 0, 0);
-      Utils.setVec4At(buffer, i + 12, 0, 0, 0, -1);
+      setVec4At(buffer, i, -9e9, -9e9, -9e9, 0);
+      setVec4At(buffer, i + 4, 0, 0, 0, 0);
+      setVec4At(buffer, i + 8, 0, 0, 0, 0);
+      setVec4At(buffer, i + 12, 0, 0, 0, -1);
     }
   }]);
   return QuadParticle;
@@ -31103,6 +31073,7 @@ var ParticleSystem = function () {
     this.next = 0;
     this.time = 0.0;
     this.maxCount = opts.maxCount;
+    this.debug = opts.debug;
     var Particle = this.ParticleHandler = QuadParticle;
 
     this.instanceBuffer = new Float32Array(Particle.instanceStride * this.maxCount);
@@ -31112,12 +31083,32 @@ var ParticleSystem = function () {
 
     var Container = ParticleSystem.backend.getParticleSystemContainerClass();
     this.container = new Container(ParticleType.QUAD, this.maxCount, Particle, this.instanceBuffer);
+
+    if (opts.force != null) {
+      var _opts$force = slicedToArray(opts.force, 3);
+
+      var x = _opts$force[0];
+      var y = _opts$force[1];
+      var z = _opts$force[2];
+
+      this.setForce(x, y, z);
+    }
   }
 
   createClass(ParticleSystem, [{
     key: 'getContainer',
     value: function getContainer() {
       return this.container;
+    }
+  }, {
+    key: 'setForce',
+    value: function setForce(x, y, z) {
+      this.container.setForce(x, y, z);
+    }
+  }, {
+    key: 'setScreenSpaceCrossVector',
+    value: function setScreenSpaceCrossVector(x, y, z) {
+      this.container.setScreenSpaceCrossVector(x, y, z);
     }
   }, {
     key: 'tick',
@@ -31143,6 +31134,9 @@ var ParticleSystem = function () {
       var next = this.getNext();
       var Particle = this.ParticleHandler;
       Particle.init(this.instanceBuffer, next, this.time, initialProperties);
+      if (this.debug) {
+        console.log('Spawn:', next, this.time, initialProperties, this.instanceBuffer);
+      }
       this.needsUpdate = true;
     }
   }]);
@@ -31158,14 +31152,14 @@ var ParticleEmitter = function () {
     this.initialProperties = {
       position: vec3.fromValues(0, 0, 0),
       velocity: vec3.fromValues(0, 0, 0),
-      color: vec4.fromValues(1, 1, 1, 0.3),
+      color: vec4.fromValues(1, 1, 1, 1),
       scale: vec2.fromValues(0.3, 0.3),
-      life: 1
+      life: 3
     };
     this.position = vec3.create();
-    this.positionRange = [vec3.fromValues(-1, 0, -1), vec3.fromValues(1, 0, 1)];
+    this.offsetRange = [vec3.fromValues(0, 0, 0), vec3.fromValues(0, 0, 0)];
     this.velocityRange = [vec3.fromValues(-10, 20, -10), vec3.fromValues(10, 40, 10)];
-    this.colorRange = [vec3.fromValues(0, 0.5, 1), vec3.fromValues(0, 1, 1)];
+    this.colorRange = [vec4.fromValues(1, 1, 1, 1), vec4.fromValues(1, 1, 1, 1)];
     this.lastUpdate = -Infinity;
     var Container = ParticleEmitter.backend.getParticleEmitterContainerClass();
     this.container = new Container();
@@ -31177,13 +31171,46 @@ var ParticleEmitter = function () {
       return this.container;
     }
   }, {
+    key: 'setPosition',
+    value: function setPosition(x, y, z) {
+      vec3.set(this.position, x, y, z);
+    }
+  }, {
+    key: 'setOffsetRange',
+    value: function setOffsetRange(x0, y0, z0, x1, y1, z1) {
+      vec3.set(this.offsetRange[0], x0, y0, z0);
+      vec3.set(this.offsetRange[1], x1, y1, z1);
+    }
+  }, {
+    key: 'setColorRange',
+    value: function setColorRange(r0, g0, b0, a0, r1, g1, b1, a1) {
+      vec4.set(this.colorRange[0], r0, g0, b0, a0);
+      vec4.set(this.colorRange[1], r1, g1, b1, a1);
+    }
+  }, {
+    key: 'setVelocity',
+    value: function setVelocity(x, y, z) {
+      vec3.set(this.velocityRange[0], x, y, z);
+      vec3.set(this.velocityRange[1], x, y, z);
+    }
+  }, {
+    key: 'setScale',
+    value: function setScale(x, y) {
+      vec2.set(this.initialProperties.scale, x, y);
+    }
+  }, {
+    key: 'setLife',
+    value: function setLife(life) {
+      this.initialProperties.life = life;
+    }
+  }, {
     key: 'maybeUpdate',
     value: function maybeUpdate() {
       if (this.lastUpdate >= this.particleSystem.time) {
         return;
       }
       this.lastUpdate = this.particleSystem.time;
-      this.container.copyPosition(this.position);
+      this.container.setPosition(this.position);
     }
   }, {
     key: 'spawnOne',
@@ -31195,11 +31222,10 @@ var ParticleEmitter = function () {
       var color = _initialProperties.color;
       var scale = _initialProperties.scale;
 
-      Utils.randomInRange(position, this.positionRange[0], this.positionRange[1]);
+      randomInRange(position, this.offsetRange[0], this.offsetRange[1]);
       vec3.add(position, position, this.position);
-      Utils.randomInRange(velocity, this.velocityRange[0], this.velocityRange[1]);
-      Utils.randomInRange(color, this.colorRange[0], this.colorRange[1]);
-      this.initialProperties.life = 3;
+      randomInRange(velocity, this.velocityRange[0], this.velocityRange[1]);
+      randomInRange4(color, this.colorRange[0], this.colorRange[1]);
       this.particleSystem.spawn(this.initialProperties);
     }
   }, {
@@ -31212,7 +31238,63 @@ var ParticleEmitter = function () {
   }]);
   return ParticleEmitter;
 }();
+
 ParticleEmitter.backend = ThreeParticleBackend;
+var ParticleWorld = function () {
+  function ParticleWorld(addHook) {
+    classCallCheck(this, ParticleWorld);
+
+    this.systems = [];
+    this.addHook = addHook ? addHook : function (x) {
+      return x;
+    };
+  }
+
+  createClass(ParticleWorld, [{
+    key: 'tick',
+    value: function tick(dt) {
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.systems[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var system = _step3.value;
+
+          system.tick(dt);
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+    }
+  }, {
+    key: 'add',
+    value: function add(system) {
+      this.systems.push(system);
+      this.addHook(system);
+    }
+  }, {
+    key: 'remove',
+    value: function remove(system) {
+      var i = this.systems.indexOf(system);
+      if (i >= 0) {
+        this.systems.splice(i, 1);
+      }
+    }
+  }]);
+  return ParticleWorld;
+}();
 
 /**
  * @author alteredq / http://alteredqualia.com/
@@ -33603,9 +33685,9 @@ FrictionEquation$1.prototype.computeB = function(h){
     return B;
 };
 
-function Utils$2(){}
+function Utils$1(){}
 
-var Utils_1 = Utils$2;
+var Utils_1 = Utils$1;
 
 /**
  * Extend an options object with default values.
@@ -33615,7 +33697,7 @@ var Utils_1 = Utils$2;
  * @param  {object} defaults An object containing default values.
  * @return {object} The modified options object.
  */
-Utils$2.defaults = function(options, defaults){
+Utils$1.defaults = function(options, defaults){
     options = options || {};
 
     for(var key in defaults){
@@ -38027,7 +38109,7 @@ ArrayCollisionMatrix$1.prototype.setNumObjects = function(n) {
 	this.matrix.length = n*(n-1)>>1;
 };
 
-var Utils$3 = Utils_1;
+var Utils$2 = Utils_1;
 
 var ContactMaterial_1 = ContactMaterial$1;
 
@@ -38046,7 +38128,7 @@ var ContactMaterial_1 = ContactMaterial$1;
  * @param {Number} [options.frictionEquationRelaxation=3]
  */
 function ContactMaterial$1(m1, m2, options){
-    options = Utils$3.defaults(options, {
+    options = Utils$2.defaults(options, {
         friction: 0.3,
         restitution: 0.3,
         contactEquationStiffness: 1e7,
@@ -40747,6 +40829,7 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.add(_this.head);
     _this.gunRotation = new Euler(-Math.PI / 2, 0, Math.PI);
 
+    _this.delta = new Vector3();
     _this.impulse = new Vector3();
     _this.aimRay = {
       from: new Vector3(),
@@ -40762,6 +40845,14 @@ var FirstPersonPlayer = function (_Object3D) {
     _this.camera.position.set(0, 0, 0);
     _this.head.add(_this.camera);
     _this.addGun();
+
+    _this.particleSystem = new ParticleSystem({ maxCount: 20, debug: true });
+    _this.particleSystem.setScreenSpaceCrossVector(1, 0, 0);
+    _this.app.particleWorld.add(_this.particleSystem);
+    _this.particleEmitter = new ParticleEmitter(_this.particleSystem);
+    _this.particleEmitter.setScale(0.08, 5);
+    _this.particleEmitter.setColorRange(0, 0.75, 1, 1, 0, 1, 1, 1);
+    _this.particleEmitter.setLife(1);
 
     _this.app.physics.createPlayerBody(_this, PLAYER_HEIGHT, PLAYER_RADIUS, 80);
 
@@ -40860,9 +40951,6 @@ var FirstPersonPlayer = function (_Object3D) {
       // Apply motion
       // Transform motion to world space
       this.frameMotion.transformDirection(this.matrix).multiplyScalar(speed);
-      // this.position.add(this.frameMotion);
-      // this.app.physics.setGroundVelocity(this, this.frameMotion);
-      // this.app.physics.addVelocity(this, this.frameMotion);
       var body = this.app.physics.getBodyOfObject(this);
       if (hasMotion) {
         body.velocity.x = this.frameMotion.x;
@@ -41049,6 +41137,12 @@ var FirstPersonPlayer = function (_Object3D) {
         this.impulse.copy(ray.dir).add(FIRE_IMPULSE_OFFSET).multiplyScalar(FIRE_INPULSE_FORCE);
         this.app.physics.applyImpulse(object, position, this.impulse);
       }
+
+      this.delta.set(0, -1, 0.46).applyMatrix4(this.gun.matrixWorld);
+      this.particleEmitter.setPosition(this.delta.x, this.delta.y, this.delta.z);
+      this.delta.subVectors(ray.to, this.delta).normalize().multiplyScalar(100);
+      this.particleEmitter.setVelocity(this.delta.x, this.delta.y, this.delta.z);
+      this.particleEmitter.spawnOne();
     }
   }, {
     key: 'initListeners',
@@ -45227,7 +45321,12 @@ var App = function () {
   }, {
     key: 'initScene',
     value: function initScene() {
+      var _this2 = this;
+
       this.scene = new Scene();
+      this.particleWorld = new ParticleWorld(function (system) {
+        return _this2.scene.add(system.getContainer().getMesh());
+      });
       this.scene.fog = new FogExp2(0x818f9c, 0.0022);
       this.initLighting();
       this.addGround();
@@ -45236,9 +45335,11 @@ var App = function () {
       this.addBoxes();
       this.addSpheres();
       this.addPhysicsBoxes();
-      this.particleSystem = new ParticleSystem({ maxCount: 100000 });
-      this.scene.add(this.particleSystem.getContainer().getMesh());
+      this.particleSystem = new ParticleSystem({ maxCount: 100000, force: [0, -10, 0] });
+      this.particleWorld.add(this.particleSystem);
       this.particleEmitter = new ParticleEmitter(this.particleSystem);
+      this.particleEmitter.setOffsetRange(-1, 0, -1, 1, 0, 1);
+      this.particleEmitter.setColorRange(0, 0.5, 1, 0.3, 0, 1, 1, 0.4);
     }
   }, {
     key: 'initLighting',
@@ -45382,11 +45483,9 @@ var App = function () {
       if (this.camera === this.orbitCamera) {
         this.cameraControls.update();
       }
-      var position = this.particleEmitter.getContainer().getObject().position;
-      position.x = Math.cos(this.time) * 100;
-      position.z = Math.sin(this.time) * 100;
+      this.particleEmitter.setPosition(Math.cos(this.time) * 100, 0, Math.sin(this.time) * 100);
       this.particleEmitter.spawnMany(100);
-      this.particleSystem.tick(dt);
+      this.particleWorld.tick(dt);
       this.renderer.render(this.scene, this.camera);
     }
   }]);

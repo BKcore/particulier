@@ -5,6 +5,7 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform vec3 force;
 uniform float time;
+uniform vec3 ssCrossVector;
 
 attribute vec4 position;
 attribute vec4 velocity;
@@ -24,9 +25,8 @@ vec4 expandQuad(vec4 pos, vec3 vel) {
   size *= 1.0 + length(vel) * velocityStretchIntensity;
   vec2 amount = (uv - quadPivot) * size;
 
-
   vec3 ncross = normalize((viewMatrix * vec4(vel, 0.0)).xyz);
-  vec3 nright = normalize(cross(vec3(0.0, 0.0, 1.0), ncross));
+  vec3 nright = cross(ssCrossVector, ncross);
 
   return vec4(pos.xyz + amount.x * nright + amount.y * ncross, 1.0);
 }
