@@ -45183,6 +45183,7 @@ var App = function () {
 
     this.onLoadProgress = function (loaded, failed, total, path, asset, error) {
       console.info('Loading:', loaded + failed, '/', total, path, asset, error);
+      _this.updatePreloader((loaded + failed) / total);
     };
 
     this.onLoadError = function (error) {
@@ -45198,6 +45199,7 @@ var App = function () {
       _this.initPlayer();
       _this.initListeners();
       requestAnimationFrame(_this.onRequestAnimationFrame);
+      _this.removePreloader();
     };
 
     this.onMouseDown = function () {
@@ -45222,6 +45224,8 @@ var App = function () {
     this.boxes = [];
     this.camera = null;
 
+    this.createPreloader();
+
     this.loader = new Loader(this.assetsPath);
     this.loader.loadAssets(ASSETS, this.onLoadComplete, this.onLoadProgress, this.onLoadError);
 
@@ -45232,6 +45236,32 @@ var App = function () {
   }
 
   createClass(App, [{
+    key: 'createPreloader',
+    value: function createPreloader() {
+      this.preloader = document.createElement('div');
+      this.preloader.style.fontSize = 32;
+      this.preloader.style.fontFamily = 'Monospace';
+      this.preloader.style.color = 'gray';
+      this.preloader.style.textAlign = 'center';
+      this.preloader.style.position = 'absolute';
+      this.preloader.style.top = '40%';
+      this.preloader.style.left = 0;
+      this.preloader.style.right = 0;
+      this.preloader.textContent = 'Loading... 0%';
+      document.body.appendChild(this.preloader);
+    }
+  }, {
+    key: 'removePreloader',
+    value: function removePreloader() {
+      this.preloader.remove();
+    }
+  }, {
+    key: 'updatePreloader',
+    value: function updatePreloader(progress) {
+      console.log('update', progress);
+      this.preloader.textContent = 'Loading... ' + Math.floor(progress * 100) + '%';
+    }
+  }, {
     key: 'toggleCamera',
     value: function toggleCamera() {
       if (this.camera === this.orbitCamera) {

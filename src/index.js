@@ -58,6 +58,8 @@ class App {
     this.boxes = [];
     this.camera = null;
 
+    this.createPreloader();
+
     this.loader = new Loader(this.assetsPath);
     this.loader.loadAssets(ASSETS, this.onLoadComplete, this.onLoadProgress, this.onLoadError);
 
@@ -88,6 +90,7 @@ class App {
 
   onLoadProgress = (loaded, failed, total, path, asset, error) => {
     console.info('Loading:', loaded + failed, '/', total, path, asset, error);
+    this.updatePreloader((loaded + failed) / total);
   }
 
   onLoadError = (error) => {
@@ -103,12 +106,36 @@ class App {
     this.initPlayer();
     this.initListeners();
     requestAnimationFrame(this.onRequestAnimationFrame);
+    this.removePreloader();
   }
 
   onMouseDown = () => {
     if(this.camera === this.player.camera) {
       this.pointerLock(true);
     }
+  }
+
+  createPreloader() {
+    this.preloader = document.createElement('div');
+    this.preloader.style.fontSize = 32;
+    this.preloader.style.fontFamily = 'Monospace';
+    this.preloader.style.color = 'gray';
+    this.preloader.style.textAlign = 'center';
+    this.preloader.style.position = 'absolute';
+    this.preloader.style.top = '40%';
+    this.preloader.style.left = 0;
+    this.preloader.style.right = 0;
+    this.preloader.textContent = 'Loading... 0%';
+    document.body.appendChild(this.preloader);
+  }
+
+  removePreloader() {
+    this.preloader.remove();
+  }
+
+  updatePreloader(progress) {
+    console.log('update', progress);
+    this.preloader.textContent = `Loading... ${Math.floor(progress * 100)}%`;
   }
 
   toggleCamera() {
